@@ -77,7 +77,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      * times.
      */
     @Override
-    public synchronized void addAudioItem(AudioItem audioItem, File externalFile)
+    public synchronized void addNewAudioItemFromFile(AudioItem audioItem, File externalFile)
             throws UnsupportedFormatException, IOException, DuplicateItemException, ConversionException {
         if (hasAudioItem(audioItem)) {
             throw new DuplicateItemException(String.format("Audio item %s already exists for language %s", audioItem.getTitle(), audioItem.getLanguageCode()));
@@ -93,7 +93,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      * into all formats that were previously stored for that audio item.
      */
     @Override
-    public synchronized void updateAudioItem(AudioItem audioItem, File externalFile)
+    public synchronized void updateExistingAudioItemFromFile(AudioItem audioItem, File externalFile)
             throws ConversionException, IOException, UnsupportedFormatException
     {
         ensureKnownFormat(externalFile);

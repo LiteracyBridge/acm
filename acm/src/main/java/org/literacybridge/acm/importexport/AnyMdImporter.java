@@ -10,11 +10,11 @@ import java.util.Set;
 /**
  * Will attempt to import anything, using ffmpeg.
  */
-public class AnyImporter extends AudioFileImporter {
-    private Metadata metadata = new Metadata();
-    private Set<Category> categories = new HashSet<>();
+class AnyMdImporter extends BaseMetadataImporter {
+    private final Metadata metadata = new Metadata();
+    private final Set<Category> categories = new HashSet<>();
 
-    AnyImporter(File audioFile) {
+    AnyMdImporter(File audioFile) {
         super(audioFile);
     }
 

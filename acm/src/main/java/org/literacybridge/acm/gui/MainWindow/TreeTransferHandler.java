@@ -5,17 +5,20 @@ import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.MainWindow.SidebarView.CategoryTreeNodeObject;
 import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.BusyDialog;
+import org.literacybridge.acm.gui.dialogs.PopUp;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.importexport.AudioImporter;
+import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Transaction;
 
-import javax.swing.*;
+import javax.swing.JOptionPane;
+import javax.swing.JTree;
+import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
-import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -78,9 +81,6 @@ public class TreeTransferHandler extends TransferHandler {
         if (target.getCategory().hasChildren()) {
             return false;
         }
-
-        int action = support.getDropAction();
-        Cursor cursor = support.getComponent().getCursor();
 
         return true;
     }
@@ -146,7 +146,7 @@ public class TreeTransferHandler extends TransferHandler {
 
                 Application parent = Application.getApplication();
                 dialog = UIUtils.showDialog(parent,
-                        new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES"), parent, true));
+                    new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES"), parent, true));
 
                 try {
                     int numImported = 0;
@@ -154,11 +154,20 @@ public class TreeTransferHandler extends TransferHandler {
                         try {
                             // TODO: See if an audio item of this name exists.
                             // TODO: Query user for the language to apply to the audio item
-                            AudioImporter.getInstance().importOrUpdateAudioItemFromFile(f, item -> item.addCategory(category));
+                            AudioImporter.getInstance()
+                                .importDroppedFile(f, item -> item.addCategory(category));
+
+                        } catch (AudioItemRepository.MissingItemException e) {
+                            new PopUp.Builder().withParent(dialog)
+                                .withTitle("Missing Audio Item")
+                                .withContents("No audio item to update from " + f.getName())
+                                .withMessageType(JOptionPane.ERROR_MESSAGE)
+                                .withOptOut()
+                                .go();
                         } catch (Exception e) {
                             LOG.log(Level.WARNING, "Failed to import file " + f, e);
                         }
-                        boolean okToContinue=onProgress(++numImported, filesToImport.size());
+                        boolean okToContinue = onProgress(++numImported, filesToImport.size());
                         if (!okToContinue) {
                             break;
                         }
@@ -178,17 +187,14 @@ public class TreeTransferHandler extends TransferHandler {
                     filesToImport.add(dir);
                 } else {
                     File[] files = dir.listFiles(audioFilesFilter);
-                    Collections.addAll(filesToImport, files);
+                    if (files!=null) Collections.addAll(filesToImport, files);
 
-                    File[] subdirs = dir.listFiles(new FileFilter() {
-                        @Override
-                        public boolean accept(File pathname) {
-                            return pathname.isDirectory();
+                    File[] subdirs = dir.listFiles(File::isDirectory);
+
+                    if (subdirs != null) {
+                        for (File subDir : subdirs) {
+                            gatherFiles(subDir, filesToImport);
                         }
-                    });
-
-                    for (File subDir : subdirs) {
-                        gatherFiles(subDir, filesToImport);
                     }
                 }
             }
@@ -215,35 +221,31 @@ public class TreeTransferHandler extends TransferHandler {
         final AudioItem[] audioItems = (AudioItem[]) t
                 .getTransferData(AudioItemView.AudioItemDataFlavor);
         // don't piggyback on the drag&drop thread
-        Runnable job = new Runnable() {
-
-            @Override
-            public void run() {
-                Transaction transaction = ACMConfiguration.getInstance().getCurrentDB()
-                        .getMetadataStore().newTransaction();
-                boolean success = false;
-                try {
-                    for (AudioItem item : audioItems) {
-                        if (move) {
-                            item.removeAllCategories();
-                        }
-                        item.addCategory(target.getCategory());
-                        transaction.add(item);
+        Runnable job = () -> {
+            Transaction transaction = ACMConfiguration.getInstance().getCurrentDB()
+                    .getMetadataStore().newTransaction();
+            boolean success = false;
+            try {
+                for (AudioItem item : audioItems) {
+                    if (move) {
+                        item.removeAllCategories();
                     }
-                    transaction.commit();
-                    success = true;
-                } catch (IOException e) {
-                    LOG.log(Level.SEVERE, "Unable to commit transaction.", e);
-                } finally {
-                    if (!success) {
-                        try {
-                            transaction.rollback();
-                        } catch (IOException e) {
-                            LOG.log(Level.SEVERE, "Unable to rollback transaction.", e);
-                        }
-                    }
-                    Application.getFilterState().updateResult(true);
+                    item.addCategory(target.getCategory());
+                    transaction.add(item);
                 }
+                transaction.commit();
+                success = true;
+            } catch (IOException e) {
+                LOG.log(Level.SEVERE, "Unable to commit transaction.", e);
+            } finally {
+                if (!success) {
+                    try {
+                        transaction.rollback();
+                    } catch (IOException e) {
+                        LOG.log(Level.SEVERE, "Unable to rollback transaction.", e);
+                    }
+                }
+                Application.getFilterState().updateResult(true);
             }
         };
         new Thread(job).start();

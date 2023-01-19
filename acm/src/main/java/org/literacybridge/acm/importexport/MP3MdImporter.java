@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.cmc.music.metadata.IMusicMetadata;
 import org.cmc.music.metadata.MusicMetadataSet;
 import org.cmc.music.metadata.UnknownUserTextValue;
@@ -19,11 +19,11 @@ import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_DATE_RECORDED;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_PRIMARY_SPEAKER;
 
-public class MP3Importer extends AudioFileImporter {
+class MP3MdImporter extends BaseMetadataImporter {
     private Metadata metadata = null;
     private Set<Category> categories = null;
 
-    MP3Importer(File audioFile) {
+    MP3MdImporter(File audioFile) {
         super(audioFile);
     }
 
@@ -38,6 +38,7 @@ public class MP3Importer extends AudioFileImporter {
                 IMusicMetadata musicMetadata = musicMetadataSet.getSimplified();
                 
                 // Import any LB defined metadata fields that exist in the OGG file.
+                @SuppressWarnings("unchecked")
                 List<UnknownUserTextValue> privateTags = (List<UnknownUserTextValue>)musicMetadata.getUnknownUserTextValues();
                 Map<String, String> mp3Metadata = new HashMap<>();
                 for (UnknownUserTextValue utv : privateTags) {
@@ -51,14 +52,14 @@ public class MP3Importer extends AudioFileImporter {
                 setMetadataFromMap(loadedMetadata, mp3Metadata);
 
                 // If no DC_TITLE, use the MP3 title. If no MP3 title, super class will parse filename.
-                if (!loadedMetadata.containsField(DC_TITLE) && !isEmpty(musicMetadata.getSongTitle())) {
+                if (!loadedMetadata.containsField(DC_TITLE) && !StringUtils.isBlank(musicMetadata.getSongTitle())) {
                     loadedMetadata.put(DC_TITLE, musicMetadata.getSongTitle());
                 }
 
-                if (!loadedMetadata.containsField(LB_PRIMARY_SPEAKER) && !isEmpty(musicMetadata.getArtist())) {
+                if (!loadedMetadata.containsField(LB_PRIMARY_SPEAKER) && !StringUtils.isBlank(musicMetadata.getArtist())) {
                     loadedMetadata.put(LB_PRIMARY_SPEAKER, musicMetadata.getArtist());
                 }
-                if (!loadedMetadata.containsField(DC_PUBLISHER) && !isEmpty(musicMetadata.getPublisher())) {
+                if (!loadedMetadata.containsField(DC_PUBLISHER) && !StringUtils.isBlank(musicMetadata.getPublisher())) {
                     loadedMetadata.put(DC_PUBLISHER, musicMetadata.getPublisher());
                 }
                 if (!loadedMetadata.containsField(LB_DATE_RECORDED)) {
@@ -73,7 +74,7 @@ public class MP3Importer extends AudioFileImporter {
                 Taxonomy taxonomy = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getTaxonomy();
                 Set<Category> loadedCategories;
                 String categoriesString = mp3Metadata.get("CATEGORIES");
-                if (!isEmpty(categoriesString)) {
+                if (!StringUtils.isBlank(categoriesString)) {
                     loadedCategories = Arrays.stream(categoriesString.split(";"))
                             .map(taxonomy::getCategory)
                             .collect(Collectors.toSet());

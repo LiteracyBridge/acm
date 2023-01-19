@@ -7,8 +7,8 @@ import org.literacybridge.acm.utils.IOUtils;
 import java.io.File;
 import java.io.IOException;
 
-class WavExporter extends AudioFileExporter {
-    WavExporter(AudioItem audioItem, File targetFile) {
+class WavMdExporter extends BaseMetadataExporter {
+    WavMdExporter(AudioItem audioItem, File targetFile) {
         super(audioItem, targetFile, AudioItemRepository.AudioFormat.WAV);
     }
 

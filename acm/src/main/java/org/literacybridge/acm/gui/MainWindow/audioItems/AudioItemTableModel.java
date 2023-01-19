@@ -123,6 +123,34 @@ public class AudioItemTableModel extends AbstractTableModel {
         140,
         MetadataSpecification.DC_IDENTIFIER);
 
+    static final ColumnInfo<String> audioItemIdColumn = ColumnInfo.newColumnInfo(
+            LabelProvider.AUDIO_ITEM_TABLE_COLUMN_AUDIOITEMID,
+            ColumnInfo.WIDTH_NOT_SET,
+            140,
+            new ValueProvider<String>(true) {
+                @Override
+                protected AudioItemNode<String> getValue(AudioItem audioItem) {
+                    String value = audioItem.getId();
+                    return new AudioItemNode<>(audioItem, value);
+                }
+            });
+
+    static final ColumnInfo<String> filenameColumn = ColumnInfo.newColumnInfo(
+            LabelProvider.AUDIO_ITEM_TABLE_COLUMN_FILENAME,
+            ColumnInfo.WIDTH_NOT_SET,
+            140,
+            new ValueProvider<String>(true) {
+                @Override
+                protected AudioItemNode<String> getValue(AudioItem audioItem) {
+                    String value = "--no file--";
+                    AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
+                    if (repository.findAudioFileWithFormat(audioItem, AudioFormat.A18) != null) {
+                        value = repository.getAudioFilename(audioItem, AudioFormat.A18);
+                    }
+                    return new AudioItemNode<>(audioItem, value);
+                }
+            });
+
     // DC_PUBLISHER
     // LB_MESSAGE_FORMAT
     // LB_TARGET_AUDIENCE
@@ -159,12 +187,12 @@ public class AudioItemTableModel extends AbstractTableModel {
     this.uuidToRowIndexMap = Maps.newHashMap();
     this.rowIndexToIdMap = Lists.newArrayList();
 
-    columns = initializeColumnInfoArray(infoIconColumn, contentidColumn, titleColumn,
+    columns = initializeColumnInfoArray(infoIconColumn, contentidColumn, audioItemIdColumn, filenameColumn, titleColumn,
         durationColumn, categoriesColumn, sourceColumn, languagesColumn,
         dateFileModifiedColumn, /*correlationIdColumn,*/ sdgGoalsColumn,
         sdgTargetsColumn, playlistOrderColumn);
 
-    defaultHiddenColumns = new int[] {contentidColumn.getColumnIndex()};
+    defaultHiddenColumns = new int[] {contentidColumn.getColumnIndex(), audioItemIdColumn.getColumnIndex(), filenameColumn.getColumnIndex()};
 
     for (AudioItem item : store.getAudioItems()) {
       addNewAudioItem(item);

@@ -12,10 +12,10 @@ import java.io.File;
 import java.io.IOException;
 
 public interface AudioItemRepository {
-    void addAudioItem(AudioItem audioItem, File externalFile)
+    void addNewAudioItemFromFile(AudioItem audioItem, File externalFile)
             throws UnsupportedFormatException, IOException, DuplicateItemException, BaseAudioConverter.ConversionException;
 
-    void updateAudioItem(AudioItem audioItem, File externalFile)
+    void updateExistingAudioItemFromFile(AudioItem audioItem, File externalFile)
                     throws BaseAudioConverter.ConversionException, IOException, UnsupportedFormatException;
 
     void deleteAudioItem(AudioItem audioItem);
@@ -50,7 +50,7 @@ public interface AudioItemRepository {
                                                                                                    BaseAudioConverter.ConversionException,
                                                                                                    UnsupportedFormatException;
 
-    public void exportFileWithFormat(File sourceFile, File targetFile, AudioFormat targetFormat) throws
+    void exportFileWithFormat(File sourceFile, File targetFile, AudioFormat targetFormat) throws
                                                                                                  BaseAudioConverter.ConversionException,
                                                                                                  IOException;
     /**
@@ -126,13 +126,30 @@ public interface AudioItemRepository {
         }
     }
 
-    final class DuplicateItemException extends Exception {
+    interface ImportFunc {
+        void accept(AudioItem item, File file)
+            throws UnsupportedFormatException, IOException, DuplicateItemException, BaseAudioConverter.ConversionException;
+    }
+
+    class AudioItemRepositoryException extends Exception {
+        public AudioItemRepositoryException(String msg) {
+            super(msg);
+        }
+    }
+
+    final class MissingItemException extends AudioItemRepositoryException {
+        public MissingItemException(String msg) {
+            super(msg);
+        }
+    }
+
+    final class DuplicateItemException extends AudioItemRepositoryException {
         public DuplicateItemException(String msg) {
             super(msg);
         }
     }
 
-    final class UnsupportedFormatException extends Exception {
+    final class UnsupportedFormatException extends AudioItemRepositoryException {
         UnsupportedFormatException(String msg) {
             super(msg);
         }

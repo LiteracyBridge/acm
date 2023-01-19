@@ -25,8 +25,8 @@ import static org.literacybridge.acm.store.MetadataSpecification.LB_KEYWORDS;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_NOTES;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_PRIMARY_SPEAKER;
 
-class MP3Exporter extends AudioFileExporter {
-    MP3Exporter(AudioItem audioItem, File targetFile) {
+class MP3MdExporter extends BaseMetadataExporter {
+    MP3MdExporter(AudioItem audioItem, File targetFile) {
         super(audioItem, targetFile, AudioItemRepository.AudioFormat.MP3);
     }
 

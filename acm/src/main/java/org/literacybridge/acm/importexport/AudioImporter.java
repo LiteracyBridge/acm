@@ -20,6 +20,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
+import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
+
 public class AudioImporter {
     @SuppressWarnings("unused")
     private static final Logger LOG = Logger.getLogger(AudioImporter.class.getName());
@@ -40,7 +42,7 @@ public class AudioImporter {
     }
 
     // Map of file extensions to ctor of the class that imports that extension.
-    private final Map<String, Function<File, AudioFileImporter>> cmap = new HashMap<>();
+    private final Map<String, Function<File, BaseMetadataImporter>> cmap = new HashMap<>();
 
     private AudioImporter() {
         Set<String> extensions = new HashSet<>();
@@ -48,14 +50,14 @@ public class AudioImporter {
         // We could also use reflection to do this on (nothing but the) class objects.
         // Performance would not be an issue, because the import overwhelms construction, but
         // this is a bit more strongly typed. It is less convenient to add new importers.
-        registerImporter(A18Importer.getSupportedFileExtensions(), A18Importer::new, extensions);
-        registerImporter(MP3Importer.getSupportedFileExtensions(), MP3Importer::new, extensions);
-        registerImporter(WavImporter.getSupportedFileExtensions(), WavImporter::new, extensions);
-        registerImporter(OggImporter.getSupportedFileExtensions(), OggImporter::new, extensions);
+        registerImporter(A18MdImporter.getSupportedFileExtensions(), A18MdImporter::new, extensions);
+        registerImporter(MP3MdImporter.getSupportedFileExtensions(), MP3MdImporter::new, extensions);
+        registerImporter(WavMdImporter.getSupportedFileExtensions(), WavMdImporter::new, extensions);
+        registerImporter(OggMdImporter.getSupportedFileExtensions(), OggMdImporter::new, extensions);
 
         audioFilesFilter = getFileExtensionFilter(extensions);
     }
-    private void registerImporter(String[] extensions, Function<File, AudioFileImporter> ctor, Set<String> extensionSet) {
+    private void registerImporter(String[] extensions, Function<File, BaseMetadataImporter> ctor, Set<String> extensionSet) {
         for (String extension : extensions) {
             extension = extension.toLowerCase();
             extensionSet.add(extension);
@@ -63,18 +65,22 @@ public class AudioImporter {
         }
     }
 
+    public static AudioItem createAudioItemForFile(File file) {
+        return new A18MdImporter(file).createAudioItem();
+    }
+
     /**
      * Given a file, return an importer that can import it, if any.
      * @param audioFile The file to be imported.
      * @return The proper importer, if any, else null.
      */
-    private AudioFileImporter getImporter(File audioFile) {
+    private BaseMetadataImporter getImporter(File audioFile) {
         String extension = FilenameUtils.getExtension(audioFile.getName()).toLowerCase();
-        Function<File, AudioFileImporter> ctor = cmap.get(extension);
+        Function<File, BaseMetadataImporter> ctor = cmap.get(extension);
         if (ctor != null) {
             return ctor.apply(audioFile);
         }
-        return new AnyImporter(audioFile);
+        return new AnyMdImporter(audioFile);
     }
 
     /**
@@ -87,7 +93,6 @@ public class AudioImporter {
     private AudioItem importFileWithOptions(File file, AudioItemProcessor processor, AudioItem existingItem, Option... optionsArg)
             throws IOException, AudioItemRepository.UnsupportedFormatException, BaseAudioConverter.ConversionException, AudioItemRepository.DuplicateItemException
     {
-        AudioItem result;
         Set<Option> options = new HashSet<>(Arrays.asList(optionsArg));
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
 
@@ -99,47 +104,51 @@ public class AudioImporter {
             throw new IllegalArgumentException(file + " is a directory.");
         }
 
+        AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
+        BaseMetadataImporter importer;
+        AudioItemRepository.ImportFunc importFn = repository::updateExistingAudioItemFromFile;
         // Determine if this is a new or existing audio item.
-        AudioItem item = null;
+        AudioItem audioItem = null;
         if (options.contains(Option.updateOnly)) {
-            item = existingItem;
-        }
-        if (item == null) {
-            String title = FilenameUtils.removeExtension(file.getName());
-            int pos = title.indexOf(AudioExporter.AUDIOITEM_ID_SEPARATOR);
-            if (pos != -1) {
-                String id = title.substring(pos + AudioExporter.AUDIOITEM_ID_SEPARATOR.length());
-                item = store.getAudioItem(id);
+            if (existingItem == null) {
+                throw new IllegalArgumentException("'existingItem' must not be null when 'updateOnly' is specified.");
             }
-        }
-
-        // If the audio item already exists, refresh the existing item with new content.
-        if (item != null) {
-            if (options.contains(Option.addNewOnly)) {
-                // just skip if we have an item with the same id already
-                System.out.printf("File '%s' is already in database; skipping%n",
-                    file.getName());
-            } else {
-                ACMConfiguration.getInstance()
-                    .getCurrentDB()
-                    .getRepository()
-                    .updateAudioItem(item, file);
-
-                // let caller tweak audio item
-                if (processor != null) {
-                    processor.process(item);
-                }
-
-                store.commit(item);
-            }
-            result = item;
+            audioItem = existingItem;
         } else {
-            // Otherwise, the item didn't already exist, so import the new audio item
-            AudioFileImporter importer = getImporter(file);
-            result = importer.importSingleFile(processor);
+            // If updating is acceptable, try to get the AudioItem via the file name.
+            if (!options.contains(Option.addNewOnly)) {
+                String id = getIdFromFilename(file);
+                if (id != null) {
+                    audioItem = store.getAudioItem(id);
+                }
+            }
+            // If not acceptable, or no item, create a new one.
+            if (audioItem == null) {
+                importer = getImporter(file);
+                audioItem = importer.createAudioItem();
+                importFn = repository::addNewAudioItemFromFile;
+            }
+        }
+        // Be certain that the DC_IDENTIFIER == the AudioItem.id
+        Metadata metadata = audioItem.getMetadata();
+        metadata.put(DC_IDENTIFIER, audioItem.getId());
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // A U D I O   I M P O R T   H A P P E N S   H E R E
+        //
+        // Here is where the actual conversion and import happens.
+        importFn.accept(audioItem, file);
+        //
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        // let caller tweak audio item
+        if (processor != null) {
+            processor.process(audioItem);
         }
 
-        return result;
+        store.commit(audioItem);
+
+        return audioItem;
     }
 
     public void updateAudioItemFromFile(AudioItem existingItem, File file, AudioItemProcessor processor)
@@ -159,9 +168,54 @@ public class AudioImporter {
         return importFileWithOptions(file, processor, null, Option.addNewOnly);
     }
 
-    public AudioItem importOrUpdateAudioItemFromFile(File file, AudioItemProcessor processor)
-            throws AudioItemRepository.UnsupportedFormatException, BaseAudioConverter.ConversionException, IOException, AudioItemRepository.DuplicateItemException {
-        return importFileWithOptions(file, processor, null);
+    /**
+     * Imports an audio file into the repository. If the name of the file is like "${title}___${id}",
+     * then this is updating an existing item, which must exist in this repository.
+     *
+     * Specifically intended for interactively drag-and-drop adding files to the ACM.
+     * @param file to be imported.
+     * @param processor An optional processor that is given an opportunity to modify the item post import.
+     * @throws BaseAudioConverter.ConversionException If the file's audio format can't be converted.
+     * @throws AudioItemRepository.AudioItemRepositoryException If something other than the audio format can't be converted.
+     * @throws IOException If there's an IO error in the conversion.
+     */
+    public void importDroppedFile(File file, AudioItemProcessor processor)
+            throws BaseAudioConverter.ConversionException, AudioItemRepository.AudioItemRepositoryException, IOException {
+        Option option = Option.addNewOnly;
+        AudioItem item = null;
+        String id = getIdFromFilename(file);
+        if (id != null) {
+            item = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getAudioItem(id);
+            if (item == null) {
+                throw new AudioItemRepository.MissingItemException("Audio item for update not found");
+            }
+            option = Option.updateOnly;
+        }
+        importFileWithOptions(file, processor, item, option);
+    }
+
+    /**
+     * Add the given file to the ACM database.
+     * @param file to be imported.
+     * @param processor An optional processor that is given an opportunity to modify the item post import.
+     * @throws BaseAudioConverter.ConversionException If the file's audio format can't be converted.
+     * @throws AudioItemRepository.AudioItemRepositoryException If something other than the audio format can't be converted.
+     * @throws IOException If there's an IO error in the conversion.
+     */
+    public void importOrUpdateAudioItemFromFile(File file, AudioItemProcessor processor)
+            throws AudioItemRepository.AudioItemRepositoryException, BaseAudioConverter.ConversionException, IOException {
+        importFileWithOptions(file, processor, null);
+    }
+
+    private static String getIdFromFilename(File audioFile) {
+        String id = null;
+        // When audio is exported as "title + id", the format is "${title}___${id}".
+        String titleFromFilename = FilenameUtils.removeExtension(audioFile.getName());
+        int pos = titleFromFilename.indexOf(AudioExporter.AUDIOITEM_ID_SEPARATOR);
+        if (pos != -1) {
+            id = titleFromFilename.substring(pos + AudioExporter.AUDIOITEM_ID_SEPARATOR.length());
+        }
+        return id;
     }
 
     /**
@@ -170,7 +224,7 @@ public class AudioImporter {
      * @return Any metadata in the file.
      */
     public Metadata getExistingMetadata(File file) {
-        AudioFileImporter importer = getImporter(file);
+        BaseMetadataImporter importer = getImporter(file);
 
         return importer.getMetadata();
     }

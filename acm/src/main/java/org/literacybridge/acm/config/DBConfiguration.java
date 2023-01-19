@@ -9,13 +9,7 @@ import org.literacybridge.acm.config.AccessControlResolver.AccessStatus;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepositoryImpl;
 import org.literacybridge.acm.sandbox.Sandbox;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.LuceneMetadataStore;
-import org.literacybridge.acm.store.MetadataStore;
-import org.literacybridge.acm.store.MetadataValue;
-import org.literacybridge.acm.store.RFC3066LanguageCode;
-import org.literacybridge.acm.store.Taxonomy;
-import org.literacybridge.acm.store.Transaction;
+import org.literacybridge.acm.store.*;
 import org.literacybridge.core.spec.LanguageLabelProvider;
 import org.literacybridge.core.spec.ProgramSpec;
 
@@ -218,7 +212,8 @@ public class DBConfiguration {
           getLanguageLabelProvider();
 
           fixupLanguageCodes();
-          
+          checkMessageIdMismatch();
+
           initialized = true;
       }
     }
@@ -675,6 +670,29 @@ public class DBConfiguration {
 //            System.out.printf("Took %d ms to fix %d categories%n", timer, itemsFixed);
 //        }
 //    }
+
+    private void checkMessageIdMismatch() {
+        Collection<AudioItem> items = this.store.getAudioItems();
+        int n = 0;
+        for (AudioItem item : items) {
+            Metadata metadata = item.getMetadata();
+            String dc_identifier = "??";
+            if (metadata.containsField(MetadataSpecification.DC_IDENTIFIER)) {
+                dc_identifier = metadata.getMetadataValue(MetadataSpecification.DC_IDENTIFIER).toString();
+            }
+            if (!dc_identifier.equalsIgnoreCase(item.getId())) {
+                String title = item.getTitle();
+                String languageCode = item.getLanguageCode();
+                boolean otherExists = this.store.getAudioItem(dc_identifier) != null;
+                System.out.printf("# %2d mismatch, audioItem: %s, metadata: %s (%s), (%s, %s)\n",
+                        ++n, item.getId(), dc_identifier, otherExists?"!":"x", languageCode, title);
+            }
+        }
+        if (n == 0) {
+            System.out.println("No audioItem id mismatches.");
+        }
+    }
+
 
     /**
      * A number of years ago (I write this on 2018-05-10), we needed a new language, Tumu Sisaala.

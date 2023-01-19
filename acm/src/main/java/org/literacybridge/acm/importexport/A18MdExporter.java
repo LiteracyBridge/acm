@@ -8,8 +8,8 @@ import org.literacybridge.acm.utils.IOUtils;
 import java.io.File;
 import java.io.IOException;
 
-class A18Exporter extends AudioFileExporter {
-    A18Exporter(AudioItem audioItem, File targetFile) {
+class A18MdExporter extends BaseMetadataExporter {
+    A18MdExporter(AudioItem audioItem, File targetFile) {
         super(audioItem, targetFile, AudioItemRepository.AudioFormat.A18);
     }
 

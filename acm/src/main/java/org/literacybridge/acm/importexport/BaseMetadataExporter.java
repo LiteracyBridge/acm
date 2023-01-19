@@ -21,8 +21,8 @@ import static org.literacybridge.acm.store.MetadataSpecification.ALL_METADATA_FI
  * Base class for audio file exporters. Handles most of the operations that are common to all formats.
  */
 
-abstract class AudioFileExporter {
-    AudioItem audioItem = null;
+abstract class BaseMetadataExporter {
+    AudioItem audioItem;
     File targetFile;
     AudioItemRepository.AudioFormat targetFormat;
 
@@ -32,7 +32,7 @@ abstract class AudioFileExporter {
      * @param targetFile The filename to which it should be exported, with extension.
      * @param targetFormat The audio format to which to export.
      */
-    AudioFileExporter(AudioItem audioItem, File targetFile, AudioItemRepository.AudioFormat targetFormat) {
+    BaseMetadataExporter(AudioItem audioItem, File targetFile, AudioItemRepository.AudioFormat targetFormat) {
         this.audioItem = audioItem;
         this.targetFile = targetFile;
         this.targetFormat = targetFormat;

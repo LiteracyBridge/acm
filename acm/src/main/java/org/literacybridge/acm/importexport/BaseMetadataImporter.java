@@ -2,9 +2,7 @@ package org.literacybridge.acm.importexport;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
@@ -12,7 +10,6 @@ import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataStore;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,10 +24,10 @@ import static org.literacybridge.acm.store.MetadataSpecification.DTB_REVISION;
 /**
  * Abstract base class for an audio file importer.
  */
-abstract class AudioFileImporter {
+abstract class BaseMetadataImporter {
 
     File audioFile;
-    AudioFileImporter(File audioFile) {
+    BaseMetadataImporter(File audioFile) {
         this.audioFile = audioFile;
     }
 
@@ -49,59 +46,20 @@ abstract class AudioFileImporter {
 
     protected abstract Set<Category> getCategories();
 
-    AudioItem importSingleFile(AudioImporter.AudioItemProcessor itemProcessor)
-            throws IOException, AudioItemRepository.UnsupportedFormatException, AudioItemRepository.DuplicateItemException, BaseAudioConverter.ConversionException {
-        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-
-        AudioItem audioItem = createAudioItem();
-
-        if (store.getAudioItem(audioItem.getId()) != null) {
-            // just skip if we have an item with the same id already
-            System.out.printf("File '%s' is already in database; skipping%n",
-                audioFile.getName());
-            return audioItem;
-        }
-
-        AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
-
-        System.out.printf("Importing file %s\n", audioFile);
-        ////////////////////////////////////////////////////////////////////////////////////////////
-        // A U D I O   I M P O R T   H A P P E N S   H E R E
-        //
-        // Here is where the actual conversion and import happens.
-        repository.addAudioItem(audioItem, audioFile);
-        //
-        ////////////////////////////////////////////////////////////////////////////////////////////
-
-        // let caller tweak audio item
-        if (itemProcessor != null) {
-            itemProcessor.process(audioItem);
-            store.commit(audioItem);
-        }
-
-        return audioItem;
-    }
-
-
     public AudioItem createAudioItem() {
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         Metadata loadedMetadata = getMetadata();
         Set<Category> loadedCategories = getCategories();
 
-        // Get a new AudioItem, using a new or existing id.
-        String id = null;
+        // Get a new AudioItem, using a new id.
+        String id = ACMConfiguration.getInstance().getNewAudioItemUID();
 
         // Try to get it from filename. When audio is exported as
         // "title + id", the format is "${title}___${id}"; we can parse that for the id.
         String titleFromFilename = FilenameUtils.removeExtension(audioFile.getName());
         int pos = titleFromFilename.indexOf(AudioExporter.AUDIOITEM_ID_SEPARATOR);
         if (pos != -1) {
-            id = titleFromFilename.substring(pos + AudioExporter.AUDIOITEM_ID_SEPARATOR.length());
             titleFromFilename = titleFromFilename.substring(0, pos);
-        }
-        // If no id from filename, allocate a new one.
-        if (isEmpty(id)) {
-            id = ACMConfiguration.getInstance().getNewAudioItemUID();
         }
         AudioItem audioItem = store.newAudioItem(id);
         Metadata metadata = audioItem.getMetadata();
@@ -112,12 +70,12 @@ abstract class AudioFileImporter {
             metadata.addValuesFromOtherWithExclusions(loadedMetadata, DC_IDENTIFIER);
         }
 
+        // Be completely sure that the DC_IDENTIFIER == the AudioItem.id
+        metadata.put(DC_IDENTIFIER, audioItem.getId());
+
         // Add defaults for missing required values.
-        if (isEmpty(metadata.get(DC_IDENTIFIER))) {
-            metadata.put(DC_IDENTIFIER, audioItem.getId());
-        }
-        if (isEmpty(metadata.get(DC_TITLE))) {
-            if (isEmpty(titleFromFilename)) {
+        if (StringUtils.isBlank(metadata.get(DC_TITLE))) {
+            if (StringUtils.isBlank(titleFromFilename)) {
                 titleFromFilename = FilenameUtils.removeExtension(audioFile.getName());
                 pos = titleFromFilename.indexOf(AudioExporter.AUDIOITEM_ID_SEPARATOR);
                 if (pos != -1) {
@@ -126,11 +84,11 @@ abstract class AudioFileImporter {
             }
             metadata.put(DC_TITLE, titleFromFilename);
         }
-        if (isEmpty(metadata.get(DTB_REVISION))) {
+        if (StringUtils.isBlank(metadata.get(DTB_REVISION))) {
             metadata.put(DTB_REVISION, 1);
         }
         // If no DC_LANGUAGE, use the ACM's first language.
-        if (isEmpty(metadata.get(DC_LANGUAGE))) {
+        if (StringUtils.isBlank(metadata.get(DC_LANGUAGE))) {
             List<Locale> languages = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages();
             String iso639 = languages.size() > 0 ? languages.get(0).getLanguage() : "en";
             metadata.put(DC_LANGUAGE, iso639);
@@ -144,10 +102,6 @@ abstract class AudioFileImporter {
 
         return audioItem;
 
-    }
-    
-    static boolean isEmpty(String string) {
-        return string==null || string.trim().length()==0;
     }
 
 }

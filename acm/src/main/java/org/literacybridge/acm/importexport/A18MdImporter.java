@@ -1,16 +1,10 @@
 package org.literacybridge.acm.importexport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.repository.AudioItemRepository.DuplicateItemException;
-import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatException;
-import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.LBMetadataSerializer;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataStore;
-import org.literacybridge.acm.store.MetadataValue;
-import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.utils.IOUtils;
 
 import java.io.BufferedInputStream;
@@ -19,14 +13,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 
-public class A18Importer extends AudioFileImporter {
+class A18MdImporter extends BaseMetadataImporter {
     private Set<Category> categories = null;
     private Metadata metadata = null;
 
-    public A18Importer(File audioFile) {
+    public A18MdImporter(File audioFile) {
         super(audioFile);
     }
 

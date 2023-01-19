@@ -51,7 +51,9 @@ public class LabelProvider {
   public static final String AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED = "AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED";
   public static final String AUDIO_ITEM_TABLE_COLUMN_SDG_GOALS = "AUDIO_ITEM_TABLE_COLUMN_SDG_GOALS";
     public static final String AUDIO_ITEM_TABLE_COLUMN_SDG_TARGETS = "AUDIO_ITEM_TABLE_COLUMN_SDG_TARGETS";
-    public static final String AUDIO_ITEM_TABLE_COLUMN_CONTENTID = "Content ID";
+    public static final String AUDIO_ITEM_TABLE_COLUMN_CONTENTID = "DC_IDENTIFIER";
+    public static final String AUDIO_ITEM_TABLE_COLUMN_AUDIOITEMID = "Audio Item ID";
+    public static final String AUDIO_ITEM_TABLE_COLUMN_FILENAME = "File Name";
 
   public static final class KeyValuePair<K, V> {
     private final K key;

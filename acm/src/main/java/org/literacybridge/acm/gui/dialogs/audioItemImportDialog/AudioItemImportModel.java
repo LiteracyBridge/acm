@@ -1,24 +1,20 @@
 package org.literacybridge.acm.gui.dialogs.audioItemImportDialog;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.swing.table.AbstractTableModel;
-
+import com.google.common.collect.Lists;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import org.literacybridge.acm.importexport.A18Importer;
+import org.literacybridge.acm.importexport.AudioImporter;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
-import com.google.common.collect.Lists;
+import javax.swing.table.AbstractTableModel;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
-@SuppressWarnings("serial")
 public class AudioItemImportModel extends AbstractTableModel {
 
   // positions of the table columns
@@ -29,11 +25,11 @@ public class AudioItemImportModel extends AbstractTableModel {
   public static final int LANGUAGES = 3;
   private static String[] columns = null;
 
-  private final AudioItemNode[] rowIndex2audioItem;
+  private final AudioItemNode<String>[] rowIndex2audioItem;
   private final List<File> sourceFiles;
 
   public List<File> getEnabledAudioItems() {
-    List<File> list = new ArrayList<File>();
+    List<File> list = new ArrayList<>();
 
     for (int i = 0; i < rowIndex2audioItem.length; i++) {
       if (rowIndex2audioItem[i].isEnabled()) {
@@ -45,14 +41,15 @@ public class AudioItemImportModel extends AbstractTableModel {
   }
 
   public void setStateForAllItems(boolean enable) {
-    for (AudioItemNode node : rowIndex2audioItem) {
+    for (AudioItemNode<String> node : rowIndex2audioItem) {
       node.setEnabled(enable);
     }
 
     fireTableDataChanged();
   }
 
-  public AudioItemImportModel(List<File> filesToImport) throws IOException {
+  public AudioItemImportModel(List<File> filesToImport) {
+    //noinspection unchecked
     rowIndex2audioItem = new AudioItemNode[filesToImport.size()];
     this.sourceFiles = filesToImport;
     initializeModel(filesToImport);
@@ -62,12 +59,11 @@ public class AudioItemImportModel extends AbstractTableModel {
     columns = initalColumnNames;
   }
 
-  private void initializeModel(List<File> filesToImport) throws IOException {
-
+  private void initializeModel(List<File> filesToImport) {
     for (int i = 0; i < filesToImport.size(); ++i) {
       File file = filesToImport.get(i);
-      AudioItem audioItem = new A18Importer(file).createAudioItem();
-      rowIndex2audioItem[i] = new AudioItemNode(audioItem, "");
+      AudioItem audioItem = AudioImporter.createAudioItemForFile(file);
+      rowIndex2audioItem[i] = new AudioItemNode<>(audioItem, "");
 
     }
   }
@@ -90,13 +86,13 @@ public class AudioItemImportModel extends AbstractTableModel {
   @Override
   public Object getValueAt(int rowIndex, int columnIndex) {
 
-    AudioItemNode item = rowIndex2audioItem[rowIndex];
+    AudioItemNode<String> item = rowIndex2audioItem[rowIndex];
     AudioItem audioItem = item.getAudioItem();
 
     try {
       switch (columnIndex) {
       case INFO_ICON:
-        return new Boolean(item.isEnabled());
+        return item.isEnabled();
       case TITLE:
         return audioItem.getMetadata()
             .getMetadataValue(MetadataSpecification.DC_TITLE).getValue();
@@ -154,9 +150,9 @@ public class AudioItemImportModel extends AbstractTableModel {
   @Override
   public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
     if (columnIndex == INFO_ICON) {
-      AudioItemNode node = rowIndex2audioItem[rowIndex];
+      AudioItemNode<? extends String> node = rowIndex2audioItem[rowIndex];
       Boolean enable = (Boolean) aValue;
-      node.setEnabled(enable.booleanValue());
+      node.setEnabled(enable);
       // fireTableCellUpdated(rowIndex, columnIndex);
     }
 

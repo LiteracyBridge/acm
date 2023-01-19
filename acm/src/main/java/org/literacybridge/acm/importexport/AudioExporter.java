@@ -1,19 +1,18 @@
 package org.literacybridge.acm.importexport;
 
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
+import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataSpecification;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
-
-import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
-import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Metadata;
-import org.literacybridge.acm.store.MetadataSpecification;
 
 public class AudioExporter {
     static final String AUDIOITEM_ID_SEPARATOR = "___";
@@ -27,17 +26,17 @@ public class AudioExporter {
     }
 
     // Map of file extensions to ctor of the class that exports that extension.
-    private Map<String, BiFunction<AudioItem, File, AudioFileExporter>> cmap = new HashMap<>();
+    private final Map<String, BiFunction<AudioItem, File, BaseMetadataExporter>> cmap = new HashMap<>();
 
     // Initializes the exporter.
     private AudioExporter() {
-        registerExporter(AudioFormat.A18, A18Exporter::new);
-        registerExporter(AudioFormat.MP3, MP3Exporter::new);
-        registerExporter(AudioFormat.WAV, WavExporter::new);
-        registerExporter(AudioFormat.OGG, OggExporter::new);
+        registerExporter(AudioFormat.A18, A18MdExporter::new);
+        registerExporter(AudioFormat.MP3, MP3MdExporter::new);
+        registerExporter(AudioFormat.WAV, WavMdExporter::new);
+        registerExporter(AudioFormat.OGG, OggMdExporter::new);
     }
     // Given an audio format and the ctor for a class that exports, build the map of export ctors.
-    private void registerExporter(AudioFormat format, BiFunction<AudioItem, File, AudioFileExporter> ctor) {
+    private void registerExporter(AudioFormat format, BiFunction<AudioItem, File, BaseMetadataExporter> ctor) {
         cmap.put(format.getFileExtension(), ctor);
     }
 
@@ -47,10 +46,10 @@ public class AudioExporter {
      * @param item The audio item to be exported.
      * @param targetFile The target file into which the export should take place.
      * @param targetFormat The target format.
-     * @return The proper AudioFileExporter, or null if no such exporter exists.
+     * @return The proper BaseMetadataExporter, or null if no such exporter exists.
      */
-    private AudioFileExporter getExporter(AudioItem item, File targetFile, AudioFormat targetFormat) {
-        BiFunction<AudioItem, File, AudioFileExporter> ctor = cmap.get(targetFormat.getFileExtension());
+    private BaseMetadataExporter getExporter(AudioItem item, File targetFile, AudioFormat targetFormat) {
+        BiFunction<AudioItem, File, BaseMetadataExporter> ctor = cmap.get(targetFormat.getFileExtension());
         if (ctor != null) {
             return ctor.apply(item, targetFile);
         }
@@ -73,19 +72,13 @@ public class AudioExporter {
         BiFunction<Integer,Integer,Boolean> onProgress
     ) throws IOException
     {
-
         try {
-            AudioItemRepository repository = ACMConfiguration.getInstance()
-                .getCurrentDB()
-                .getRepository();
-
             int count = 0;
             for (AudioItem audioItem : audioItems) {
                 // Build the desired file name.
                 Metadata metadata = audioItem.getMetadata();
                 StringBuilder basename = new StringBuilder();
                 if (titleInFilename) {
-                    String t = metadata.get(MetadataSpecification.DC_TITLE);
                     String title = metadata.getMetadataValue(MetadataSpecification.DC_TITLE).getValue();
                     basename.append(title);
                     if (idInFilename) {
@@ -93,7 +86,7 @@ public class AudioExporter {
                     }
                 }
                 if (idInFilename) {
-                    String id = metadata.getMetadataValue(MetadataSpecification.DC_IDENTIFIER).getValue();
+                    String id = audioItem.getId();
                     basename.append(id);
                 }
 
@@ -130,7 +123,7 @@ public class AudioExporter {
      */
     public void export(AudioItem audioItem, File targetFile, AudioFormat targetFormat)
         throws IOException, ConversionException, AudioItemRepository.UnsupportedFormatException {
-        AudioFileExporter exporter = getExporter(audioItem, targetFile, targetFormat);
+        BaseMetadataExporter exporter = getExporter(audioItem, targetFile, targetFormat);
         if (exporter == null) {
             // Count as a file we can't convert.
             return;

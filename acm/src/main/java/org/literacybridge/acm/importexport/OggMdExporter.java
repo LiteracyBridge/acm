@@ -15,8 +15,8 @@ import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_DATE_RECORDED;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_PRIMARY_SPEAKER;
 
-class OggExporter extends AudioFileExporter {
-    OggExporter(AudioItem audioItem, File targetFile) {
+class OggMdExporter extends BaseMetadataExporter {
+    OggMdExporter(AudioItem audioItem, File targetFile) {
         super(audioItem, targetFile, AudioItemRepository.AudioFormat.OGG);
     }
 
@@ -24,7 +24,7 @@ class OggExporter extends AudioFileExporter {
         VorbisCommentHeader comments = new VorbisCommentHeader();
         comments.vendor = "Amplio";
 
-        gatherMetadata((name, value) -> {comments.fields.add(new CommentField(name, value));});
+        gatherMetadata((name, value) -> comments.fields.add(new CommentField(name, value)));
 
         // Add metadata that will be shown by more tools.
         Metadata metadata = audioItem.getMetadata();
