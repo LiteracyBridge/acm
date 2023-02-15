@@ -144,6 +144,7 @@ public class TBBuilder {
     public String getRevision() {
         return builderContext.revision;
     }
+
     public List<String> getAcceptableFirmwareVersions(boolean isUserFeedbackHidden) {
         List<String> versions = utils.allFirmwareImageVersions();
         String minVersion = FilenameUtils.getBaseName(MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE);

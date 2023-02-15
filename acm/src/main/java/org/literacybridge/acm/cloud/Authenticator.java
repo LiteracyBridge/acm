@@ -63,6 +63,7 @@ public class Authenticator {
     public static final String ACCESS_CONTROL_API = "https://oxn3lknwre.execute-api.us-west-2.amazonaws.com/prod";
     public static final String TBL_HELPER_API= "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod";
     public static final String PROGRAMS_INFO_API = "https://uomgzti07c.execute-api.us-west-2.amazonaws.com/prod/getprograms";
+    public static final String UF_KEYS_HELPER_API = "https://l9gt6xbtm5.execute-api.us-west-2.amazonaws.com/prod";
 
     public static final String PROGRAMS_INFO_FILE = "programs.info";
 

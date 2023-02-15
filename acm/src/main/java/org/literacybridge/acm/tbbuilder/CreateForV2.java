@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
+import org.literacybridge.acm.cloud.UfKeyHelper;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.AmplioHome;
 import org.literacybridge.acm.deployment.DeploymentInfo;
@@ -21,6 +22,7 @@ import org.literacybridge.core.tbloader.PackagesData;
 import org.literacybridge.core.tbloader.PackagesData.PackageData;
 import org.literacybridge.core.tbloader.PackagesData.PackageData.PlaylistData;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -575,6 +577,17 @@ class CreateForV2 extends CreateFromDeploymentInfo {
             File controlDefFile = new File(sourceSystemDir, "control_def.txt");
             if (controlDefFile.exists()) {
                 FileUtils.copyFileToDirectory(controlDefFile, targetSystemDir);
+            }
+
+            // If UF is hidden in the deployment, copy the appropriate 'uf.der' file to 'system/'
+            if (deploymentInfo.isUfHidden()) {
+                UfKeyHelper ufKeyHelper = new UfKeyHelper(builderContext.project);
+                byte[] publicKey = ufKeyHelper.getPublicKeyFor(builderContext.deploymentNo);
+                File derFile = new File(targetSystemDir, "uf.der");
+                try (FileOutputStream fos = new FileOutputStream(derFile);
+                     DataOutputStream dos = new DataOutputStream(fos)){
+                    dos.write(publicKey);
+                }
             }
         }
 
