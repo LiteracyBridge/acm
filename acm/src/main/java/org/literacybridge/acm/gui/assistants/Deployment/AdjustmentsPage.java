@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     private final JLabel deployment;
-    private final JCheckBox includeUfCategory;
+    private final JCheckBox userFeedbackPublicCB;
     private final JCheckBox includeTbTutorial;
     private final JCheckBox noPublish;
     private final JTree playlistTree;
@@ -81,18 +81,19 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
-        includeUfCategory = new JCheckBox("Make User Feedback visible.");
-        if (ACMConfiguration.getInstance().getCurrentDB().isUserFeedbackHidden()) {
-            includeUfCategory.setSelected(false);
-            JLabel label = new JLabel("User Feedback is hidden for this program.");
+        userFeedbackPublicCB = new JCheckBox("Make User Feedback public.");
+        Constants.USER_FEEDBACK_PUBLIC_OPTION ufVisible = ACMConfiguration.getInstance().getCurrentDB().getUserFeedbackPublicOption();
+        userFeedbackPublicCB.setSelected(ufVisible.isPublic());
+        if (!ufVisible.isOverrideable()) {
+            // If ufPublic can't be overridden, add a label with the setting, instead of the checkbox.
+            JLabel label = new JLabel(String.format("User Feedback is %s for this program.", ufVisible.isPublic()?"pubic":"hidden"));
             Font normalFont = label.getFont();
             Font italicFont = new Font(normalFont.getName(),normalFont.getStyle()|Font.ITALIC, normalFont.getSize());
             label.setFont(italicFont);
             add(label, gbc);
         } else {
-            includeUfCategory.setSelected(true);
-            add(includeUfCategory, gbc);
-            includeUfCategory.addActionListener(this::onSelection);
+            add(userFeedbackPublicCB, gbc);
+            userFeedbackPublicCB.addActionListener(this::onSelection);
         }
 
 
@@ -146,7 +147,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     protected void onPageEntered(boolean progressing) {
         deployment.setText(Integer.toString(context.deploymentNo));
 
-        includeUfCategory.setSelected(context.includeUfCategory);
+        userFeedbackPublicCB.setSelected(context.userFeedbackPublic);
         includeTbTutorial.setSelected(context.includeTbTutorial);
 
         if (progressing) {
@@ -160,7 +161,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
 
     @Override
     protected void onPageLeaving(boolean progressing) {
-        context.includeUfCategory = includeUfCategory.isSelected();
+        context.userFeedbackPublic = userFeedbackPublicCB.isSelected();
         context.includeTbTutorial = includeTbTutorial.isSelected();
         // Don't publish if user chose "no publish" option. Also don't publish if running in sandbox.
         context.setNoPublish(noPublish.isSelected());

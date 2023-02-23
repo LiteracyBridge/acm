@@ -581,7 +581,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     }
 
     private void validateFirmware() {
-        validateV1Firmware();
+            validateV1Firmware();
         if (ACMConfiguration.getInstance().getCurrentDB().hasTbV2Devices()) {
             validateV2Firmware();
         }
@@ -593,7 +593,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
         // A firmware update may be required to support hidden user feedback. Check the
         // version currently in the project.
-        if (!context.includeUfCategory) {
+        if (!context.userFeedbackPublic) {
             // Find the lexically greatest filename of firmware. Works because we'll never exceed 4 digits.
             File sourceTbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getPathProvider().getProgramTbLoadersDir();
             File sourceTbOptionsDir = new File(sourceTbLoadersDir, "TB_Options");

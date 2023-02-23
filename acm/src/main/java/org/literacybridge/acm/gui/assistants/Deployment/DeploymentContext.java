@@ -24,7 +24,7 @@ class DeploymentContext implements AssistantContext {
 
     // Should these be per-contentpackage properties?
     // "User Feedback..."
-    boolean includeUfCategory = !ACMConfiguration.getInstance().getCurrentDB().isUserFeedbackHidden();
+    boolean userFeedbackPublic = ACMConfiguration.getInstance().getCurrentDB().getUserFeedbackPublicOption().isPublic();
     // "Talking Book. To learn about this device, press the tree."
     boolean includeTbTutorial;
 

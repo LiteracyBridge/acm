@@ -145,10 +145,10 @@ public class TBBuilder {
         return builderContext.revision;
     }
 
-    public List<String> getAcceptableFirmwareVersions(boolean isUserFeedbackHidden) {
+    public List<String> getAcceptableFirmwareVersions(boolean isUserFeedbackPublic) {
         List<String> versions = utils.allFirmwareImageVersions();
         String minVersion = FilenameUtils.getBaseName(MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE);
-        if (isUserFeedbackHidden) {
+        if (!isUserFeedbackPublic) {
             versions = versions.stream()
                 .filter(verStr -> verStr.compareToIgnoreCase(minVersion) >= 0)
                 .collect(Collectors.toList());
@@ -271,9 +271,9 @@ public class TBBuilder {
 
     public void createDeployment(DeploymentInfo deploymentInfo) throws Exception {
         // Was "v1-"
-        BuilderContext bc1 = new BuilderContext("", builderContext);
-        CreateForV1 cfv1 = new CreateForV1(this,  bc1,  deploymentInfo);
-        cfv1.go();
+            BuilderContext bc1 = new BuilderContext("", builderContext);
+            CreateForV1 cfv1 = new CreateForV1(this, bc1, deploymentInfo);
+            cfv1.go();
 
         // Was "v2-"
         DBConfiguration dbConfig = ACMConfiguration.getInstance().getDbConfiguration(builderContext.project);

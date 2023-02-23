@@ -249,7 +249,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
 
     @Override
     protected List<String> getAcceptableFirmwareVersions() {
-        return tbBuilder.getAcceptableFirmwareVersions(deploymentInfo.isUfHidden());
+        return tbBuilder.getAcceptableFirmwareVersions(deploymentInfo.isUfPublic());
     }
 
 

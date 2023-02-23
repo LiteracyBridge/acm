@@ -27,7 +27,7 @@ public class DeploymentInfo {
     private final String programid;
     private final int deploymentNumber;
     private final String name;
-    private boolean ufHidden;
+    private boolean ufPublic;
     private boolean hasTutorial;
 
     private final List<PackageInfo> packages = new ArrayList<>();
@@ -43,12 +43,14 @@ public class DeploymentInfo {
         return name;
     }
 
-    public boolean isUfHidden() { return ufHidden; }
-    public DeploymentInfo ufHidden() { return setUfHidden(true); }
-    public DeploymentInfo setUfHidden(boolean ufHidden) {
-        this.ufHidden = ufHidden;
+    public boolean isUfHidden() { return !ufPublic; }
+    public boolean isUfPublic() { return ufPublic;}
+    public DeploymentInfo ufPublic() { return setUfPublic(true); }
+    public DeploymentInfo setUfPublic(boolean ufPublic) {
+        this.ufPublic = ufPublic;
         return this;
     }
+
 
     public boolean hasTutorial() { return hasTutorial; }
     public void setTutorial(boolean hasTutorial) {
@@ -180,7 +182,10 @@ public class DeploymentInfo {
         }
 
         public boolean isUfHidden() {
-            return DeploymentInfo.this.isUfHidden();
+            return !DeploymentInfo.this.isUfPublic();
+        }
+        public boolean isUfPublic() {
+            return DeploymentInfo.this.isUfPublic();
         }
 
         /**

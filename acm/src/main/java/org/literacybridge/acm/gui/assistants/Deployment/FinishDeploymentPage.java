@@ -151,7 +151,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         Deployment depl = context.getProgramSpec().getDeployment(context.deploymentNo);
         startdate.setTime(depl.startdate);
         context.deploymentInfo = new DeploymentInfo(programId, context.deploymentNo, startdate);
-        context.deploymentInfo.setUfHidden(!context.includeUfCategory);
+        context.deploymentInfo.setUfPublic(context.userFeedbackPublic);
         context.deploymentInfo.setTutorial(context.includeTbTutorial);
 
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -323,7 +323,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_ID_PROPERTY, dbConfig.getProgramId());
         deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_NUMBER, Integer.toString(context.deploymentNo));
         Date now = new Date();
-        List<String> acceptableFirmwareVersions = tbb.getAcceptableFirmwareVersions(!context.includeUfCategory);
+        List<String> acceptableFirmwareVersions = tbb.getAcceptableFirmwareVersions(context.userFeedbackPublic);
         deploymentProperties.setProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS, String.join(",", acceptableFirmwareVersions));
         DateFormat localTime = new SimpleDateFormat("HH:mm:ss a z", Locale.getDefault());
         DateFormat localDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
@@ -467,7 +467,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                         }
                     }
 
-                    if (context.includeUfCategory) {
+                    if (context.userFeedbackPublic) {
                         activeListsWriter.println(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
                     }
                     if (context.includeTbTutorial) {

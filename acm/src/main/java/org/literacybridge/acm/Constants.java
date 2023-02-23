@@ -38,7 +38,8 @@ public class Constants {
   public final static String DESCRIPTION_PROP_NAME = "DESCRIPTION";
   public final static String FRIENDLY_NAME_PROP_NAME = "NAME";
   public final static String STRICT_DEPLOYMENT_NAMING = "STRICT_DEPLOYMENT_NAMING";
-  public final static String USER_FEEDBACK_HIDDEN = "USER_FEEDBACK_HIDDEN";
+    public final static String USER_FEEDBACK_HIDDEN = "USER_FEEDBACK_HIDDEN";
+    public final static String USER_FEEDBACK_PUBLIC = "USER_FEEDBACK_PUBLIC";
   public final static String DE_DUPLICATE_AUDIO = "DE_DUPLICATE_AUDIO";
   public final static String CONFIGURATION_DIALOG = "CONFIGURATION_DIALOG";
   public final static String NATIVE_AUDIO_FORMATS = "NATIVE_AUDIO_FORMATS";
@@ -53,7 +54,7 @@ public class Constants {
   public final static String FUZZY_THRESHOLD = "FUZZY_THRESHOLD";
   public final static String WARN_FOR_MISSING_GREETINGS = "WARN_FOR_MISSING_GREETINGS";
   public final static String FORCE_WAV_CONVERSION = "FORCE_WAV_CONVERSION";
-  public final static String HAS_TBV2_DEVICES = "HAS_TBV2_DEVICES";
+    public final static String HAS_TBV2_DEVICES = "HAS_TBV2_DEVICES";
   public final static String NOTIFY_LIST = "NOTIFY_LIST";
 
   // Gather obsolete property names here. We could write code to remove these from the properties file.
@@ -89,4 +90,20 @@ public class Constants {
   public static final int AMPLIO_GREEN_G = 154; // 0x9a;
   public static final int AMPLIO_GREEN_B = 106; // 0x6a;
     public final static String NON_FILE_CHARS = "[\\\\/~;:*?'\"]";
+
+
+    public enum USER_FEEDBACK_PUBLIC_OPTION {
+        ALWAYS, OPT_OUT, OPT_IN, NEVER;
+
+        public boolean isOverrideable() {
+            return this==OPT_OUT || this==OPT_IN;
+        }
+        public boolean isPublic() {
+            return this==ALWAYS || this==OPT_OUT;
+        }
+        public boolean isHidden() {
+            return !isPublic();
+        }
+    };
+
 }

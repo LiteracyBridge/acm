@@ -1,49 +1,28 @@
 package org.literacybridge.acm.tbbuilder;
 
-import com.opencsv.CSVWriterBuilder;
-import com.opencsv.ICSVWriter;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
-import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.deployment.DeploymentInfo;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.utils.IOUtils;
-import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
-import org.literacybridge.core.tbloader.TBLoaderConstants;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.CATEGORIES_IN_PACKAGES_CSV_FILE_NAME;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.CONTENT_IN_PACKAGES_CSV_FILE_NAME;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.CSV_COLUMNS_CATEGORIES_IN_PACKAGE;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.CSV_COLUMNS_CONTENT_IN_PACKAGE;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.CSV_COLUMNS_PACKAGES_IN_DEPLOYMENT;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME;
 
 /*
  * Builds a TBv1 deployment.
@@ -125,7 +104,7 @@ class CreateForV1 extends CreateFromDeploymentInfo {
     }
     @Override
     protected List<String> getAcceptableFirmwareVersions() {
-        return tbBuilder.getAcceptableFirmwareVersions(deploymentInfo.isUfHidden());
+        return tbBuilder.getAcceptableFirmwareVersions(deploymentInfo.isUfPublic());
     }
 
 
@@ -242,11 +221,11 @@ class CreateForV1 extends CreateFromDeploymentInfo {
                 }
             }
 
-            // If uf is hidden, there was no UF in _activeLists.txt, and no (empty) uf.txt file. Create it now.
+            // If uf is not public, there was no UF in _activeLists.txt, and no (empty) uf.txt file. Create it now.
             if (!haveUfContent || packageInfo.isUfHidden()) {
                 File listFile = new File(listsDir, Constants.CATEGORY_UNCATEGORIZED_FEEDBACK + ".txt");
                 listFile.createNewFile();
-                if (!packageInfo.isUfHidden()) {
+                if (packageInfo.isUfPublic()) {
                     activeListsWriter.println(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
                 }
             }

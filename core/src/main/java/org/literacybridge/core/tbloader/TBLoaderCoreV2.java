@@ -186,6 +186,8 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         // deployment properties to it. If not, create one.
         TbFile.FilenameFilter audioFilesFilter = new TbFile.FilenameFilter() {
             final Set<String> includedExts = new HashSet<>(Arrays.asList("wav",
+                    "enc",
+                    "key",
                     "mp3",
                     "ogg"));
             @Override

@@ -229,7 +229,7 @@ public abstract class CreateFromDeploymentInfo {
                     // So we'll know whether to add it.
                     hasUserFeedbackContent |= playlistInfo.getCategoryId().equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
                 }
-                if (!packageInfo.isUfHidden() && !hasUserFeedbackContent) {
+                if (packageInfo.isUfPublic() && !hasUserFeedbackContent) {
                     // User feedback categories, even if there isn't content published in the category.
                     categoriesColumns[2] = Constants.CATEGORY_UNCATEGORIZED_FEEDBACK;
                     categoriesColumns[3] = Integer.toString(++plPosition);

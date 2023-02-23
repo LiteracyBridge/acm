@@ -425,6 +425,24 @@ public class DBConfiguration {
         return userFeedbackHidden != null && userFeedbackHidden.equalsIgnoreCase("true");
     }
 
+    public Constants.USER_FEEDBACK_PUBLIC_OPTION getUserFeedbackPublicOption() {
+        Constants.USER_FEEDBACK_PUBLIC_OPTION ufVisibleOption = null;
+        // Try to read the USER_FEEDBACK_PUBLIC setting.
+        String userFeedbackVisible = getDbProperties().getProperty(Constants.USER_FEEDBACK_PUBLIC);
+        if (StringUtils.isNotBlank(userFeedbackVisible)) {
+            try {
+                ufVisibleOption = Constants.USER_FEEDBACK_PUBLIC_OPTION.valueOf(userFeedbackVisible);
+            } catch (Exception ignored) { }
+        }
+        // If we didn't get anything from USER_FEEDBACK_PUBLIC, fall back to USER_FEEDBACK_HIDDEN.
+        if (ufVisibleOption == null) {
+            ufVisibleOption = isUserFeedbackHidden()
+                              ? Constants.USER_FEEDBACK_PUBLIC_OPTION.NEVER
+                              : Constants.USER_FEEDBACK_PUBLIC_OPTION.OPT_OUT;
+        }
+        return ufVisibleOption;
+    }
+
     /**
      * Switch to control leaving a zero-byte marker file in images, with a single copy of the actual
      * (audio) file. Saves significant space in multi-variant deployments.
