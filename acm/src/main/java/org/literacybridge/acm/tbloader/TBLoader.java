@@ -644,6 +644,7 @@ public class TBLoader extends JFrame {
         this.tbLoaderConfig.pseudoTbDir = pseudoTbDir;
     }
 
+    @SuppressWarnings("SameParameterValue")
     void setTestMode(boolean testMode) {
         this.tbLoaderConfig.isTestMode = testMode;
     }
@@ -1369,7 +1370,9 @@ public class TBLoader extends JFrame {
                 result = tbLoader.collectStatistics();
 
                 tbsCollected = tbLoader.getTbsCollected();
-                TbHistory.getInstance().addTbCollected(tbsCollected);
+                if (tbsCollected != null) {
+                    TbHistory.getInstance().addTbCollected(tbsCollected);
+                }
 
                 opLog.put("success", result.gotStatistics);
             } catch (Exception e) {
@@ -1505,8 +1508,12 @@ public class TBLoader extends JFrame {
 
                 tbsCollected = tbLoader.getTbsCollected();
                 tbsDeployed = tbLoader.getTbsDeployed();
-                TbHistory.getInstance().addTbCollected(tbsCollected);
-                TbHistory.getInstance().addTbDeployed(tbsDeployed);
+                if (tbsCollected != null) {
+                    TbHistory.getInstance().addTbCollected(tbsCollected);
+                }
+                if (tbsDeployed != null) {
+                    TbHistory.getInstance().addTbDeployed(tbsDeployed);
+                }
 
                 opLog.put("gotstatistics", result.gotStatistics)
                     .put("corrupted", result.corrupted)
