@@ -398,6 +398,9 @@ class CreateForV2 extends CreateFromDeploymentInfo {
             if (packageInfo.hasTutorial()) {
                 addTutorialToImage(packageData);
             }
+            if (packageInfo.isUfPublic()) {
+                addUfToImage(packageData);
+            }
 
             allPackagesData.addPackagesData(packagesData);
             File of = new File(contentDir, PackagesData.PACKAGES_DATA_TXT);
@@ -589,6 +592,30 @@ class CreateForV2 extends CreateFromDeploymentInfo {
                     dos.write(publicKey);
                 }
             }
+        }
+
+        private void addUfToImage(PackageData packageData)
+        throws BaseAudioConverter.ConversionException, AudioItemRepository.UnsupportedFormatException, IOException {
+            File sourceLanguageDir = new File(builderContext.sourceTbOptionsDir,
+                "languages" + File.separator + packageInfo.getLanguageCode());
+            File sourceTutorialPromptsDir = new File(sourceLanguageDir, "cat");
+            File promptFile = new File(sourceTutorialPromptsDir,
+                Constants.CATEGORY_UNCATEGORIZED_FEEDBACK + "." + getAudioFormat().getFileExtension());
+            PromptInfo shortPromptInfo = new PromptInfo(null, promptFile);
+            promptFile = new File(sourceTutorialPromptsDir,
+                "i" + Constants.CATEGORY_UNCATEGORIZED_FEEDBACK + "." + getAudioFormat().getFileExtension());
+            PromptInfo longPromptInfo = new PromptInfo(null, promptFile);
+
+            // Playlist for UF.
+            PlaylistData playlistData = packageData.addPlaylist("userfeedback");
+
+            // Prompts for the uf.
+            exportPrompt(shortPromptInfo, Constants.CATEGORY_TUTORIAL, "userfeedback", playlistData::withShortPrompt);
+            exportPrompt(longPromptInfo,
+                'i' + Constants.CATEGORY_TUTORIAL,
+                "tutorial - invitation",
+                playlistData::withLongPrompt);
+
         }
 
         /**
