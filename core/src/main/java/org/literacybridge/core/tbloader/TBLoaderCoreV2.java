@@ -25,6 +25,8 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     public static final String STATS_DIR = "stats";
     public static final String SYSTEM_DIR = "system";
     public static final String RECORDINGS_DIR = "recordings";
+    public static final String CONTENT_DIR = "recordings";
+    public static final String PUBLIC_UF_LIST = "uf_list.txt";
     public static final String SET_RTC_TXT = "SetRTC.txt";
     public static final String DONT_SET_RTC_TXT = "dontSetRTC.txt";
 
@@ -185,7 +187,8 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         // all of the UF recordings. If the recording already has a .properties file, add the
         // deployment properties to it. If not, create one.
         TbFile.FilenameFilter audioFilesFilter = new TbFile.FilenameFilter() {
-            final Set<String> includedExts = new HashSet<>(Arrays.asList("wav",
+            final Set<String> includedExts = new HashSet<>(Arrays.asList(
+                    "wav",
                     "enc",
                     "key",
                     "mp3",
@@ -227,6 +230,7 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     protected void clearUserRecordings() {
         startStep(clearUserRecordings);
         mTalkingBookRoot.open(RECORDINGS_DIR).delete(contentRecursive);
+        mTalkingBookRoot.open(CONTENT_DIR).open(PUBLIC_UF_LIST).delete();
         finishStep();
     }
 
@@ -338,6 +342,8 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         if (!qcFile.exists()) {
             eraseAndOverwriteFile(qcFile, "");
         }
+        // Delete all files from content.
+        mTalkingBookRoot.open(CONTENT_DIR).delete(contentRecursive);
 
         finishStep();
     }

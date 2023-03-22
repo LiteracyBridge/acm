@@ -610,10 +610,10 @@ class CreateForV2 extends CreateFromDeploymentInfo {
             PlaylistData playlistData = packageData.addPlaylist("userfeedback");
 
             // Prompts for the uf.
-            exportPrompt(shortPromptInfo, Constants.CATEGORY_TUTORIAL, "userfeedback", playlistData::withShortPrompt);
+            exportPrompt(shortPromptInfo, Constants.CATEGORY_UNCATEGORIZED_FEEDBACK, "userfeedback", playlistData::withShortPrompt);
             exportPrompt(longPromptInfo,
-                'i' + Constants.CATEGORY_TUTORIAL,
-                "tutorial - invitation",
+                'i' + Constants.CATEGORY_UNCATEGORIZED_FEEDBACK,
+                "userfeedback - invitation",
                 playlistData::withLongPrompt);
 
         }
