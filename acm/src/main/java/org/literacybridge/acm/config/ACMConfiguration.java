@@ -33,6 +33,7 @@ public class ACMConfiguration {
 
     private final Map<String, DBConfiguration> knownDbs = new HashMap<>();
     private final boolean autoGo;
+    private final boolean autoFix;
     private DBConfiguration currentDB = null;
 
     private String title;
@@ -153,6 +154,7 @@ public class ACMConfiguration {
         }
 
         autoGo = params.go;
+        autoFix = params.autofix;
         disableUI = params.disableUI;
         forceSandbox = params.sandbox;
         doUpdate = params.update;
@@ -600,7 +602,9 @@ public class ACMConfiguration {
     public boolean isAutoGo() {
         return autoGo;
     }
-
+    public boolean isAutoFix() {
+        return autoFix;
+    }
     public boolean isDisableUI() {
         return disableUI;
     }

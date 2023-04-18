@@ -40,6 +40,9 @@ public class CommandLineParams {
   @Option(name="--go", usage="Do not wait for user to override default values.")
   public boolean go;
 
+  @Option(name="--autofix", usage="Automatically fix errors.")
+  public boolean autofix;
+
   @Option(name="--no-found-dbs", usage="Do not include found programs not in server's list of programs")
   public boolean noFoundDbs;
 

@@ -39,8 +39,10 @@ import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.Constants.ALLOW_PACKAGE_CHOICE;
 import static org.literacybridge.acm.cloud.ProjectsHelper.PROGSPEC_ETAGS_FILE_NAME;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
+@SuppressWarnings("IOStreamConstructor")
 public class DBConfiguration {
   private static final Logger LOG = Logger.getLogger(DBConfiguration.class.getName());
 
@@ -691,7 +693,9 @@ public class DBConfiguration {
 
     private void checkMessageIdMismatch() {
         Collection<AudioItem> items = this.store.getAudioItems();
-        int n = 0;
+        int nErrors = 0;
+        int nFixed = 0;
+        int nFailed = 0;
         for (AudioItem item : items) {
             Metadata metadata = item.getMetadata();
             String dc_identifier = "??";
@@ -701,13 +705,27 @@ public class DBConfiguration {
             if (!dc_identifier.equalsIgnoreCase(item.getId())) {
                 String title = item.getTitle();
                 String languageCode = item.getLanguageCode();
+                // Is there an item under the id that this item thinks it has?
                 boolean otherExists = this.store.getAudioItem(dc_identifier) != null;
                 System.out.printf("# %2d mismatch, audioItem: %s, metadata: %s (%s), (%s, %s)\n",
-                        ++n, item.getId(), dc_identifier, otherExists?"!":"x", languageCode, title);
+                        ++nErrors, item.getId(), dc_identifier, otherExists?"!":"x", languageCode, title);
+                if (!otherExists && ACMConfiguration.getInstance().isAutoFix()) {
+                    // Be completely sure that the DC_IDENTIFIER == the AudioItem.id
+                    metadata.put(DC_IDENTIFIER, item.getId());
+                    try {
+                        getMetadataStore().commit(item);
+                        nFixed++;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        nFailed++;
+                    }
+                }
             }
         }
-        if (n == 0) {
+        if (nErrors == 0) {
             System.out.println("No audioItem id mismatches.");
+        } else if (nFixed > 0 || nFailed > 0) {
+            System.out.printf("%d audioItem id mismatches fixed; %d failed to fix.\n", nFixed, nFailed);
         }
     }
 

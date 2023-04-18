@@ -25,7 +25,7 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     public static final String STATS_DIR = "stats";
     public static final String SYSTEM_DIR = "system";
     public static final String RECORDINGS_DIR = "recordings";
-    public static final String CONTENT_DIR = "recordings";
+    public static final String CONTENT_DIR = "content";
     public static final String PUBLIC_UF_LIST = "uf_list.txt";
     public static final String SET_RTC_TXT = "SetRTC.txt";
     public static final String DONT_SET_RTC_TXT = "dontSetRTC.txt";
@@ -343,7 +343,7 @@ class TBLoaderCoreV2 extends TBLoaderCore {
             eraseAndOverwriteFile(qcFile, "");
         }
         // Delete all files from content.
-        mTalkingBookRoot.open(CONTENT_DIR).delete(contentRecursive);
+        mStepFileCount += mTalkingBookRoot.open(CONTENT_DIR).delete(contentRecursive);
 
         finishStep();
     }
