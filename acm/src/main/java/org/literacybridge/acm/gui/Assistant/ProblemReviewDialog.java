@@ -186,7 +186,10 @@ public class ProblemReviewDialog extends JDialog {
 
         public String toString() {
             Exception ex = (Exception) getUserObject();
-            return ex.getLocalizedMessage();
+            String msg = ex.getLocalizedMessage();
+            if (msg == null)
+                msg = ex.toString();
+            return msg;
         }
     }
 
