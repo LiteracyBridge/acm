@@ -10,38 +10,17 @@ import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.cloud.ProjectsHelper;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.sandbox.Sandbox;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 
 import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.CATEGORIES_IN_PACKAGES_CSV_FILE_NAME;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.CONTENT_IN_PACKAGES_CSV_FILE_NAME;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.CSV_COLUMNS_CATEGORIES_IN_PACKAGE;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.CSV_COLUMNS_CONTENT_IN_PACKAGE;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.CSV_COLUMNS_PACKAGES_IN_DEPLOYMENT;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME;
+import static org.literacybridge.acm.tbbuilder.TBBuilder.*;
 
 @SuppressWarnings({"ResultOfMethodCallIgnored", "JavadocReference"})
 class Create {
@@ -549,9 +528,13 @@ class Create {
                     exportFile = new File(targetDirectory, filename);
                 }
                 if (!exportFile.exists()) {
-                    repository.exportAudioFileWithFormat(audioItem,
-                            exportFile,
-                            audioFormat);
+                    try {
+                        repository.exportAudioFileWithFormat(audioItem,
+                                exportFile,
+                                audioFormat);
+                    } catch (Exception ex) {
+                        builderContext.logException(ex);
+                    }
                 }
 
                 csvColumns[2] = audioItemId;

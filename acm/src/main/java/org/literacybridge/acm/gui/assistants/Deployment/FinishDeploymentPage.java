@@ -72,20 +72,26 @@ import static java.util.Calendar.YEAR;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
-@SuppressWarnings("JavadocBlankLines")
+@SuppressWarnings({"JavadocBlankLines", "FieldCanBeLocal"})
 public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
     private final JLabel publishNotification;
     private final JLabel statusLabel;
     private final JButton viewErrorsButton;
     private final JLabel currentState;
+    private final JLabel revisionText;
 
     private final DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
     private final List<Exception> errors = new ArrayList<>();
     private final DateTimeFormatter localDateFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL)
         .withZone(ZoneId.systemDefault());
     private StringBuilder summaryMessage;
-    private final JLabel revisionText;
+
+    private final String publishNotificationText = "<html>The deployment was <u>not</u> published. To publish, start the "
+                                             +"Deployment Assistant again, and do <u>not</u> select the 'Do not publish the deployment.' option.</html>";
+    private final String publishErrorNotificationText = "<html>The deployment was <u>not</u> published, due to errors. Correct the errors and run the "
+            +"Deployment Assistant again. If you need assistance, please click on 'View Errors', and choose "
+            +"'Send to Amplio'.</html>";
 
     FinishDeploymentPage(PageHelper<DeploymentContext> listener) {
         super(listener);
@@ -105,8 +111,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
-        publishNotification = new JLabel("<html>The deployment was <u>not</u> published. To publish, start the "
-            +"Deployment Assistant again, and do <u>not</u> select the 'Do not publish the deployment.' option.</html>");
+        publishNotification = new JLabel(publishNotificationText);
         add(publishNotification, gbc);
         publishNotification.setVisible(false);
 
@@ -288,13 +293,18 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             tbBuilder.createDeployment(context.deploymentInfo);
 
             // Publish.
-            if (context.isPublish()) {
+            if (context.isPublish() && errors.size()==0) {
                 args.clear();
                 args.add(deploymentName());
                 tbBuilder.publishDeployment(args);
                 UIUtils.setLabelText(revisionText, String.format(" (revision '%s')", tbBuilder.getRevision()));
                 UIUtils.setVisible(revisionText, true);
             } else {
+                if (context.isPublish()) {
+                    context.issues.add(Issues.Severity.FATAL, Issues.Area.DEPLOYMENT, "Deployment not published due to errors.", (Object)null);
+                    errors.add(new DeploymentException("Deployment not published due to errors.", null));
+                    publishNotification.setText(publishErrorNotificationText);
+                }
                 publishNotification.setVisible(true);
             }
         } catch (Exception e) {

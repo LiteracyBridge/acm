@@ -17,7 +17,7 @@ public class Issues {
         WARNING("Warnings"),
         INFO("Information");
 
-        String displayName;
+        final String displayName;
 
         Severity(String displayName) {
             this.displayName = displayName;
@@ -38,9 +38,10 @@ public class Issues {
         CATEGORY_PROMPTS("Prompts"),
         SYSTEM_PROMPTS("Sys Prompts"),
         CUSTOM_GREETINGS("Greetings"),
+        DEPLOYMENT("Deployment")
         ;
 
-        String displayName;
+        final String displayName;
 
         Area(String displayName) {
             this.displayName = displayName;

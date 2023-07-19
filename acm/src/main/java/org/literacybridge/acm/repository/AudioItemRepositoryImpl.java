@@ -231,8 +231,8 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
             }
         }
         if (!(sourceFile.exists() && sourceFile.isFile())) {
-            throw new ConversionSourceMissingException(String.format("Can't find file to convert for: %s",
-                    audioItem.toString()));
+            throw new ConversionSourceMissingException(String.format("Can't find file for: %s in language %s",
+                    audioItem.toString(), audioItem.getLanguageCode()));
         }
         // Get a file appropriate to write to.
         targetFile = resolveFile(audioItem, targetFormat, true);

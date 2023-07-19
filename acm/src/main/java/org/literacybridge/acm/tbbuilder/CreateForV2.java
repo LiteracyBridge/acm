@@ -465,16 +465,10 @@ class CreateForV2 extends CreateFromDeploymentInfo {
          * @param playlistInfo The playlist to be added to the image.
          * @param playlistData To create the package_data.txt file.
          * @throws IOException                                    if a file can't be read or written
-         * @throws BaseAudioConverter.ConversionException         if an audio file can't be converted to the required format
-         *                                                        (eg, .a18, .mp3)
-         * @throws AudioItemRepository.UnsupportedFormatException if the requested or found audio format is not supported
-         *                                                        (hmm, "Apple Lossless" maybe? ffmpeg supports many formats.)
          */
         private void addPlaylistContentToImage(PlaylistInfo playlistInfo, PlaylistData playlistData)
             throws
-            IOException,
-            BaseAudioConverter.ConversionException,
-            AudioItemRepository.UnsupportedFormatException {
+            IOException {
             for (String audioItemId : playlistInfo.getAudioItemIds()) {
                 // Export the audio item.
                 AudioItem audioItem = ACMConfiguration.getInstance().getCurrentDB()
@@ -487,7 +481,11 @@ class CreateForV2 extends CreateFromDeploymentInfo {
                 // Export the audio file.
                 File exportFile = determineShadowFile(messagesDir, filename, shadowMessagesDir);
                 if (!exportFile.exists()) {
-                    repository.exportAudioFileWithFormat(audioItem, exportFile, getAudioFormat());
+                    try {
+                        repository.exportAudioFileWithFormat(audioItem, exportFile, getAudioFormat());
+                    } catch (Exception ex) {
+                        builderContext.logException(ex);
+                    }
                 }
                 // Add audio item to the package_data.txt.
                 Path exportPath = makePath(new File(messagesDir, filename));

@@ -250,16 +250,10 @@ class CreateForV1 extends CreateFromDeploymentInfo {
      * @param audioDir Audio files (or shadow markers) go here.
      * @param shadowDir If shodowing, the real files go here.
      * @throws IOException if a file can't be read or written
-     * @throws BaseAudioConverter.ConversionException if an audio file can't be converted to the required format
-     *          (eg, .a18, .mp3)
-     * @throws AudioItemRepository.UnsupportedFormatException if the requested or found audio format is not supported
-     *          (hmm, "Apple Lossless" maybe? ffmpeg supports many formats.)
      */
     private void addPlaylistContentToImage(DeploymentInfo.PackageInfo.PlaylistInfo playlistInfo, PrintWriter listWriter,
         File audioDir, File shadowDir) throws
-                          IOException,
-                          BaseAudioConverter.ConversionException,
-                          AudioItemRepository.UnsupportedFormatException {
+                          IOException {
 
         for (String audioItemId : playlistInfo.getAudioItemIds()) {
             // Export the audio item.
@@ -270,7 +264,11 @@ class CreateForV1 extends CreateFromDeploymentInfo {
 
             File exportFile = determineShadowFile(audioDir, filename, shadowDir);
             if (!exportFile.exists()) {
-                repository.exportAudioFileWithFormat(audioItem, exportFile, getAudioFormat());
+                try {
+                    repository.exportAudioFileWithFormat(audioItem, exportFile, getAudioFormat());
+                } catch (Exception ex) {
+                    builderContext.logException(ex);
+                }
             }
 
             // Add the audio item id to the list file.
