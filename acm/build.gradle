@@ -50,7 +50,7 @@ task updateVersion() {
     }
 
     def versionString = versionDate + versionCounter
-    
+
     versionProps['BUILD_NUMBER'] = buildNumber.toString()
     versionProps['BUILD_TIMESTAMP'] = timestamp
     versionProps['BUILD_DATE'] = buildDate
@@ -251,4 +251,3 @@ idea {
 static def findComponent(project, name) {
     project.component.find { it.@name == name }
 }
-
