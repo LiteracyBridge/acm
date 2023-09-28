@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -361,13 +362,25 @@ public class PackagesData implements Serializable {
         }
 
         private void parsePlaylist(PackageData packageData) throws IOException {
+            Pattern scriptPattern = Pattern.compile("\\s*script\\s*[=:]\\s*(\\w*)");
+            Pattern noNavPattern = Pattern.compile("(?i)\\s*noNav");
+            Pattern numberPattern = Pattern.compile("(\\d*)");
+
             String playlistName = nextLine();
             PackageData.PlaylistData playlistData = packageData.addPlaylist(playlistName);
             Path announcement = nextPath();
             Path invitation = nextPath();
             playlistData.withShortPrompt("playlist announcement", announcement);
             playlistData.withLongPrompt("playlist invitation", invitation);
-            int numMessages = Integer.parseInt(nextLine());
+            String line = nextLine();
+            Integer numMessages = null;
+            while (numMessages == null) {
+                if (numberPattern.matcher(line).matches()) {
+                    numMessages = Integer.parseInt(line);
+                } else {
+                    line = nextLine();
+                }
+            }
             for (int i=0; i<numMessages; i++) {
                 parseMessage(playlistData);
             }

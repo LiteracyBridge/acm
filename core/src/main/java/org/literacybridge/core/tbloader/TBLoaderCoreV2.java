@@ -186,6 +186,8 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         // If there is a deployment.properties file on the device, look for a .properties file for
         // all of the UF recordings. If the recording already has a .properties file, add the
         // deployment properties to it. If not, create one.
+
+        // Filter to select which files may get a .properties file.
         TbFile.FilenameFilter audioFilesFilter = new TbFile.FilenameFilter() {
             final Set<String> includedExts = new HashSet<>(Arrays.asList(
                     "wav",
@@ -199,16 +201,33 @@ class TBLoaderCoreV2 extends TBLoaderCore {
             }
         };
 
+        Properties ufCommonProps = getDeploymentPropertiesForUserFeedback();
+
         if (getDeploymentPropertiesStringForUserFeedback() != null) {
             for (TbFile audioFile : recordingsDst.listFiles(audioFilesFilter)) {
                 String propsName = FilenameUtils.removeExtension(audioFile.getName()) + ".properties";
                 TbFile propsFile = audioFile.getParent().open(propsName);
-                Properties ufProps = readPropsFile(propsFile);
-                Properties deploymentProperties = getDeploymentPropertiesForUserFeedback();
-                for (Map.Entry<Object,Object> e : deploymentProperties.entrySet()) {
-                    ufProps.setProperty(e.getKey().toString(), e.getValue().toString());
+                Properties ufFileProps;
+                if (propsFile.exists()) {
+                    ufFileProps = readPropsFile(propsFile);
+                } else {
+                    ufFileProps = new Properties();
                 }
-                writePropsFile(ufProps, propsFile);
+
+                ufFileProps.putAll(ufCommonProps);
+
+//                for (Map.Entry<Object,Object> e : ufCommonProps.entrySet()) {
+//                    ufFileProps.setProperty(e.getKey().toString(), e.getValue().toString());
+//                }
+                if (!ufFileProps.containsKey("metadata.MESSAGE_UUID")) {
+                    // Allocate a UUID for the UF message. By allocating it now, the same UUID will be used even if the
+                    // message is re-imported. (V1 computes a UUID based on properties that should be unique per message,
+                    // but V2 does not; thus this accommodates V2.)
+                    String uuid = UUID.randomUUID().toString();
+                    ufFileProps.setProperty("metadata.MESSAGE_UUID", uuid);
+                }
+
+                writePropsFile(ufFileProps, propsFile);
             }
         }
 
