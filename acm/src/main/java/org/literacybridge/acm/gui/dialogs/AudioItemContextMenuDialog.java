@@ -249,8 +249,8 @@ public class AudioItemContextMenuDialog extends JDialog {
               }
             }
             transaction.commit();
-          } catch (IOException ignored) {
-            // ignored
+          } catch (IOException ex) {
+            ex.printStackTrace();
           }
           Application.getFilterState().updateResult(true);
         }

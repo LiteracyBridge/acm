@@ -96,7 +96,8 @@ public abstract class BaseAudioConverter {
             }
 
             // check for converter error
-            success = (proc.waitFor() == 0);
+            int result = proc.waitFor();
+            success = (result >= 0);
         } catch (Exception ignored) {
         } finally {
             if (!success) {
