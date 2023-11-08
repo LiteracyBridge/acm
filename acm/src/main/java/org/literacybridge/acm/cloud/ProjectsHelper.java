@@ -37,7 +37,7 @@ public class ProjectsHelper {
             new String[] { "pub_recipients.csv", "recipients.csv" },
             new String[] { "pub_deployments.csv", "deployment_spec.csv" },
             new String[] { "pub_content.csv", "content.csv" },
-            new String[] { "pub_languages.csv", "languages.csv" },
+            new String[] { "pub_languages.csv" },
             // Added files
             new String[] { "pub_general.csv" },
             new String[] { "pub_progspec.xlsx" },
