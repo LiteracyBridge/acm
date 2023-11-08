@@ -11,6 +11,7 @@ import java.util.Set;
 
 public abstract class BaseAudioConverter {
 
+
     public static final String SAMPLE_RATE = "sampleRate";
 
     protected final String targetFormatExtension;

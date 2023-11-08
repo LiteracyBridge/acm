@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +34,7 @@ public class ProgramSpec {
 
     private List<String> components = null;
     private List<Deployment> deployments = null;
+    private List<Language> languages = null;
     private RecipientList recipients = null;
     private Map<String, String> recipientsMap = null;
     private ContentSpec contentSpec = null;
@@ -45,6 +47,7 @@ public class ProgramSpec {
     /**
      * For testing purposes, it is possible to embed a program specification into
      * resources. This constructor gives access to those embedded program specs.
+     *
      * @param resourceDirectory containing the program specification resources.
      */
     public ProgramSpec(String resourceDirectory) {
@@ -52,7 +55,9 @@ public class ProgramSpec {
     }
 
     /**
-     * Create a ProgramSpec that will get its content from a caller-supplied streamProvider.
+     * Create a ProgramSpec that will get its content from a caller-supplied
+     * streamProvider.
+     *
      * @param streamProvider that will provide the data for the program spec.
      */
     public ProgramSpec(StreamProvider streamProvider) {
@@ -70,14 +75,17 @@ public class ProgramSpec {
         }
         return languageLabelProvider;
     }
+
     /**
      * A StreamProvider class that loads progspec data from files in a directory.
      */
     private static class FileStreamProvider implements StreamProvider {
         private final File programSpecDir;
+
         public FileStreamProvider(File programSpecDir) {
             this.programSpecDir = programSpecDir;
         }
+
         @Override
         public InputStream getSpecStream(String... filenames) {
             for (String filename : filenames) {
@@ -95,13 +103,15 @@ public class ProgramSpec {
     }
 
     /**
-     *  A StreamProvider class that loads progspec data from resource streams.
+     * A StreamProvider class that loads progspec data from resource streams.
      */
     private static class ResourceStreamProvider implements StreamProvider {
         private final String resourceDirectory;
+
         public ResourceStreamProvider(String resourceDirectory) {
             this.resourceDirectory = resourceDirectory;
         }
+
         @Override
         public InputStream getSpecStream(String... filenames) {
             for (String filename : filenames) {
@@ -116,7 +126,9 @@ public class ProgramSpec {
 
     /**
      * Opens an input stream on the named program specification part.
-     * @param filenames one or more name of the program specification file, like "content.csv"
+     *
+     * @param filenames one or more name of the program specification file, like
+     *                  "content.csv"
      * @return the first found file or resource, as a stream.
      */
     private InputStream getSpecStream(String... filenames) {
@@ -125,6 +137,7 @@ public class ProgramSpec {
 
     /**
      * Lazily loads the recipients from the program specification.
+     *
      * @return the RecipientList, or null if it can't be read.
      */
     public synchronized RecipientList getRecipients() {
@@ -144,7 +157,9 @@ public class ProgramSpec {
     }
 
     /**
-     * Get the recipients whose components are configured to receive the given deployment.
+     * Get the recipients whose components are configured to receive the given
+     * deployment.
+     *
      * @param deploymentNumber of interest.
      * @return the Recipients in that deployment.
      */
@@ -153,8 +168,9 @@ public class ProgramSpec {
         RecipientList recipients = getRecipients();
         if (recipients.hasDeploymentsColumn()) {
             recipients.stream()
-                .filter(r -> r.deployments == null || r.deployments.size()==0 || r.deployments.contains(deploymentNumber))
-                .forEach(filteredRecipients::add);
+                    .filter(r -> r.deployments == null || r.deployments.size() == 0
+                            || r.deployments.contains(deploymentNumber))
+                    .forEach(filteredRecipients::add);
         } else {
             Deployment deployment = getDeployment(deploymentNumber);
             StringFilter componentFilter = deployment.componentFilter;
@@ -166,10 +182,12 @@ public class ProgramSpec {
     }
 
     /**
-     * Get the recipients whose components are configured to receive the given deployment, and which are
+     * Get the recipients whose components are configured to receive the given
+     * deployment, and which are
      * configured with the given language.
+     *
      * @param deploymentNumber of interest.
-     * @param languagecode of interest.
+     * @param languagecode     of interest.
      * @return the Recipients in that deployment, with that language.
      */
     public RecipientList getRecipientsForDeploymentAndLanguage(int deploymentNumber, String languagecode) {
@@ -183,6 +201,7 @@ public class ProgramSpec {
     /**
      * Gets the languages configured for the recipients who should receive a given
      * deployment.
+     *
      * @param deploymentNumber of interest
      * @return a Set of the languages.
      */
@@ -192,8 +211,11 @@ public class ProgramSpec {
     }
 
     /**
-     * Gets the variants used in a given deployment. This is the intersection of the variants
-     * of the recipients of the deployment with the variants of the messages in the deployment.
+     * Gets the variants used in a given deployment. This is the intersection of the
+     * variants
+     * of the recipients of the deployment with the variants of the messages in the
+     * deployment.
+     *
      * @param deploymentNumber of interest.
      * @return a Set of the variants used in the deployment.
      */
@@ -202,8 +224,9 @@ public class ProgramSpec {
         Set<String> recipientVariants = recipients.stream().map(r -> r.variant).collect(Collectors.toSet());
         Set<String> messageVariants = new HashSet<>();
         messageVariants.add("");
-        for (ContentSpec.PlaylistSpec playlistSpec : getContentSpec().getDeployment(deploymentNumber).getPlaylistSpecs()) {
-            for (ContentSpec.MessageSpec messageSpec: playlistSpec.getMessageSpecs()) {
+        for (ContentSpec.PlaylistSpec playlistSpec : getContentSpec().getDeployment(deploymentNumber)
+                .getPlaylistSpecs()) {
+            for (ContentSpec.MessageSpec messageSpec : playlistSpec.getMessageSpecs()) {
                 messageVariants.addAll(messageSpec.variantItems());
             }
         }
@@ -212,11 +235,14 @@ public class ProgramSpec {
     }
 
     /**
-     * Get the variants used in a given deployment for messages of a given language. Like getVariantsForDeployment()
+     * Get the variants used in a given deployment for messages of a given language.
+     * Like getVariantsForDeployment()
      * but also limited to a particular language.
+     *
      * @param deploymentNumber of interest.
-     * @param languagecode of interest.
-     * @return a Set of the variants in the deployment for messages in the given language.
+     * @param languagecode     of interest.
+     * @return a Set of the variants in the deployment for messages in the given
+     *         language.
      */
     public Set<String> getVariantsForDeploymentAndLanguage(int deploymentNumber, String languagecode) {
         RecipientList recipients = getRecipientsForDeploymentAndLanguage(deploymentNumber, languagecode);
@@ -224,8 +250,9 @@ public class ProgramSpec {
         // Find all of the message variants for that language in the deployment.
         Set<String> messageVariants = new HashSet<>();
         messageVariants.add("");
-        for (ContentSpec.PlaylistSpec playlistSpec : getContentSpec().getDeployment(deploymentNumber).getPlaylistSpecsForLanguage(languagecode)) {
-            for (ContentSpec.MessageSpec messageSpec: playlistSpec.getMessageSpecs()) {
+        for (ContentSpec.PlaylistSpec playlistSpec : getContentSpec().getDeployment(deploymentNumber)
+                .getPlaylistSpecsForLanguage(languagecode)) {
+            for (ContentSpec.MessageSpec messageSpec : playlistSpec.getMessageSpecs()) {
                 messageVariants.addAll(messageSpec.variantItems());
             }
         }
@@ -235,6 +262,7 @@ public class ProgramSpec {
 
     /**
      * Gets the recipient_map, {recipientid : directoryname}
+     *
      * @return the map
      */
     public synchronized Map<String, String> getRecipientsMap() {
@@ -243,9 +271,9 @@ public class ProgramSpec {
                 if (is != null) {
                     final Map<String, String> result = new HashMap<>();
                     CsvReader.read(is,
-                        RecipientMap.columnNames,
-                        record -> result.put(record.get(RecipientMap.columns.recipientid.name()),
-                            record.get(RecipientMap.columns.directory.name())));
+                            RecipientMap.columnNames,
+                            record -> result.put(record.get(RecipientMap.columns.recipientid.name()),
+                                    record.get(RecipientMap.columns.directory.name())));
                     recipientsMap = result;
                 } else {
                     // No recipients map
@@ -259,13 +287,16 @@ public class ProgramSpec {
 
     /**
      * A list of languages declared for any recipient in the project.
+     *
      * @return a list (in a set) of the ISO 639-3 language codes.
      */
     public Set<String> getLanguageCodes() {
         return getRecipients().stream().map(r -> r.languagecode).collect(Collectors.toSet());
     }
+
     /**
-     * Gets a list of used components in the Program. (That is, components which have recipient
+     * Gets a list of used components in the Program. (That is, components which
+     * have recipient
      * members.)
      *
      * Loads the Recipients as a side effect.
@@ -275,15 +306,41 @@ public class ProgramSpec {
     public synchronized List<String> getComponents() {
         if (components == null) {
             this.components = getRecipients().stream()
-                .map(r -> r.component)
-                .distinct()
-                .collect(Collectors.toList());
+                    .map(r -> r.component)
+                    .distinct()
+                    .collect(Collectors.toList());
         }
         return components;
     }
 
     /**
+     * Gets the list of Languages defined in the Program Specification.
+     *
+     * @return the Languages.
+     */
+    public synchronized List<Language> getLanguages() {
+        if (languages == null) {
+            try (InputStream is = getSpecStream(Language.FILENAMES)) {
+                if (is != null) {
+                    final List<Language> result = new ArrayList<>();
+                    CsvReader.read(is, Language.columnNames, record -> {
+                        try {
+                            result.add(new Language(record));
+                        } catch (ParseException ignored) {
+                        }
+                    });
+                    languages = result;
+                }
+            } catch (IOException ignored) {
+                languages = Collections.emptyList();
+            }
+        }
+        return languages;
+    }
+
+    /**
      * Gets the list of Deployments defined in the Program Specification.
+     *
      * @return the Deployments.
      */
     public synchronized List<Deployment> getDeployments() {
@@ -307,21 +364,23 @@ public class ProgramSpec {
 
     public Deployment getDeployment(int deploymentNumber) {
         return getDeployments().stream()
-            .filter(d -> d.deploymentnumber == deploymentNumber)
-            .findFirst()
-            .orElse(null);
+                .filter(d -> d.deploymentnumber == deploymentNumber)
+                .findFirst()
+                .orElse(null);
     }
 
     public Deployment getDeployment(String deployment) {
         return getDeployments().stream()
-            .filter(d -> d.deployment.equalsIgnoreCase(deployment) || d.deploymentname.equalsIgnoreCase(deployment))
-            .findFirst()
-            .orElse(null);
+                .filter(d -> d.deployment.equalsIgnoreCase(deployment) || d.deploymentname.equalsIgnoreCase(deployment))
+                .findFirst()
+                .orElse(null);
     }
 
     /**
      * Gets the contentSpec defined in the Program Specification.
-     * @return an object describing the content for every Deployment, including Playlist membership.
+     *
+     * @return an object describing the content for every Deployment, including
+     *         Playlist membership.
      */
     public synchronized ContentSpec getContentSpec() {
         if (contentSpec == null) {
@@ -329,8 +388,8 @@ public class ProgramSpec {
             try (InputStream fis = getSpecStream(ContentSpec.FILENAMES)) {
                 if (fis != null) {
                     CsvReader.read(fis,
-                        ContentSpec.columnNames,
-                        x -> newContentSpec.addMessage(newContentSpec.new MessageSpec(x)));
+                            ContentSpec.columnNames,
+                            x -> newContentSpec.addMessage(newContentSpec.new MessageSpec(x)));
                     contentSpec = newContentSpec;
                 }
             } catch (IOException e) {
@@ -341,15 +400,18 @@ public class ProgramSpec {
     }
 
     /**
-     * Gets the "deployment.properties" if it exists. This is part of the deployment, and is saved
+     * Gets the "deployment.properties" if it exists. This is part of the
+     * deployment, and is saved
      * with the program specification as of the time the deployment was created.
+     *
      * @return the Properties object. Empty if can't be found.
      */
     public synchronized Properties getDeploymentProperties() {
         if (deploymentProperties == null) {
             deploymentProperties = new Properties();
 
-            try (InputStream fis = getSpecStream(DEPLOYMENT_INFO_PROPERTIES_NAME, DEPLOYMENT_INFO_PROPERTIES_NAME_OLD)) {
+            try (InputStream fis = getSpecStream(DEPLOYMENT_INFO_PROPERTIES_NAME,
+                    DEPLOYMENT_INFO_PROPERTIES_NAME_OLD)) {
                 if (fis != null) {
                     try (BufferedInputStream bis = new BufferedInputStream(fis)) {
                         deploymentProperties.load(bis);
