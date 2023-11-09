@@ -138,6 +138,15 @@ public class AudioItemView extends Container {
           .createAlternateStriping(Color.white, new Color(237, 243, 254)));
     }
 
+
+    // Specify the column index for the duration and the highlight color
+    int durationColumnIndex = 1; // Change to match your duration column index
+    Color highlightColor = Color.RED; // Customize the highlight color
+
+    // Create and apply the custom highlighter
+    CorruptedAudioHighlighter customHighlighter = new CorruptedAudioHighlighter(durationColumnIndex, highlightColor);
+    audioItemTable.addHighlighter(customHighlighter);
+
     audioItemTable.setSortOrder(
         AudioItemTableModel.dateFileModifiedColumn.getColumnIndex(),
         SortOrder.DESCENDING);
