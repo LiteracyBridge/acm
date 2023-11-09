@@ -158,7 +158,14 @@ public class AudioItem extends Committable {
     }
 
     public String getDuration() {
-        return metadata.getMetadataValue(MetadataSpecification.LB_DURATION).getValue();
+        return metadata.getMetadataValue(MetadataSpecification.LB_DURATION).getValue().trim();
+    }
+
+    /**
+     * Audio is considered as corrupted if it has a negative or 00:00 duration
+     */
+    public Boolean isCorrupted() {
+        return this.getDuration().indexOf('-') != -1 || this.getDuration().equals("00:000");
     }
 
     @Override
