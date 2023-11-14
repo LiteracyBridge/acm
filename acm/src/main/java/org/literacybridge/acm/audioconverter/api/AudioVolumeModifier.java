@@ -17,7 +17,6 @@ public class AudioVolumeModifier {
         File f = ACMConfiguration.getInstance().getCurrentDB().getRepository()
                 .getAudioFile(audioItem, AudioItemRepository.AudioFormat.WAV);
 
-        String outputFilePath = f.getAbsolutePath();
         try {
             // Open the input audio file from the file system
             AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(f);
@@ -28,7 +27,7 @@ public class AudioVolumeModifier {
             audioInputStream.read(audioData);
 
             // Modify the volume of the audio data
-            float volume = Float.parseFloat(newVolume);
+            float volume = (float) (Float.parseFloat(newVolume) * 0.01);
             modifyVolume(audioData, volume);
 
             // Create a new AudioInputStream with the modified audio data
@@ -36,6 +35,7 @@ public class AudioVolumeModifier {
                     new ByteArrayInputStream(audioData), audioFormat, audioData.length / audioFormat.getFrameSize());
 
             // Save the modified audio to a new file
+            String outputFilePath = f.getAbsolutePath();
             AudioSystem.write(modifiedAudioInputStream, AudioFileFormat.Type.WAVE, new File(outputFilePath));
 
             // Close the input stream
