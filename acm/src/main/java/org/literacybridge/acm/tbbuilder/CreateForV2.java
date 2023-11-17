@@ -129,7 +129,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
     private final File imagesDir;
 
     public static final List<String> requiredFirmwareFiles = Arrays.asList("TBookRev2b.hex", "firmware_built.txt");
-    public static final List<String> requiredCSMFiles = Arrays.asList("control_def.txt", "csm_data.txt");
+    public static final List<String> requiredCSMFiles = Collections.singletonList("control_def.csm");
 
     public final static List<String> TUTORIAL_V2_MESSAGES = Arrays.asList(
             // 22 and 23 are speed control, not implemented in v2
@@ -570,12 +570,14 @@ class CreateForV2 extends CreateFromDeploymentInfo {
 
             File targetSystemDir = new File(imageDir, "system");
 
-            // The csm_data.txt file. Control file for the TB.
-            File csmData = new File(sourceSystemDir, "csm_data.txt");
-            FileUtils.copyFileToDirectory(csmData, targetSystemDir);
+            // The control_def.csm file. Control file for the TB, if not using the built-in one.
+            File csmData = new File(sourceSystemDir, "control_def.csm");
+            if (csmData.exists()) {
+                FileUtils.copyFileToDirectory(csmData, targetSystemDir);
+            }
 
-            // Optionally, the source for csm_data.txt file. 
-            File controlDefFile = new File(sourceSystemDir, "control_def.txt");
+            // Optionally, the yaml source for control_def.csm file.
+            File controlDefFile = new File(sourceSystemDir, "control_def.yaml");
             if (controlDefFile.exists()) {
                 FileUtils.copyFileToDirectory(controlDefFile, targetSystemDir);
             }

@@ -719,34 +719,26 @@ public abstract class TBLoaderCore {
         if (!goodCard) {
             return false;
         }
+        boolean chkdskOk = true;
         if (mTbLoaderConfig.hasCommandLineUtils()) {
             startStep(checkDisk);
-            FileSystemUtilities.RESULT chkdskResult = mTbLoaderConfig.getCommandLineUtils().checkDisk(mTbDeviceInfo.getRootFile()
-                .getAbsolutePath());
+            String tbPath = mTbDeviceInfo.getRootFile().getAbsolutePath();
+            String logFileName = getCollectedOpDataDir().open("chkdsk-fix.txt").getAbsolutePath();
+            FileSystemUtilities.RESULT chkdskResult = mTbLoaderConfig.getCommandLineUtils().checkDiskAndFix(tbPath, logFileName);
+            chkdskOk = chkdskResult.isSuccess();
+            finishStep("'chkdsk' of Talking Book storage: ", chkdskOk?"succeded":"failed");
             if (chkdskResult.isFailure()) {
-                boolean fixed = false;
                 if (chkdskResult.isTimeout()) {
                     mTbDeviceInfo.setFsCheckTimeout();
                 } else {
-                    mProgressListener.log("Storage corrupted, attempting repair.");
-                    String tbPath = mTbDeviceInfo.getRootFile().getAbsolutePath();
-                    String logFileName = getCollectedOpDataDir().open("chkdsk-reformat.txt").getAbsolutePath();
-                    FileSystemUtilities.RESULT chkdskFixResult = mTbLoaderConfig.getCommandLineUtils().checkDiskAndFix(tbPath, logFileName);
-                    fixed = chkdskFixResult.isSuccess();
-                }
-                if (!fixed) {
                     mTbDeviceInfo.setCorrupted();
                     mTbHasDiskCorruption = true;
                 }
-                finishStep("Attempted repair of Talking Book storage: ", fixed?"succeded":"failed");
-                return fixed;
-            } else {
-                finishStep("storage good");
             }
         } else {
             mProgressListener.log("chkdsk not supported on this OS");
         }
-        return true;
+        return chkdskOk;
     }
 
     protected Properties getDeploymentPropertiesForUserFeedback() {
