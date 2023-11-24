@@ -89,6 +89,8 @@ public abstract class TbDeviceInfo {
     protected boolean corrupted = false;
     // did the fsck (chkdsk) timeout?
     protected boolean fsCheckTimeout = false;
+    // Did Windows not allow chkdsk?
+    protected boolean fsAccessDenied = false;
 
     // Properties that are read from the Talking Book and provided to clients of the class.
     protected String serialNumber = null;
@@ -154,6 +156,12 @@ public abstract class TbDeviceInfo {
     }
     public boolean isFsCheckTimeout() {
         return fsCheckTimeout;
+    }
+    public void setFsAccessDenied() {
+        this.fsAccessDenied = true;
+    }
+    public boolean isFsAccessDenied() {
+        return fsAccessDenied;
     }
 
     public abstract boolean isSerialNumberFormatGood(String srn);
@@ -257,7 +265,7 @@ public abstract class TbDeviceInfo {
                 String[] files;
 
                 if (getFlashData() != null && getFlashData().getDeploymentNumber() != null
-                    && !getFlashData().getDeploymentNumber().equals("")) {
+                    && !getFlashData().getDeploymentNumber().isEmpty()) {
                     deploymentName = getFlashData().getDeploymentNumber();
                     src = "flash";
                 } else if (tbSystem.exists()) {
@@ -293,8 +301,7 @@ public abstract class TbDeviceInfo {
             // If we didn't have it in properties, look for the flash data or marker file(s).
             if (communityName.equalsIgnoreCase(TBLoaderConstants.UNKNOWN)) {
                 if (getFlashData() != null && getFlashData().getCommunity() != null
-                    && !getFlashData().getCommunity().equals(
-                    "")) {
+                    && !getFlashData().getCommunity().isEmpty()) {
                     communityName = getFlashData().getCommunity();
                     src = "flash";
                 } else {
@@ -466,7 +473,7 @@ public abstract class TbDeviceInfo {
 
     /**
      * Returns the device's latest deployment properties as a friendly string.
-     * @return
+     * @return string representation of deployment properties
      */
     public String getDeploymentPropertiesString() {
         Properties props = loadDeploymentProperties();
@@ -496,7 +503,7 @@ public abstract class TbDeviceInfo {
 
         Arrays.stream(infos)
                 .filter(p->StringUtils.isNotBlank(p[0]))
-                .forEach(p->{builder.append(p[1]).append(p[0]).append("\n");});
+                .forEach(p-> builder.append(p[1]).append(p[0]).append("\n"));
 
         return builder.toString();
     }
@@ -564,7 +571,7 @@ public abstract class TbDeviceInfo {
      * @return The a list of one or more package names, or "UNKNOWN" if it can not be determined.
      */
     private List<String> getPackageNames() {
-        if (packageNames.size() == 0) {
+        if (packageNames.isEmpty()) {
             String packageNameProperty = getProperty(PACKAGE_PROPERTY);
             String src = "properties";
 
@@ -577,7 +584,7 @@ public abstract class TbDeviceInfo {
                 String[] files;
 
                 if (getFlashData() != null && getFlashData().getImageName() != null
-                    && !getFlashData().getImageName().equals("")) {
+                    && !getFlashData().getImageName().isEmpty()) {
                     packageNames.add(getFlashData().getImageName());
                     src = "flash";
                 } else if (tbSystem.exists()) {
@@ -744,7 +751,7 @@ public abstract class TbDeviceInfo {
                     String tsnFileName = files[0];
                     sn = tsnFileName.substring(0, tsnFileName.length() - 4);
                 }
-                if (sn.equals("")) { // Can only happen if file is named ".srn"
+                if (sn.isEmpty()) { // Can only happen if file is named ".srn"
                     sn = TBLoaderConstants.UNKNOWN;
                 }
                 if (!sn.equals(TBLoaderConstants.UNKNOWN)) {

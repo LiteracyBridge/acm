@@ -1,7 +1,6 @@
 package org.literacybridge.core.tbloader;
 
 import org.apache.commons.lang3.StringUtils;
-import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.fs.ZipUnzip;
@@ -597,10 +596,6 @@ public abstract class TBLoaderCore {
 
             writeTbLog(action);
 
-            if (!mTbHasDiskCorruption) {
-                disconnectDevice();
-            }
-
         } catch (Throwable e) {
             LOG.log(Level.WARNING, "TBL!: Unable to zip Talking Book statistics:", e);
             mProgressListener.log("Unable to zip Talking Book statistics");
@@ -724,12 +719,15 @@ public abstract class TBLoaderCore {
             startStep(checkDisk);
             String tbPath = mTbDeviceInfo.getRootFile().getAbsolutePath();
             String logFileName = getCollectedOpDataDir().open("chkdsk-fix.txt").getAbsolutePath();
-            FileSystemUtilities.RESULT chkdskResult = mTbLoaderConfig.getCommandLineUtils().checkDiskAndFix(tbPath, logFileName);
-            chkdskOk = chkdskResult.isSuccess();
-            finishStep("'chkdsk' of Talking Book storage: ", chkdskOk?"succeded":"failed");
-            if (chkdskResult.isFailure()) {
-                if (chkdskResult.isTimeout()) {
+            FileSystemUtilities.RESULT chkdskFSResult = mTbLoaderConfig.getCommandLineUtils().checkDiskAndFix(tbPath, logFileName);
+            chkdskOk = chkdskFSResult.isSuccess();
+            finishStep("'chkdsk' of Talking Book storage", chkdskFSResult.label);
+            if (chkdskFSResult.isFailure()) {
+                if (chkdskFSResult.isTimeout()) {
                     mTbDeviceInfo.setFsCheckTimeout();
+                } else if (chkdskFSResult.isAccessDenied()) {
+                    chkdskOk = true;
+                    mTbDeviceInfo.setFsAccessDenied();
                 } else {
                     mTbDeviceInfo.setCorrupted();
                     mTbHasDiskCorruption = true;
@@ -757,7 +755,7 @@ public abstract class TBLoaderCore {
         // every UF file.
         Properties feedbackProperties = getDeploymentPropertiesForUserFeedback();
         ByteArrayOutputStream bos = null;
-        if (feedbackProperties.size() > 0) {
+        if (!feedbackProperties.isEmpty()) {
             bos = new ByteArrayOutputStream();
             feedbackProperties.store(bos, "User Feedback");
         }
@@ -797,7 +795,7 @@ public abstract class TBLoaderCore {
             props.append(TBLoaderConstants.LATEST_FIRMWARE_PROPERTY, mNewDeploymentInfo.getFirmwareRevision())
                     .append(TBLoaderConstants.FIRMWARE_PROPERTY, mOldDeploymentInfo.getFirmwareRevision());
         }
-        if (mCoordinates != null && mCoordinates.length() > 0) {
+        if (mCoordinates != null && !mCoordinates.isEmpty()) {
             props.append(TBLoaderConstants.COORDINATES_PROPERTY, mCoordinates);
         }
         if (mNewDeploymentInfo.getRecipientid() != null) {
@@ -1020,7 +1018,7 @@ public abstract class TBLoaderCore {
             .append(TBLoaderConstants.TBCDID_PROPERTY, mTbLoaderConfig.getTbLoaderId())
             .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation)
             .append(TBLoaderConstants.STATS_COLLECTED_UUID_PROPERTY, mStatsCollectedUUID);
-        if (mCoordinates != null && mCoordinates.length() > 0) {
+        if (mCoordinates != null && !mCoordinates.isEmpty()) {
             props.append(TBLoaderConstants.COORDINATES_PROPERTY, mCoordinates);
         }
 
@@ -1118,19 +1116,6 @@ public abstract class TBLoaderCore {
         mTbsCollected = new TbsCollected(tbLoaderLogger.mTbsCollectedData);
         if (!mBuilder.mStatsOnly) {
             mTbsDeployed = new TbsDeployed(tbLoaderLogger.mTbsDeployedData);
-        }
-    }
-
-    /**
-     * Disconnects the Talking Book from the system.
-     *
-     * @throws IOException if there is an error disconnecting the drive. Note that on some OS
-     * it may be completely impossible to disconnect the drive, and no exception is thrown.
-     */
-    private void disconnectDevice() throws IOException {
-        if (OSChecker.WINDOWS && mTbLoaderConfig.hasCommandLineUtils()) {
-            mProgressListener.log("Disconnecting TB");
-            mTbLoaderConfig.getCommandLineUtils().disconnectDrive(mTbDeviceInfo.getRootFile().getAbsolutePath());
         }
     }
 
