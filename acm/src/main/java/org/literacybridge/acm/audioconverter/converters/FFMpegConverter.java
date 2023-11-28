@@ -27,8 +27,13 @@ public class FFMpegConverter extends BaseAudioConverter {
         String cmd = getConverterEXEPath() + " -v 0 -i \"" + sourceFile.getAbsolutePath() + "\"" // input file
                 + " -ab 16k" + " -ar 16000" // 16000 sampling rate
             + " -ac 1" // 1 channel = mono
-            + " -y" // overwrite output file
-            + " \"" + targetFile.getAbsolutePath() + "\""; // outout file name
+            + " -y"; // overwrite output file
+
+        if(parameters.containsKey("volume")){
+            cmd += " -vol " + parameters.get("volume"); // set volume level of output file
+        }
+
+        cmd += " \"" + targetFile.getAbsolutePath() + "\""; // outout file name
 
         System.out.printf("Convert to 'wav' from file:\n%s\n with command:\n%s%n", sourceFile, cmd);
 

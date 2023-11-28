@@ -139,6 +139,7 @@ public abstract class BaseAudioConverter {
             success = true;
         } catch (Exception e) {
             // nothing to do - finally block will throw exception
+            e.printStackTrace();
         } finally {
             if (!success) {
                 //noinspection ThrowFromFinallyBlock

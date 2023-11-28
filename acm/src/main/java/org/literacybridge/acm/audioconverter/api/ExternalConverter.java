@@ -9,9 +9,13 @@ import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.Conve
 import org.literacybridge.acm.audioconverter.converters.FFMpegConverter;
 import org.literacybridge.acm.audioconverter.converters.PipelineConverter;
 import org.literacybridge.acm.audioconverter.converters.WavToMp3Converter;
+import org.literacybridge.acm.importexport.AudioImporter;
+import org.literacybridge.acm.store.Metadata;
 
 import java.io.File;
 import java.util.Map;
+
+import static org.literacybridge.acm.store.MetadataSpecification.LB_VOLUME;
 
 public class ExternalConverter {
     private final File sourceFile;
@@ -19,6 +23,8 @@ public class ExternalConverter {
     private File targetFile;
     private File targetDirectory;
     private Boolean overwriteExisting;
+
+    private Metadata audioMetadata;
 
     /**
      * Creates an object to manage the conversion of an audio file from one format to another.
@@ -29,6 +35,12 @@ public class ExternalConverter {
     public ExternalConverter(File sourceFile, AudioConversionFormat targetFormat) {
         this.sourceFile = sourceFile;
         this.targetFormat = targetFormat;
+    }
+
+    public ExternalConverter(File sourceFile, AudioConversionFormat targetFormat, Metadata metadata) {
+        this.sourceFile = sourceFile;
+        this.targetFormat = targetFormat;
+        this.audioMetadata = metadata;
     }
 
     /**
@@ -92,8 +104,8 @@ public class ExternalConverter {
             // No target directory was specified. If a given target file has an explicit parent, use that, otherwise use
             // the source file's directory.
             targetDirectory = (targetFile == null || targetFile.getParentFile() == null)
-                              ? sourceFile.getParentFile()
-                              : targetFile.getParentFile();
+                    ? sourceFile.getParentFile()
+                    : targetFile.getParentFile();
         }
         if (targetFile == null) {
             // No target file given. Base name on the source file. Explicit output directory, or implicitly input file's directory (from above).
@@ -106,8 +118,14 @@ public class ExternalConverter {
             overwriteExisting = true;
         }
 
+//        Metadata metadata = AudioImporter.getInstance().getExistingMetadata(sourceFile);
+//        System.out.println(metadata);
         Map<String, String> parameters = targetFormat.getParameters();
         BaseAudioConverter converter = getConverter();
+
+        if (this.audioMetadata != null && audioMetadata.containsField(LB_VOLUME)) {
+            parameters.put("volume", audioMetadata.get(LB_VOLUME));
+        }
 
         return converter.convertFile(sourceFile, targetFile, overwriteExisting, parameters);
     }
@@ -133,22 +151,33 @@ public class ExternalConverter {
      */
     private BaseAudioConverter getConverter() {
         BaseAudioConverter converter;
-        if (targetFormat.getFileExtension().equalsIgnoreCase("A18")) {
-            converter = new AnyToA18Converter();
-        } else if (targetFormat.getFileExtension().equalsIgnoreCase("mp3")) {
-            if (FilenameUtils.getExtension(sourceFile.getName()).equalsIgnoreCase("a18")) {
+        String sourceExtension = FilenameUtils.getExtension(sourceFile.getName());
+        String targetExtension = targetFormat.getFileExtension();
+
+        if (targetExtension.equalsIgnoreCase("a18")) {
+//            return new PipelineConverter(new AnyToA18Converter();
+            if(sourceExtension.equalsIgnoreCase("a18")) {
+                return new PipelineConverter(new A18ToWavConverter(), new AnyToA18Converter());
+            }
+            return new AnyToA18Converter();
+        }
+
+        if (targetExtension.equalsIgnoreCase("mp3")) {
+            if (sourceExtension.equalsIgnoreCase("a18")) {
                 converter = new PipelineConverter(new A18ToWavConverter(), new WavToMp3Converter());
-            } else if (FilenameUtils.getExtension(sourceFile.getName()).equalsIgnoreCase("wav")) {
+            } else if (sourceExtension.equalsIgnoreCase("wav")) {
                 converter = new WavToMp3Converter();
             } else {
                 converter = new PipelineConverter(new FFMpegConverter(), new WavToMp3Converter());
             }
         } else {
-            if (FilenameUtils.getExtension(sourceFile.getName()).equalsIgnoreCase("a18")) {
-                if (targetFormat.getFileExtension().equalsIgnoreCase("WAV")) {
-                    converter = new A18ToWavConverter();
+            if (sourceExtension.equalsIgnoreCase("a18")) {
+                // A18 converter does not support volume modification, the output is passed through ffmpeg
+                // for volume modification.
+                if (targetExtension.equalsIgnoreCase("WAV")) {
+                    converter = new PipelineConverter(new A18ToWavConverter(), new FFMpegConverter());
                 } else {
-                    converter = new A18ToAnyConverter(targetFormat.getFileExtension());
+                    converter = new PipelineConverter(new A18ToAnyConverter(targetExtension), new FFMpegConverter());
                 }
             } else {
                 converter = new FFMpegConverter();

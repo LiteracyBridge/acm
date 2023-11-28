@@ -13,6 +13,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.importexport.AudioExporter;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.utils.AudioFileProperties;
 import org.literacybridge.acm.utils.IOUtils;
@@ -27,6 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_VOLUME;
 
 /**
  * This repository manages all audio files associated with the audio items that
@@ -158,7 +160,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
                 ConversionResult wavToWavResult = wavToWav.doConvertFile(externalFile,
                         toFile.getParentFile(), toFile, new HashMap<>());
             } else if (forceConversion(externalFile, format)) {
-                convertFile(externalFile, toFile);
+                convertFile(externalFile, toFile, audioItem.getMetadata());
             } else {
                 IOUtils.copy(externalFile, toFile);
             }
@@ -199,7 +201,10 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
                                                                                    ConversionException,
                                                                                    UnsupportedFormatException {
         File file = resolveFile(audioItem, format, false);
-        if (file == null || !file.exists() || forceConversion(file, format)) {
+        // TODO: company audio file volume with metadata value
+        String volume = audioItem.getMetadata().get(LB_VOLUME);
+        System.out.println(volume);
+        if (file == null || !file.exists() || forceConversion(file, format) || volume != null) {
             file = convertAudioItem(audioItem, format);
         }
         return file;
@@ -215,7 +220,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
 
         // See if there is already a readable version of the file.
         File targetFile = resolveFile(audioItem, targetFormat, false);
-        if (targetFile.exists() && !forceConversion(targetFile, targetFormat)) {
+        if (targetFile.exists() && !forceConversion(targetFile, targetFormat) && audioItem.getMetadata().get(LB_VOLUME) == null) {
             return targetFile;
         }
 
@@ -236,7 +241,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         }
         // Get a file appropriate to write to.
         targetFile = resolveFile(audioItem, targetFormat, true);
-        convertFile(sourceFile, targetFile);
+        convertFile(sourceFile, targetFile, audioItem.getMetadata());
 
         return targetFile;
     }
@@ -246,7 +251,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      * @param sourceFile to be converted.
      * @param targetFile to be converted to.
      */
-    private synchronized void convertFile(File sourceFile, File targetFile) throws
+    private synchronized void convertFile(File sourceFile, File targetFile, Metadata metadata) throws
                                                                             ConversionException,
                                                                             UnsupportedFormatException {
         if (audioFileRepository.isSandboxedFile(targetFile)) {
@@ -259,7 +264,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         }
         AudioFormat targetFormat = ensureKnownFormat(targetFile);
         boolean overWrite = targetFile.exists() && forceConversion(targetFile, targetFormat);
-        new ExternalConverter(sourceFile, targetFormat.getAudioConversionFormat())
+        new ExternalConverter(sourceFile, targetFormat.getAudioConversionFormat(), metadata)
             .toFile(targetFile)
             .overwritingExisting(overWrite)
             .go();
