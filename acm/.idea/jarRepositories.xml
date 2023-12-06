@@ -26,5 +26,10 @@
       <option name="name" value="maven2" />
       <option name="url" value="http://essi-lab.eu/nexus/content/groups/open.repos" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="maven" />
+      <option name="name" value="maven" />
+      <option name="url" value="https://maven.pkg.github.com/LiteracyBridge/CSMcompile" />
+    </remote-repository>
   </component>
 </project>
