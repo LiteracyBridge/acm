@@ -1,4 +1,0 @@
-# DO NOT EDIT WITH WINDOWS NOTEPAD!! IT WILL CORRUPT THE FILE. Notepad++ is fine.
-bill
-michael
-system
