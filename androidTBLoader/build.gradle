@@ -3,10 +3,10 @@
 buildscript {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.2.1'
+        classpath 'com.android.tools.build:gradle:8.2.0'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -22,7 +22,7 @@ allprojects {
 
     repositories {
         google()
-        jcenter()
+        mavenCentral()
         maven {
             url "https://bits.netbeans.org/maven2"
         }
@@ -42,9 +42,6 @@ def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
-    lintOptions {
-        abortOnError false
-    }
     // Load versionCode from version.properties file.
     Properties versionProps = new Properties()
     def versionPropsFile = file('version.properties')
@@ -70,11 +67,12 @@ android {
             storePassword keystoreProperties['storePassword']
         }
     }
-    compileSdkVersion 30
+//    compileSdkVersion 33
+    compileSdk 33
     defaultConfig {
         applicationId "org.literacybridge.androidtbloader"
         minSdkVersion 25
-        targetSdkVersion 30
+        targetSdkVersion 33
         versionCode code
         versionName "1.1.0 (${code})"
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"    }
@@ -89,6 +87,10 @@ android {
             sourceCompatibility JavaVersion.VERSION_1_8
             targetCompatibility JavaVersion.VERSION_1_8
         }
+    namespace 'org.literacybridge.androidtbloader'
+    lint {
+        abortOnError false
+    }
 
 }
 

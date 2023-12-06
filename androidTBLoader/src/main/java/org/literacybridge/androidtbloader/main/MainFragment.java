@@ -1,6 +1,7 @@
 package org.literacybridge.androidtbloader.main;
 
 import static android.app.Activity.RESULT_OK;
+import static android.os.Environment.isExternalStorageManager;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -12,10 +13,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -311,6 +314,19 @@ public class MainFragment extends Fragment {
     private void checkStartupInformationComplete() {
         if (!mHaveConfig || awaitingLocationPermission || !haveProgramInfo) {
             return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!isExternalStorageManager()) {
+                Uri uri = Uri.parse(String.format("package:%s", BuildConfig.APPLICATION_ID));
+
+                startActivity(
+                    new Intent(
+                        Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                        uri
+                    )
+                );
+                return;
+            }
         }
         closeWaitDialog();
         // The UI is all set up, so now let the upload service start.
