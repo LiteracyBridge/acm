@@ -100,6 +100,7 @@ public abstract class BaseAudioConverter {
             int result = proc.waitFor();
             success = (result >= 0);
         } catch (Exception ignored) {
+            ignored.printStackTrace();
         } finally {
             if (!success) {
                 //noinspection ThrowFromFinallyBlock

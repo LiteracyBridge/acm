@@ -12,6 +12,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,6 +23,7 @@ import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.border.Border;
 
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
@@ -29,9 +31,11 @@ import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.LanguageComboBoxModel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.*;
 
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
+import org.literacybridge.acm.audioconverter.converters.FFMpegConverter;
 
 // TODO: deal with localized audio items when languages are fully implemented
 public class AudioItemContextMenuDialog extends JDialog {
@@ -68,6 +72,9 @@ public class AudioItemContextMenuDialog extends JDialog {
     FlatButton exportMetadataButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.EXPORT_DATA_TYPE.Metadata);
     FlatButton deleteButton = makeDeleteButton(selectedAudioItems, labelPostfix);
     FlatButton languageButton = makeLanguageButton(selectedAudioItems, labelPostfix);
+    FlatButton normalizeVolumeButton = makeNormalizeVolumeButton(selectedAudioItems, labelPostfix);
+
+
 
     setLayout(grid);
     Border border = BorderFactory.createEmptyBorder(10, 10, 10, 10);
@@ -81,6 +88,7 @@ public class AudioItemContextMenuDialog extends JDialog {
     exportMetadataButton.setBorder(border);
     deleteButton.setBorder(border);
     languageButton.setBorder(border);
+    normalizeVolumeButton.setBorder(border);
 
     add(renameButton);
     add(editButton);
@@ -91,6 +99,7 @@ public class AudioItemContextMenuDialog extends JDialog {
     add(exportMetadataButton);
     add(deleteButton);
     add(languageButton);
+    add(normalizeVolumeButton);
 
     addWindowListener(windowListener);
     addKeyListener(keyListener);
@@ -287,6 +296,48 @@ public class AudioItemContextMenuDialog extends JDialog {
       }
     };
     return renameButton;
+  }
+
+
+  /**
+   * Make a button to invoke the rename dialog.
+   * @param selectedAudioItems Audio Items that would be renamed.
+   * @param labelPostfix A description of the item(s).
+   * @return the button.
+   */
+  private FlatButton makeNormalizeVolumeButton(final AudioItem[] selectedAudioItems, String labelPostfix) {
+    Color backgroundColor = Application.getApplication().getBackground();
+    Color highlightedColor = SystemColor.textHighlight;
+    // TODO: change icon
+    ImageIcon renameImageIcon = new ImageIcon(
+            UIConstants.getResource("rename-16.png"));
+    final String selectedTitle = getMetadataTitle(selectedAudioItems[0]);
+    String buttonLabel = String.format("Normalize Volume of '%s'", labelPostfix);
+
+    FlatButton normalizeButton = new FlatButton(buttonLabel, renameImageIcon, backgroundColor, highlightedColor) {
+      @Override
+      public void click() {
+        System.out.println("Clicked here");
+
+        try {
+          File f = ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(selectedAudioItems[0], AudioItemRepository.AudioFormat.MP3);
+
+          FFMpegConverter converter = new FFMpegConverter();
+         BaseAudioConverter.ConversionResult result= converter.normalizeVolume(f);
+//          System.out.println(result.outputFile.getAbsolutePath());
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+// TODO: Find audio file and use ffmpeg to normalize it
+//        AudioItemContextMenuDialog.this.setVisible(false);
+//        AudioItemRenameDialog dialog = new AudioItemRenameDialog(
+//                Application.getApplication(),  selectedAudioItems);
+//        // Place the new dialog within the application frame.
+//        dialog.setLocation(Application.getApplication().getX()+20, Application.getApplication().getY()+20);
+//        dialog.setVisible(true);
+      }
+    };
+    return normalizeButton;
   }
 
   /**

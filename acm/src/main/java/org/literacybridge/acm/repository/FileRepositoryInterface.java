@@ -19,7 +19,7 @@ interface FileRepositoryInterface {
     File resolveFile(AudioItem audioItem, AudioItemRepository.AudioFormat format, boolean writeAccess);
 
     /**
-     * Gets a list of all of the audio item files in the repository.
+     * Gets a list of all the audio item files in the repository.
      * @return List of IDs.
      */
     List<String> getAudioItemIds();
