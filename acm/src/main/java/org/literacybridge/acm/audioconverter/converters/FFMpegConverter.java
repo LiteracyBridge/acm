@@ -3,9 +3,8 @@ package org.literacybridge.acm.audioconverter.converters;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.AmplioHome;
 import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.store.AudioItem;
 
-import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioSystem;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,42 +23,60 @@ public class FFMpegConverter extends BaseAudioConverter {
         super(TARGET_EXTENSION);
     }
 
-    public ConversionResult normalizeVolume(File audioFile)
-            throws ConversionException, IOException {
+    public ConversionResult normalizeVolume(AudioItem audioItem, Boolean replaceExistingFile)
+            throws ConversionException, IOException, AudioItemRepository.UnsupportedFormatException {
+
+
         // For a18 files, we need to convert to wav first before we can normalize
         // TODO: convert a18 to wav first
+        // TODO: If replace existing file, conver the file to all the format, using uncached files
+        //TODO: if not replace existing file, convert to only wav using get cached file
+        File sourceFile = null;
 
-        String fileSeparator = System.getProperty("file.separator");
-//        String format =  audioFile.getName().("a18") ? "wav" : TARGET_EXTENSION;
-        String tempFilePath = AmplioHome.getTempsDir() + System.getProperty("file.separator") + audioFile.getName();
+        // TODO: Get cached file if we are in demo mode
+        if (replaceExistingFile) {
+            sourceFile = ACMConfiguration.getInstance().getCurrentDB().getRepository().getUncachedAudioFile(audioItem, AudioItemRepository.AudioFormat.WAV);
+        } else {
+            sourceFile = ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioItemRepository.AudioFormat.WAV);
+        }
+
+        String tempFilePath = AmplioHome.getTempsDir() + File.separator + sourceFile.getName();
 
         // TODO: parse loudnorm values as parameters
         // TODO: comment ffmpeg params
-        String cmd = String.format("%s -i %s -af loudnorm=I=-12:LRA=7:tp=-2.0:print_format=summary -ar 48k -y %s", getConverterEXEPath(), audioFile.getAbsolutePath(), tempFilePath);
+        String cmd = String.format("%s -i %s -af loudnorm=I=-12:LRA=7:tp=-2.0:print_format=summary -ar 48k -y %s", getConverterEXEPath(), sourceFile.getAbsolutePath(), tempFilePath);
 //                "-i input.mp3  output_normalized.wav\n -v 0 -i \"" + sourceFile.getAbsolutePath() + "\"" // input file
 //                + " -ab 16k" + " -ar 16000" // 16000 sampling rate
 //                + " -ac 1" // 1 channel = mono
 //                + " -y" // overwrite output file
 //                + " \"" + targetFile.getAbsolutePath() + "\""; // outout file name
 
-        System.out.printf("Convert to 'wav' from file:\n%s\n with command:\n%s%n", audioFile, cmd);
+        System.out.printf("Convert to 'wav' from file:\n%s\n with command:\n%s%n", sourceFile, cmd);
 
         ConversionResult result = new ConversionResult();
 //        result.outputFile = targetFile;
         // important! ffmpeg prints to stderr, not stdout
         result.response = BaseAudioConverter.executeConversionCommand(cmd, true,
-                audioFile.getName());
+                sourceFile.getName());
 
         // Create a temp file to write the output to, then replace the source file with the temp file
         // Replace the source file with the temporary file
+        Files.move(Paths.get(tempFilePath), Paths.get(sourceFile.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
 //        Files.move()
-        Files.move(Paths.get(tempFilePath), Paths.get(audioFile.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
-//        Files.move(tempFilePath, audioFile.getAbsolutePath(), StandardCopyOption.REPLACE_EXISTING);
 
+        // TODO: not in demo mode
+        // An audio item can be in multiple formats, we have to convert it to all supported formats, starting with WAV.
+        if (replaceExistingFile) {
+//           TODO; find a way to normalize for all audio formats
 
-//        Files.write(targetFile.toPath(), result.outputFile.);
-//        AudioSystem.write(targetFile, AudioFileFormat.Type.MP, new File(outputFilePath));
+            // Since getUncachedAudioFile/getAudioFile do implicit conversion, so we simply call getAudioFile with the format we want.
+            ACMConfiguration.getInstance().getCurrentDB().getRepository().getUncachedAudioFile(audioItem, AudioItemRepository.AudioFormat.MP3);
+            ACMConfiguration.getInstance().getCurrentDB().getRepository().getUncachedAudioFile(audioItem, AudioItemRepository.AudioFormat.A18);
 
+        } else {
+            ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioItemRepository.AudioFormat.MP3);
+            ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioItemRepository.AudioFormat.A18);
+        }
         System.out.printf("Conversion to 'wav' result: %s\n%n", result.response);
 
         return result;

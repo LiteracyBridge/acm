@@ -312,29 +312,29 @@ public class AudioItemContextMenuDialog extends JDialog {
     ImageIcon renameImageIcon = new ImageIcon(
             UIConstants.getResource("rename-16.png"));
     final String selectedTitle = getMetadataTitle(selectedAudioItems[0]);
-    String buttonLabel = String.format("Normalize Volume of '%s'", labelPostfix);
+    String buttonLabel = String.format("Modify volume of '%s'", labelPostfix);
 
     FlatButton normalizeButton = new FlatButton(buttonLabel, renameImageIcon, backgroundColor, highlightedColor) {
       @Override
       public void click() {
         System.out.println("Clicked here");
 
-        try {
-          File f = ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(selectedAudioItems[0], AudioItemRepository.AudioFormat.MP3);
-
-          FFMpegConverter converter = new FFMpegConverter();
-         BaseAudioConverter.ConversionResult result= converter.normalizeVolume(f);
-//          System.out.println(result.outputFile.getAbsolutePath());
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
+//        try {
+////          File f = ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(selectedAudioItems[0], AudioItemRepository.AudioFormat.MP3);
+//
+//          FFMpegConverter converter = new FFMpegConverter();
+//         BaseAudioConverter.ConversionResult result= converter.normalizeVolume(selectedAudioItems[0], true);
+////          System.out.println(result.outputFile.getAbsolutePath());
+//        } catch (Exception e) {
+//          throw new RuntimeException(e);
+//        }
 // TODO: Find audio file and use ffmpeg to normalize it
-//        AudioItemContextMenuDialog.this.setVisible(false);
-//        AudioItemRenameDialog dialog = new AudioItemRenameDialog(
-//                Application.getApplication(),  selectedAudioItems);
-//        // Place the new dialog within the application frame.
-//        dialog.setLocation(Application.getApplication().getX()+20, Application.getApplication().getY()+20);
-//        dialog.setVisible(true);
+        AudioItemContextMenuDialog.this.setVisible(false);
+        AudioItemVolumeNormalizationDialog dialog = new AudioItemVolumeNormalizationDialog(
+                Application.getApplication(),  selectedAudioItems);
+        // Place the new dialog within the application frame.
+        dialog.setLocation(Application.getApplication().getX()+20, Application.getApplication().getY()+20);
+        dialog.setVisible(true);
       }
     };
     return normalizeButton;
