@@ -23,14 +23,8 @@ public class FFMpegConverter extends BaseAudioConverter {
         super(TARGET_EXTENSION);
     }
 
-    public ConversionResult normalizeVolume(AudioItem audioItem, Boolean replaceExistingFile)
+    public ConversionResult normalizeVolume(AudioItem audioItem, Boolean replaceExistingFile, String volumeLevel)
             throws ConversionException, IOException, AudioItemRepository.UnsupportedFormatException {
-
-
-        // For a18 files, we need to convert to wav first before we can normalize
-        // TODO: convert a18 to wav first
-        // TODO: If replace existing file, conver the file to all the format, using uncached files
-        //TODO: if not replace existing file, convert to only wav using get cached file
         File sourceFile = null;
 
         // TODO: Get cached file if we are in demo mode
@@ -40,36 +34,32 @@ public class FFMpegConverter extends BaseAudioConverter {
             sourceFile = ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioItemRepository.AudioFormat.WAV);
         }
 
+        // Create a temp file to write the output to, then replace the source file with the temp file
         String tempFilePath = AmplioHome.getTempsDir() + File.separator + sourceFile.getName();
 
-        // TODO: parse loudnorm values as parameters
-        // TODO: comment ffmpeg params
-        String cmd = String.format("%s -i %s -af loudnorm=I=-12:LRA=7:tp=-2.0:print_format=summary -ar 48k -y %s", getConverterEXEPath(), sourceFile.getAbsolutePath(), tempFilePath);
-//                "-i input.mp3  output_normalized.wav\n -v 0 -i \"" + sourceFile.getAbsolutePath() + "\"" // input file
-//                + " -ab 16k" + " -ar 16000" // 16000 sampling rate
-//                + " -ac 1" // 1 channel = mono
-//                + " -y" // overwrite output file
-//                + " \"" + targetFile.getAbsolutePath() + "\""; // outout file name
+        double lufsValue = convertVolumeToLUFS(Double.parseDouble(volumeLevel));
+        String cmd = getConverterEXEPath() // ffmpeg.exe
+                + " -i " + sourceFile.getAbsolutePath() // input file
+                + " -af loudnorm=I=" + lufsValue + ":LRA=7:tp=-2.0:print_format=summary" // loudnorm filter, Loudness Range target of 7 LU, True Peak target of -2.0 dBTP
+                + " -ar 16k" // 48000 sampling rate
+                + " -ac 1" // 1 channel = mono
+                + " -y" // overwrite output file
+                + " " + tempFilePath; // outout file name
 
         System.out.printf("Convert to 'wav' from file:\n%s\n with command:\n%s%n", sourceFile, cmd);
 
         ConversionResult result = new ConversionResult();
-//        result.outputFile = targetFile;
         // important! ffmpeg prints to stderr, not stdout
         result.response = BaseAudioConverter.executeConversionCommand(cmd, true,
                 sourceFile.getName());
 
-        // Create a temp file to write the output to, then replace the source file with the temp file
         // Replace the source file with the temporary file
         Files.move(Paths.get(tempFilePath), Paths.get(sourceFile.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
-//        Files.move()
 
         // TODO: not in demo mode
         // An audio item can be in multiple formats, we have to convert it to all supported formats, starting with WAV.
+        // Since getUncachedAudioFile/getAudioFile do implicit conversion, so we simply call getAudioFile with the format we want.
         if (replaceExistingFile) {
-//           TODO; find a way to normalize for all audio formats
-
-            // Since getUncachedAudioFile/getAudioFile do implicit conversion, so we simply call getAudioFile with the format we want.
             ACMConfiguration.getInstance().getCurrentDB().getRepository().getUncachedAudioFile(audioItem, AudioItemRepository.AudioFormat.MP3);
             ACMConfiguration.getInstance().getCurrentDB().getRepository().getUncachedAudioFile(audioItem, AudioItemRepository.AudioFormat.A18);
 
@@ -81,6 +71,20 @@ public class FFMpegConverter extends BaseAudioConverter {
 
         return result;
     }
+
+    private double convertVolumeToLUFS(double volumeLevel) {
+        // Assuming a linear mapping from 0-100 to LUFS values in the range of -23 to -1
+        double slope = 0.23;    // 0.21 LUFS per volume unit
+        double intercept = -23.0; // -24.0 LUFS is the lowest possible value
+
+        // Perform the linear conversion
+        volumeLevel = Math.min(Math.max(volumeLevel, 0.0), 100.0); // Ensure that the volume level is within the desired range (0-100)
+        double lufsValue = slope * volumeLevel + intercept;
+
+        // Ensure that the result is within the desired LUFS range (-23 to -1)
+        return Math.min(Math.max(lufsValue, -23.0), -1.0);
+    }
+
 
     @Override
     public ConversionResult doConvertFile(File sourceFile, File targetDir,

@@ -779,7 +779,7 @@ public class AudioItemVolumeNormalizationDialog extends JDialog {
 
             for (AudioItem item : this.selectedAudioItems) {
                 FFMpegConverter converter = new FFMpegConverter();
-                BaseAudioConverter.ConversionResult result = converter.normalizeVolume(item, true);
+                BaseAudioConverter.ConversionResult result = converter.normalizeVolume(item, false, titleEdit.getText().trim());
             }
 //          System.out.println(result.outputFile.getAbsolutePath());
         } catch (Exception e) {
