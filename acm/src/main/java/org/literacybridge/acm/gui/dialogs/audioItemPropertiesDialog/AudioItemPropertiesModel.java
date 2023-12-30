@@ -1,24 +1,5 @@
 package org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog;
 
-import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_PUBLISHER;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_RELATION;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_SOURCE;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_BENEFICIARY;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_DATE_RECORDED;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_DURATION;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_ENGLISH_TRANSCRIPTION;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_GOAL;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_KEYWORDS;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_MESSAGE_FORMAT;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_NOTES;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_PRIMARY_SPEAKER;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_STATUS;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_TARGET_AUDIENCE;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_TIMING;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +11,7 @@ import java.util.logging.Logger;
 import javax.swing.table.AbstractTableModel;
 
 import org.apache.commons.lang3.StringUtils;
+import org.literacybridge.acm.audioconverter.converters.FFMpegConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
@@ -45,6 +27,8 @@ import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 import com.google.common.collect.Maps;
+
+import static org.literacybridge.acm.store.MetadataSpecification.*;
 
 public class AudioItemPropertiesModel extends AbstractTableModel {
   private static final Logger LOG = Logger
@@ -108,6 +92,42 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
     // TODO: calculate duration of audio item
     audioItemPropertiesObject
         .add(new AudioItemProperty.MetadataProperty(LB_DURATION, false));
+
+
+        audioItemPropertiesObject.add(new AudioItemProperty(true) {
+            @Override
+            public String getName() {
+                return "Volume";
+            }
+
+            @Override
+            public String getValue(AudioItem audioItem) {
+                MetadataValue<String> value = audioItem.getMetadata()
+                        .getMetadataValue(LB_VOLUME);
+                if (value == null) {
+                    return "100";
+                }
+
+                return value.getValue();
+            }
+
+            @Override
+            public void setValue(AudioItem audioItem, Object newValue) {
+//                TODO; modify audio file on disk
+                // Update audio volume to new value
+                try {
+                      FFMpegConverter converter = new FFMpegConverter();
+                converter.normalizeVolume(audioItem, false, newValue.toString());
+                // Update volume field if conversion completed successfully
+                  audioItem.getMetadata().putMetadataField(
+                            LB_VOLUME, new MetadataValue<>(newValue.toString()));
+                } catch (Exception e) {
+//                    throw new RuntimeException(e);
+                    e.printStackTrace();
+                }
+            }
+        });
+
     audioItemPropertiesObject.add(new AudioItemProperty(false, true) {
       @Override
       public String getName() {
