@@ -72,8 +72,6 @@ public class AudioItemContextMenuDialog extends JDialog {
     FlatButton exportMetadataButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.EXPORT_DATA_TYPE.Metadata);
     FlatButton deleteButton = makeDeleteButton(selectedAudioItems, labelPostfix);
     FlatButton languageButton = makeLanguageButton(selectedAudioItems, labelPostfix);
-    FlatButton normalizeVolumeButton = makeNormalizeVolumeButton(selectedAudioItems, labelPostfix);
-
 
 
     setLayout(grid);
@@ -88,7 +86,6 @@ public class AudioItemContextMenuDialog extends JDialog {
     exportMetadataButton.setBorder(border);
     deleteButton.setBorder(border);
     languageButton.setBorder(border);
-    normalizeVolumeButton.setBorder(border);
 
     add(renameButton);
     add(editButton);
@@ -99,7 +96,6 @@ public class AudioItemContextMenuDialog extends JDialog {
     add(exportMetadataButton);
     add(deleteButton);
     add(languageButton);
-    add(normalizeVolumeButton);
 
     addWindowListener(windowListener);
     addKeyListener(keyListener);
@@ -298,47 +294,6 @@ public class AudioItemContextMenuDialog extends JDialog {
     return renameButton;
   }
 
-
-  /**
-   * Make a button to invoke the rename dialog.
-   * @param selectedAudioItems Audio Items that would be renamed.
-   * @param labelPostfix A description of the item(s).
-   * @return the button.
-   */
-  private FlatButton makeNormalizeVolumeButton(final AudioItem[] selectedAudioItems, String labelPostfix) {
-    Color backgroundColor = Application.getApplication().getBackground();
-    Color highlightedColor = SystemColor.textHighlight;
-    // TODO: change icon
-    ImageIcon renameImageIcon = new ImageIcon(
-            UIConstants.getResource("rename-16.png"));
-    final String selectedTitle = getMetadataTitle(selectedAudioItems[0]);
-    String buttonLabel = String.format("Modify volume of '%s'", labelPostfix);
-
-    FlatButton normalizeButton = new FlatButton(buttonLabel, renameImageIcon, backgroundColor, highlightedColor) {
-      @Override
-      public void click() {
-        System.out.println("Clicked here");
-
-//        try {
-////          File f = ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(selectedAudioItems[0], AudioItemRepository.AudioFormat.MP3);
-//
-//          FFMpegConverter converter = new FFMpegConverter();
-//         BaseAudioConverter.ConversionResult result= converter.normalizeVolume(selectedAudioItems[0], true);
-////          System.out.println(result.outputFile.getAbsolutePath());
-//        } catch (Exception e) {
-//          throw new RuntimeException(e);
-//        }
-// TODO: Find audio file and use ffmpeg to normalize it
-        AudioItemContextMenuDialog.this.setVisible(false);
-        AudioItemVolumeNormalizationDialog dialog = new AudioItemVolumeNormalizationDialog(
-                Application.getApplication(),  selectedAudioItems);
-        // Place the new dialog within the application frame.
-        dialog.setLocation(Application.getApplication().getX()+20, Application.getApplication().getY()+20);
-        dialog.setVisible(true);
-      }
-    };
-    return normalizeButton;
-  }
 
   /**
    * Makes the button to handle editing one audio item
