@@ -115,7 +115,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
             public void setValue(AudioItem audioItem, Object newValue) {
                 try {
                     FFMpegConverter converter = new FFMpegConverter();
-                    converter.normalizeVolume(audioItem, false, newValue.toString());
+                    converter.normalizeVolume(audioItem,  newValue.toString());
                     // Update volume field if conversion completed successfully
                     audioItem.getMetadata().putMetadataField(
                             LB_VOLUME, new MetadataValue<>(newValue.toString()));

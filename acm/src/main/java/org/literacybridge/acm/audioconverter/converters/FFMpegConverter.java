@@ -23,15 +23,25 @@ public class FFMpegConverter extends BaseAudioConverter {
         super(TARGET_EXTENSION);
     }
 
-    public ConversionResult normalizeVolume(AudioItem audioItem, Boolean replaceExistingFile, String volumeLevel)
+    /**
+     * Normalises the volume of the given audio item using ffpemg's loudnorm filter. The normalised audio is converted
+     * to all supported formats and replaces the original audio item (cached audio file is used in sandbox mode)
+     *
+     * @param audioItem AudioItem to be normalized
+     * @param volumeLevel Desired volume level, in the range of 0-100. Value is translated to a LUFS value in the range of -23 to -1.
+     * @throws ConversionException
+     * @throws IOException
+     * @throws AudioItemRepository.UnsupportedFormatException
+     */
+    public void normalizeVolume(AudioItem audioItem, String volumeLevel)
             throws ConversionException, IOException, AudioItemRepository.UnsupportedFormatException {
         File sourceFile = null;
 
-        // TODO: Get cached file if we are in demo mode
-        if (replaceExistingFile) {
-            sourceFile = ACMConfiguration.getInstance().getCurrentDB().getRepository().getUncachedAudioFile(audioItem, AudioItemRepository.AudioFormat.WAV);
-        } else {
+        // If in sandbox mode, use the cached file, otherwise use the uncached file
+        if (ACMConfiguration.getInstance().isForceSandbox()) {
             sourceFile = ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioItemRepository.AudioFormat.WAV);
+        } else {
+            sourceFile = ACMConfiguration.getInstance().getCurrentDB().getRepository().getUncachedAudioFile(audioItem, AudioItemRepository.AudioFormat.WAV);
         }
 
         // Create a temp file to write the output to, then replace the source file with the temp file
@@ -56,20 +66,18 @@ public class FFMpegConverter extends BaseAudioConverter {
         // Replace the source file with the temporary file
         Files.move(Paths.get(tempFilePath), Paths.get(sourceFile.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
 
-        // TODO: not in demo mode
         // An audio item can be in multiple formats, we have to convert it to all supported formats, starting with WAV.
         // Since getUncachedAudioFile/getAudioFile do implicit conversion, so we simply call getAudioFile with the format we want.
-        if (replaceExistingFile) {
+        if (ACMConfiguration.getInstance().isForceSandbox()) {
+            ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioItemRepository.AudioFormat.MP3);
+            ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioItemRepository.AudioFormat.A18);
+        } else {
             ACMConfiguration.getInstance().getCurrentDB().getRepository().getUncachedAudioFile(audioItem, AudioItemRepository.AudioFormat.MP3);
             ACMConfiguration.getInstance().getCurrentDB().getRepository().getUncachedAudioFile(audioItem, AudioItemRepository.AudioFormat.A18);
 
-        } else {
-            ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioItemRepository.AudioFormat.MP3);
-            ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioItemRepository.AudioFormat.A18);
         }
         System.out.printf("Conversion to 'wav' result: %s\n%n", result.response);
 
-        return result;
     }
 
     private double convertVolumeToLUFS(double volumeLevel) {
