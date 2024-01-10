@@ -46,23 +46,28 @@ public class LBMetadataSerializer {
     int serializedVersion = IOUtils.readLittleEndian32(in);
     int numberOfFields = IOUtils.readLittleEndian32(in);
 
-    for (int i = 0; i < numberOfFields; i++) {
-      int fieldID = IOUtils.readLittleEndian16(in);
-      int fieldLength = IOUtils.readLittleEndian32(in);
+    try{
+      for (int i = 0; i < numberOfFields; i++) {
+        int fieldID = IOUtils.readLittleEndian16(in);
+        int fieldLength = IOUtils.readLittleEndian32(in);
 
-      if (fieldID == LBMetadataIDs.CATEGORY_FIELD_ID) {
-        deserializeCategories(taxonomy, categories, in);
-      } else {
-        MetadataField<?> field = LBMetadataIDs.FieldToIDMap.inverse()
-            .get(fieldID);
-        if (field == null) {
-          // unknown field - for forward-compatibility we must skip it
-          in.skipBytes(fieldLength);
+        if (fieldID == LBMetadataIDs.CATEGORY_FIELD_ID) {
+          deserializeCategories(taxonomy, categories, in);
         } else {
-          deserializeField(metadata, field, in);
+          MetadataField<?> field = LBMetadataIDs.FieldToIDMap.inverse()
+                  .get(fieldID);
+          if (field == null) {
+            // unknown field - for forward-compatibility we must skip it
+            in.skipBytes(fieldLength);
+          } else {
+            deserializeField(metadata, field, in);
+          }
         }
       }
+    } catch (IOException e){
+      e.printStackTrace();;
     }
+
   }
 
   private final <T> void deserializeField(Metadata metadata,

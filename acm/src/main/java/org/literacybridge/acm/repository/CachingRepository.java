@@ -69,6 +69,17 @@ class CachingRepository implements FileRepositoryInterface {
         }
     }
 
+    /**
+     * TODO: add javadoc
+     *
+     * @param audioItem
+     * @param format
+     * @return
+     */
+    public File resolveUncachedFile(AudioItem audioItem, AudioFormat format) {
+        return sandboxingRepository.resolveFile(audioItem, format, true);
+    }
+
     @Override
     public List<String> getAudioItemIds() {
         List<String> result = new ArrayList<>();

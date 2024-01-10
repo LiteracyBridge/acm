@@ -3,6 +3,7 @@ package org.literacybridge.acm.repository;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FilenameUtils;
+import org.literacybridge.acm.audioconverter.api.AudioConversionFormat;
 import org.literacybridge.acm.audioconverter.api.ExternalConverter;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
@@ -199,6 +200,20 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
                                                                                    ConversionException,
                                                                                    UnsupportedFormatException {
         File file = resolveFile(audioItem, format, false);
+        System.out.println(file.getAbsolutePath());
+
+        if (file == null || !file.exists() || forceConversion(file, format)) {
+            file = convertAudioItem(audioItem, format);
+        }
+        return file;
+    }
+
+    public synchronized File getUncachedAudioFile(AudioItem audioItem, AudioFormat format) throws
+            ConversionException,
+            UnsupportedFormatException {
+        File file = audioFileRepository.resolveUncachedFile(audioItem, format);
+        System.out.println(file.getAbsolutePath());
+
         if (file == null || !file.exists() || forceConversion(file, format)) {
             file = convertAudioItem(audioItem, format);
         }

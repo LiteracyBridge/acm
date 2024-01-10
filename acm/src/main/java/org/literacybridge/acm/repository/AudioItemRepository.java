@@ -33,6 +33,10 @@ public interface AudioItemRepository {
                                                                BaseAudioConverter.ConversionException,
                                                                UnsupportedFormatException;
 
+    File getUncachedAudioFile(AudioItem audioItem, AudioFormat format) throws
+            BaseAudioConverter.ConversionException,
+            UnsupportedFormatException;
+
     String getAudioFilename(AudioItem audioItem, AudioFormat audioFormat);
 
     /**

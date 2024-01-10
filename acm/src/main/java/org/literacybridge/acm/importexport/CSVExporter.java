@@ -19,27 +19,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import static org.literacybridge.acm.store.LBMetadataIDs.FieldToIDMap;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_PUBLISHER;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_RELATION;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_SOURCE;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
-import static org.literacybridge.acm.store.MetadataSpecification.DTB_REVISION;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_BENEFICIARY;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_DATE_RECORDED;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_DURATION;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_ENGLISH_TRANSCRIPTION;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_GOAL;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_KEYWORDS;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_MESSAGE_FORMAT;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_NOTES;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_PRIMARY_SPEAKER;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_SDG_GOALS;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_SDG_TARGETS;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_STATUS;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_TARGET_AUDIENCE;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_TIMING;
+import static org.literacybridge.acm.store.MetadataSpecification.*;
 
 public class CSVExporter {
     private static final Logger LOG = Logger.getLogger(CSVExporter.class.getName());
@@ -69,7 +49,7 @@ public class CSVExporter {
             // categories are stuffed here
             null,  // quality is stuffed here
             null,  // project is stuffed here
-            LB_SDG_GOALS, LB_SDG_TARGETS };
+            LB_SDG_GOALS, LB_SDG_TARGETS, LB_VOLUME };
 
     private static final int CATEGORY_COLUMN_INDEX = 19;
     private static final int QUALITY_COLUMN_INDEX = 20;
