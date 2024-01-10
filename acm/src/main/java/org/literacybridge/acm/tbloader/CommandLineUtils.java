@@ -13,9 +13,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CommandLineUtils extends FileSystemUtilities {
-    private static final Logger LOG = Logger.getLogger(CommandLineUtils.class.getName());
+    //private static final Logger LOG = Logger.getLogger(CommandLineUtils.class.getName());
     private final File windowsUtilsDirectory;
-
+    
     private static final long CHKDSK_TIMEOUT = 60 * 1000;
 
     public CommandLineUtils(File softwareDir) {
@@ -63,13 +63,6 @@ public class CommandLineUtils extends FileSystemUtilities {
             throw new IllegalStateException("relabel operation is only supported on Windows");
         }
         return super.relabel(drive, newLabel);
-    }
-
-    @Override
-    public boolean disconnectDrive(String drive) throws IOException {
-        String cmd = String.format("%s %s",new File(windowsUtilsDirectory, "RemoveDrive.exe") ,drive);
-        String errorLine = execute(cmd);
-        return errorLine == null;
     }
 
     public boolean hasDfuDriver() {
@@ -199,7 +192,7 @@ public class CommandLineUtils extends FileSystemUtilities {
         }
     }
 
-    private static class FileSystemCheck implements BiFunction<Writer, ExternalCommandRunner.LineReader, Boolean> {
+    private static class FileSystemCheck implements BiFunction<Writer, ExternalCommandRunner.LineReader, RESULT> {
         private static final Pattern NO_PROBLEMS = Pattern.compile("(?i).*(?:Windows has scanned the file system and found no problem|Windows a analys.* le syst.*me de fichiers sans trouver de probl.*).*");
         private static final Pattern CONVERT_CHAINS = Pattern.compile("(?i).*(?:(?:files.*|chains.*){2}|Convertir les liens perdus en fichiers).*\\?");
         private static final Pattern FOUND_ERRORS = Pattern.compile("(?i).*(?:Windows found errors on the disk, but will not fix them|Windows a trouv.* des erreurs sur le disque, mais ne les corrigera pas).*");
@@ -224,20 +217,28 @@ public class CommandLineUtils extends FileSystemUtilities {
 
         private boolean hasErrors = false;
         private boolean hasNoProblems = false;
-        private Boolean result = null;
+
+        private RESULT result = RESULT.TIMEOUT;
+
 
         private static RESULT checkDisk(String volume) throws FileNotFoundException {
             FileSystemCheck fsck = new FileSystemCheck(null);
             String[] command = new String[]{"chkdsk", volume};
-            Boolean result = ExternalCommandRunner.run(command, fsck, CHKDSK_TIMEOUT);
-            return RESULT.result(result);
+            RESULT result = ExternalCommandRunner.run(command, fsck, CHKDSK_TIMEOUT);
+            if (result == null) {
+                result = RESULT.TIMEOUT;
+            }
+            return result;
         }
 
         private static RESULT checkDiskAndFix(String volume, String logfileName) throws FileNotFoundException {
             FileSystemCheck fsck = new FileSystemCheck(logfileName);
             String[] command = new String[]{"chkdsk", "/f", volume};
-            Boolean result = ExternalCommandRunner.run(command, fsck, CHKDSK_TIMEOUT);
-            return RESULT.result(result);
+            RESULT result = ExternalCommandRunner.run(command, fsck, CHKDSK_TIMEOUT);
+            if (result == null) {
+                result = RESULT.TIMEOUT;
+            }
+            return result;
         }
 
         private FileSystemCheck(String logfileName) throws FileNotFoundException {
@@ -248,10 +249,10 @@ public class CommandLineUtils extends FileSystemUtilities {
          * Waits for chkdsk output.
          *
          * @param stream Output from the chkdsk command programmer.
-         * @return true if the chkdsk completes; false if it fails to complete.
+         * @return result the chkdsk operation
          */
         @Override
-        public Boolean apply(Writer writer, ExternalCommandRunner.LineReader stream) {
+        public RESULT apply(Writer writer, ExternalCommandRunner.LineReader stream) {
             lineReader = stream;
             try {
                 String programOutputLine;
@@ -275,23 +276,18 @@ public class CommandLineUtils extends FileSystemUtilities {
                 System.out.println("Got EOF on chkdsk output.");
             } catch (IOException ignored) {
             }
-            if (hasNoProblems) {
-                return true;
-            }
-            if (hasErrors) {
-                return false;
-            }
             return result;
         }
 
         private void noProblems(Writer writer, Matcher matcher) {
-            System.out.printf("Found 'no problems'.");
+            System.out.print("Found 'no problems'.");
             hasNoProblems = true;
-            result = true;
+            result = RESULT.SUCCESS;
         }
 
         private void insufficientPrivileges(Writer writer, Matcher matcher) {
             hasErrors = true;
+            result = RESULT.ACCESS_DENIED;
         }
 
         private void gotConvertChains(Writer writer, Matcher matcher) {
@@ -305,7 +301,7 @@ public class CommandLineUtils extends FileSystemUtilities {
             reply(response, writer, matcher);
         }
 
-        private void reply(String reply, Writer writer, Matcher matcher) {
+        private void reply(String reply, Writer writer, Matcher unused) {
             try {
                 writer.write(reply);
                 writer.flush();
@@ -316,11 +312,11 @@ public class CommandLineUtils extends FileSystemUtilities {
 
         private void foundErrors(Writer writer, Matcher matcher) {
             hasErrors = true;
-            result = false;
+            result = RESULT.FAILURE;
         }
         private void noFParam(Writer writer, Matcher matcher) {
             hasErrors = true;
-            result = false;
+            result = RESULT.FAILURE;
         }
 
         private void percentComplete(Writer writer, Matcher matcher) {

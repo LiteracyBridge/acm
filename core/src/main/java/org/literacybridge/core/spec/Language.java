@@ -4,7 +4,7 @@ import java.text.ParseException;
 import java.util.Map;
 
 public class Language {
-    final static String[] FILENAMES = new String[] { "pub_languages.csv", "languages.csv", "language_spec.csv" };
+    final static String[] FILENAMES = new String[] { "pub_languages.csv" };
 
     public enum columns {
         code, name

@@ -22,7 +22,9 @@ cp -av ../acm/dist/ctrl-all.jar ./ACM/
 # Combined version properties
  cat ../acm/dist/build.properties ../../S3Sync/dist/s3sync.properties >./ACM/build.properties
 # Include TBv2 artifacts
- shasum system.v2/csm_data.txt >>./ACM/build.properties
+ if [ -e system.v2/control_def.csm ]; then
+   shasum system.v2/control_def.csm >>./ACM/build.properties
+ fi
  cat firmware.v2/firmware_built.txt >>./ACM/build.properties
  echo "$(shasum bats/*|shasum) bats" >>./ACM/build.properties
 

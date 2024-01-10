@@ -500,7 +500,7 @@ public class TBLoader extends JFrame {
         Properties deploymentProperties = getProgramSpec().getDeploymentProperties();
         // If the deployment properties doesn't have a map of language-variant to package, always allow the user
         // to select the package, since we can't reliably do it automatically.
-        tbLoaderConfig.allowPackageChoice |= deploymentProperties.size()==0;
+        tbLoaderConfig.allowPackageChoice |= deploymentProperties.isEmpty();
         packagesInDeployment = getPackagesInDeployment(deploymentDir);
         List<String> packagesList = Arrays.asList(packagesInDeployment);
         Map<String,String> packageNameMap = deploymentProperties.stringPropertyNames().stream()
@@ -1007,7 +1007,7 @@ public class TBLoader extends JFrame {
         if (index==-1 && lastMatchIndex!=-1) {
             index=lastMatchIndex;
         }
-        if (newList.size() == 0) {
+        if (newList.isEmpty()) {
             LOG.log(Level.INFO, "No drives");
             newList.add(new TbDeviceInfoHolder(null, null));
             index = 0;
@@ -1385,6 +1385,12 @@ public class TBLoader extends JFrame {
                     endMsg = String.format("TB-Loader was unable to check the storage on the Talking Book device.\nPlease run 'chkdsk /f %s' and try again",
                             letter);
                     endTitle = "Device Check Error";
+                } else if (currentTbDevice.isFsAccessDenied()) {
+                    String letter = currentTbDevice.getDriveLetter();
+                    endMsg = String.format("Due to Windows Security, TB-Loader was unable to check the storage on the Talking Book device.\n" +
+                                    "If there are problems with the device, please run 'chkdsk /f %s' (as Administrator) and try again",
+                            letter);
+                    endTitle = "Device Check Error";
                 } else if (result != null && result.gotStatistics) {
                     endMsg = "Got Stats!";
                     endTitle = "Success";
@@ -1524,6 +1530,12 @@ public class TBLoader extends JFrame {
                 if (currentTbDevice.isFsCheckTimeout()) {
                     String letter = currentTbDevice.getDriveLetter();
                     endMsg = String.format("TB-Loader was unable to check the storage on the Talking Book device.\nPlease run 'chkdsk /f %s' and try again",
+                            letter);
+                    endTitle = "Device Check Error";
+                } else if (currentTbDevice.isFsAccessDenied()) {
+                    String letter = currentTbDevice.getDriveLetter();
+                    endMsg = String.format("Due to Windows Security, TB-Loader was unable to check the storage on the Talking Book device.\n" +
+                                    "If there are problems with the device, please run 'chkdsk /f %s' (as Administrator) and try again",
                             letter);
                     endTitle = "Device Check Error";
                 } else if (result.corrupted

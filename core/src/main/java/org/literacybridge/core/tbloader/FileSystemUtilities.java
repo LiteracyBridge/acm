@@ -14,8 +14,12 @@ import java.util.regex.Pattern;
 public class FileSystemUtilities {
   private  final Logger LOG = Logger.getLogger(FileSystemUtilities.class.getName());
 
-  public enum RESULT { SUCCESS, FAILURE, TIMEOUT;
+  public enum RESULT { SUCCESS("success"), FAILURE("failure"), TIMEOUT("timeout"), ACCESS_DENIED("access denied");
 
+    RESULT(String label) {
+      this.label = label;
+    }
+    public final String label;
     public boolean isSuccess() {
       return this == SUCCESS;
     }
@@ -24,6 +28,9 @@ public class FileSystemUtilities {
     }
     public boolean isTimeout() {
       return this == TIMEOUT;
+    }
+    public boolean isAccessDenied() {
+      return this == ACCESS_DENIED;
     }
     public static RESULT result(Boolean result) {
       if (result == null) {
@@ -168,9 +175,4 @@ public class FileSystemUtilities {
     return errorLine == null;
   }
 
-  public  boolean disconnectDrive(String drive) throws IOException {
-    String cmd = String.format("%s %s",new File(windowsUtilsDirectory, "RemoveDrive.exe") ,drive);
-    String errorLine = execute(cmd);
-    return errorLine == null;
-  }
 }
