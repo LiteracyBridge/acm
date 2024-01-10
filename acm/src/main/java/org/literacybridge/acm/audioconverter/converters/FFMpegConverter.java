@@ -27,7 +27,7 @@ public class FFMpegConverter extends BaseAudioConverter {
      * Normalises the volume of the given audio item using ffpemg's loudnorm filter. The normalised audio is converted
      * to all supported formats and replaces the original audio item (cached audio file is used in sandbox mode)
      *
-     * @param audioItem AudioItem to be normalized
+     * @param audioItem   AudioItem to be normalized
      * @param volumeLevel Desired volume level, in the range of 0-100. Value is translated to a LUFS value in the range of -23 to -1.
      * @throws ConversionException
      * @throws IOException
@@ -80,6 +80,15 @@ public class FFMpegConverter extends BaseAudioConverter {
 
     }
 
+    /**
+     * Converts a volume level to Loudness Units Full Scale (LUFS) using a linear mapping.
+     * <p>
+     * The function assumes a linear mapping from a volume level in the range of 0-100 to LUFS values
+     * in the range of -23 to -1. The conversion is performed using the formula: LUFS = slope * volume + intercept.
+     *
+     * @param volumeLevel The input volume level to be converted to LUFS. Should be in the range of 0 to 100 (clamped to this range if not).
+     * @return The corresponding LUFS value after the linear conversion. The result is clamped to the range of -23 to -1.
+     */
     private double convertVolumeToLUFS(double volumeLevel) {
         // Assuming a linear mapping from 0-100 to LUFS values in the range of -23 to -1
         double slope = 0.23;    // 0.21 LUFS per volume unit
