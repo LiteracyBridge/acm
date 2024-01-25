@@ -19,18 +19,8 @@ import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.sortedset.DefaultSortedSetDocValuesReaderState;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.*;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
-import org.apache.lucene.index.LeafReader;
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.PostingsEnum;
-import org.apache.lucene.index.SegmentInfos;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.Terms;
-import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Collector;
@@ -44,23 +34,20 @@ import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.store.ChecksumIndexInput;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.IOContext;
 import org.apache.lucene.util.BytesRef;
 import org.javatuples.Pair;
+import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.DBConfiguration;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -73,6 +60,10 @@ public class AudioItemIndex {
   public static final String UID_FIELD = "uid";
   public static final String CATEGORIES_FIELD = "categories";
   public static final String CATEGORIES_FACET_FIELD = "categories_facet";
+  public static final String SYSTEM_PROMPTS_FIELD = "systemprompts";
+  public static final String SYSTEM_PROMPTS_FACET_FIELD = "systemprompts_facet";
+  public static final String SYSTEM_PROMPT_NAMES_COMMIT_DATA = "systemprompts_names";
+  public static final String MAX_SYSTEM_PROMPTS_UID_COMMIT_DATA = "max_systemprompts_uuid";
   public static final String PLAYLISTS_FIELD = "playlists";
   public static final String PLAYLISTS_FACET_FIELD = "playlists_facet";
   public static final String LOCALES_FIELD = "locales";
@@ -97,18 +88,20 @@ public class AudioItemIndex {
   private final Taxonomy taxonomy;
 
   private int currentMaxPlaylistUuid;
+  private int currentMaxPromptsUuid;
 
   private AudioItemIndex(Directory dir, Taxonomy taxonomy) throws IOException {
-    this.dir = dir;
-    this.taxonomy = taxonomy;
+      this.dir = dir;
+      this.taxonomy = taxonomy;
 
-    facetsConfig = new FacetsConfig();
-    facetsConfig.setMultiValued(AudioItemIndex.CATEGORIES_FACET_FIELD, true);
-    facetsConfig.setMultiValued(AudioItemIndex.LOCALES_FACET_FIELD, true);
-    facetsConfig.setMultiValued(AudioItemIndex.PLAYLISTS_FACET_FIELD, true);
+      facetsConfig = new FacetsConfig();
+      facetsConfig.setMultiValued(AudioItemIndex.CATEGORIES_FACET_FIELD, true);
+      facetsConfig.setMultiValued(AudioItemIndex.LOCALES_FACET_FIELD, true);
+      facetsConfig.setMultiValued(AudioItemIndex.PLAYLISTS_FACET_FIELD, true);
+      facetsConfig.setMultiValued(AudioItemIndex.SYSTEM_PROMPTS_FACET_FIELD, true);
 
-    queryAnalyzer = new QueryAnalyzer();
-    searcherManager = new SearcherManager(dir, new SearcherFactory());
+      queryAnalyzer = new QueryAnalyzer();
+      searcherManager = new SearcherManager(dir, new SearcherFactory());
       // Here in the AudioItemIndex constructor, there should be (can be?) no pending transaction, so even
       // though readPlaylistNames() can't see into pending transactions, what it reads will be complete.
       //
@@ -628,6 +621,7 @@ public class AudioItemIndex {
       Map<String, Integer> categoryFacets = Maps.newHashMap();
       Map<String, Integer> localeFacets = Maps.newHashMap();
       Map<String, Integer> playlistFacets = Maps.newHashMap();
+      Map<String, Integer> promptsFacets = Maps.newHashMap();
 
       try {
         SortedSetDocValuesFacetCounts facetCounts = new SortedSetDocValuesFacetCounts(
@@ -652,6 +646,11 @@ public class AudioItemIndex {
             }
 
           }
+          if (r.dim.equals(SYSTEM_PROMPTS_FACET_FIELD)) {
+            for (LabelAndValue lv : r.labelValues) {
+              promptsFacets.put(lv.label, lv.value.intValue());
+            }
+          }
         }
       } catch (IllegalArgumentException e) {
         // With empty indexes it can happen that Lucene throws an exception here
@@ -660,7 +659,7 @@ public class AudioItemIndex {
 
       SearchResult result = new SearchResult(
           searcher.getIndexReader().numDocs(), categoryFacets, localeFacets,
-          playlistFacets, Lists.newArrayList(results));
+          playlistFacets, promptsFacets, Lists.newArrayList(results));
 
       return result;
     } finally {

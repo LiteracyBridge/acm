@@ -1,36 +1,65 @@
 package org.literacybridge.acm.store;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.*;
 
 import com.google.common.collect.Lists;
+import com.opencsv.CSVReader;
+import org.apache.commons.io.input.BOMInputStream;
+import org.literacybridge.acm.gui.assistants.PromptsImport.PromptImportAssistant;
+import org.literacybridge.acm.gui.assistants.PromptsImport.PromptTarget;
+import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
 
 public abstract class MetadataStore {
-  private final Taxonomy taxonomy;
+    private final Taxonomy taxonomy;
 
-  private final List<DataChangeListener> dataChangeListeners;
-  private boolean haveChanges = false;
-  private long changeCount = 0L;
+    private final List<DataChangeListener> dataChangeListeners;
+    private boolean haveChanges = false;
+    private long changeCount = 0L;
 
-  public abstract Transaction newTransaction();
+    Map<String, PromptsInfo.PromptInfo> promptsMap = new LinkedHashMap<>();
 
-  public abstract AudioItem newAudioItem(String uid);
+    public static final String PROMPTS_FILE_NAME = "prompts_ex.csv";
+    public void loadPromptsInfo() {
+        InputStream csvStream = PromptImportAssistant.class.getClassLoader()
+                .getResourceAsStream(PROMPTS_FILE_NAME);
+        try (BOMInputStream bis = new BOMInputStream(csvStream);
+             Reader ir = new InputStreamReader(bis);
+             CSVReader reader = new CSVReader(ir)) {
+            Collection<PromptsInfo.PromptInfo> prompts = new LinkedList<>();
+            for (String[] line : reader.readAll()) {
+                prompts.add(new PromptsInfo.PromptInfo(line));
+            }
+            prompts.forEach(i->promptsMap.put(i.getId(), i));
+        } catch (Exception ignored) {
+            // Ignore
+        }
+    }
 
-  public abstract AudioItem getAudioItem(String uid);
+    public Map<String, PromptsInfo.PromptInfo> getPromptsMap() {
+        return this.promptsMap;
+    }
 
-  public abstract void deleteAudioItem(String uid);
+    public abstract Transaction newTransaction();
 
-  public abstract Collection<AudioItem> getAudioItems();
+    public abstract AudioItem newAudioItem(String uid);
 
-  public abstract Playlist newPlaylist(String name);
+    public abstract AudioItem getAudioItem(String uid);
 
-  public abstract Playlist getPlaylist(String uid);
+    public abstract void deleteAudioItem(String uid);
 
-  public abstract Playlist findPlaylistByName(String name);
+    public abstract Collection<AudioItem> getAudioItems();
 
-  public abstract void deletePlaylist(String uid);
+    public abstract Playlist newPlaylist(String name);
+
+    public abstract Playlist getPlaylist(String uid);
+
+    public abstract Playlist findPlaylistByName(String name);
+
+    public abstract void deletePlaylist(String uid);
 
   public abstract Collection<Playlist> getPlaylists();
 

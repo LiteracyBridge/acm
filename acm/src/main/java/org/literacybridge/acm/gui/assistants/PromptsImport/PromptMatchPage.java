@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.assistants.PromptsImport;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.Matcher.AbstractMatchTableModel;
@@ -9,6 +10,7 @@ import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchTableRenderers;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
+import org.literacybridge.acm.store.MetadataStore;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;

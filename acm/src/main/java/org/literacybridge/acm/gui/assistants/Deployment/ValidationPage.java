@@ -1,15 +1,20 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.store.IOContext;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
+import org.literacybridge.acm.gui.assistants.PromptsImport.PromptImportContext;
+import org.literacybridge.acm.gui.assistants.PromptsImport.PromptTarget;
 import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
+import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.tbbuilder.CreateForV2;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
@@ -332,6 +337,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      */
     private void validateSystemPrompts(Collection<String> languages) {
         List<String> required_messages = TBBuilder.getRequiredSystemMessages(context.includeTbTutorial);
+        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+        Map<String, PromptsInfo.PromptInfo> promptsInfoMap = store.getPromptsMap();
 
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         String languagesPath = "TB_Options" + File.separator + "languages";
@@ -343,12 +350,25 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             File languageDir = IOUtils.FileIgnoreCase(languagesDir, language);
             List<Integer> missing = new ArrayList<>();
 
+            Map<String, SystemPrompts> systemPromptsMap = new HashMap<>();
+            context.systemprompts.put(language, systemPromptsMap);
+
             for (String prompt : required_messages) {
                 File p1 = new File(languageDir, prompt + ".a18");
+                //File p2 =
                 if (!p1.exists()) {
                     // We know they're short integers.
                     missing.add(Integer.parseInt(prompt));
+                    //System.out.print("System prompt ");
+                    //System.out.print(p1.getAbsolutePath());
+                    //System.out.println(" not found in file system");
                 }
+
+                // This is for testing reading prompts from repo
+                // Should replace the file format implemented above
+                SystemPrompts tempSystemPrompt = new SystemPrompts(prompt, language);
+                tempSystemPrompt.findPrompts();
+                systemPromptsMap.put(prompt, tempSystemPrompt);
             }
             if (!missing.isEmpty()) {
                 /*
@@ -404,7 +424,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             Map<String, PlaylistPrompts> promptsMap = new HashMap<>();
             context.prompts.put(language, promptsMap);
 
-            // Get all of the playlists with content in this language, and get those playlist titles.
+            // Get all the playlists with content in this language, and get those playlist titles.
             List<String> playlistTitles = languageNode.getPlaylistNodes()
                 .stream()
                 .map(AcmContent.PlaylistNode::getTitle)

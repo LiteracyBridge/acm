@@ -4,6 +4,8 @@ import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.DefaultCheckboxTreeCellRenderer;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingModel;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.literacybridge.acm.config.ACMConfiguration;
@@ -41,6 +43,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -82,6 +85,7 @@ public class SidebarView extends ACMContainer implements Observer {
     private final DefaultMutableTreeNode languageRootNode;
     private final DefaultMutableTreeNode deviceRootNode;
     private final DefaultTreeModel deviceTreeModel;
+    private final DefaultMutableTreeNode promptsRootNode;
 
     private JXTaskPaneContainer taskPaneContainer;
 
@@ -89,7 +93,10 @@ public class SidebarView extends ACMContainer implements Observer {
         CATEGORY(300, false),
         PLAYLIST(120, true),
         LANGUAGE(90, false),
-        DEVICE(50, true);
+        DEVICE(50, true),
+
+        PROMPTS(120, true);
+
         TaskPaneProps(int preferredHeight, boolean initiallyCollapsed) {
             this.preferredSize = new Dimension(150, preferredHeight);
             this.initiallyCollapsed = initiallyCollapsed;
@@ -115,6 +122,8 @@ public class SidebarView extends ACMContainer implements Observer {
         deviceRootNode = new DefaultMutableTreeNode(LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL));
         languageRootNode = new DefaultMutableTreeNode();
         deviceTreeModel = new DefaultTreeModel(deviceRootNode);
+        promptsRootNode = new DefaultMutableTreeNode(LabelProvider.getLabel(LabelProvider.PROMPTS_ROOT_LABEL));
+
         createControls();
     }
 

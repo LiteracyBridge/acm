@@ -28,14 +28,16 @@ public class SearchResult {
   private final Map<String, Integer> categoryFacetCounts;
   private final Map<String, Integer> languageFacetCounts;
   private final Map<String, Integer> playlistFacetCounts;
+  private final Map<String, Integer> promptsFacetCounts;
 
   public SearchResult(int totalNumDocsInIndex, Map<String, Integer> facetCounts,
       Map<String, Integer> languageFacetCounts,
-      Map<String, Integer> playlistFacetCounts, List<String> audioItems) {
+      Map<String, Integer> playlistFacetCounts, Map<String, Integer> promptsFacetCounts, List<String> audioItems) {
     this.totalNumDocsInIndex = totalNumDocsInIndex;
     this.categoryFacetCounts = facetCounts;
     this.languageFacetCounts = languageFacetCounts;
     this.playlistFacetCounts = playlistFacetCounts;
+    this.promptsFacetCounts = promptsFacetCounts;
     this.audioItems = Sets.newLinkedHashSet(audioItems);
   }
 
@@ -76,6 +78,20 @@ public class SearchResult {
       return 0;
     }
     Integer count = languageFacetCounts.get(languageCode);
+    if (count == null) {
+      return 0;
+    } else {
+      return count;
+    }
+  }
+
+  public int getSystemPromptsFacetCount(String systemPrompt) {
+    if (systemPrompt == null) {
+      return 0;
+    }
+
+    Integer count = promptsFacetCounts.get(systemPrompt);
+    //return count ? count : 0;
     if (count == null) {
       return 0;
     } else {

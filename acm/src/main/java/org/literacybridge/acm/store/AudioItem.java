@@ -22,10 +22,10 @@ public class AudioItem extends Committable {
   private final Map<String, Playlist> playlists;
 
   AudioItem(String id) {
-    this.id = id;
-    this.metadata = new Metadata();
-    this.categories = Maps.newHashMap();
-    this.playlists = Maps.newHashMap();
+      this.id = id;
+      this.metadata = new Metadata();
+      this.categories = Maps.newHashMap();
+      this.playlists = Maps.newHashMap();
   }
 
   public final String getId() {

@@ -4,11 +4,7 @@ import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,39 +21,40 @@ public class LuceneMetadataStore extends MetadataStore {
 
   public LuceneMetadataStore(Taxonomy taxonomy, File indexDirectory)
       throws IOException {
-    super(taxonomy);
-    // initialize Lucene index
-    if (!AudioItemIndex.indexExists(indexDirectory)) {
-      this.index = AudioItemIndex.newIndex(indexDirectory, taxonomy);
-    } else {
-      this.index = AudioItemIndex.load(indexDirectory, taxonomy);
-    }
-
-    this.playlistCache = Maps.newLinkedHashMap();
-    this.audioItemCache = Maps.newLinkedHashMap();
-
-    // fill caches
-    try {
-      Iterable<AudioItem> audioItems = index.getAudioItems();
-      for (AudioItem audioItem : audioItems) {
-        audioItemCache.put(audioItem.getId(), audioItem);
+      super(taxonomy);
+      // initialize Lucene index
+      if (!AudioItemIndex.indexExists(indexDirectory)) {
+          this.index = AudioItemIndex.newIndex(indexDirectory, taxonomy);
+      } else {
+        this.index = AudioItemIndex.load(indexDirectory, taxonomy);
       }
 
-      Iterable<Playlist> playlists = index.getPlaylists();
-      for (Playlist playlist : playlists) {
-        playlistCache.put(playlist.getId(), playlist);
-        for (String uid : playlist.getAudioItemList()) {
-          AudioItem audioItem = audioItemCache.get(uid);
-          if (audioItem != null) {
-            audioItem.addPlaylist(playlist);
-            audioItemCache.put(audioItem.getId(), audioItem);
+      this.playlistCache = Maps.newLinkedHashMap();
+      this.audioItemCache = Maps.newLinkedHashMap();
+
+      // fill caches
+      try {
+          Iterable<AudioItem> audioItems = index.getAudioItems();
+          for (AudioItem audioItem : audioItems) {
+              audioItemCache.put(audioItem.getId(), audioItem);
           }
-        }
-      }
 
-    } catch (IOException e) {
-      throw new RuntimeException("Unable to initialize caches", e);
-    }
+          Iterable<Playlist> playlists = index.getPlaylists();
+          for (Playlist playlist : playlists) {
+              playlistCache.put(playlist.getId(), playlist);
+              for (String uid : playlist.getAudioItemList()) {
+                  AudioItem audioItem = audioItemCache.get(uid);
+                  if (audioItem != null) {
+                      audioItem.addPlaylist(playlist);
+                      audioItemCache.put(audioItem.getId(), audioItem);
+                  }
+              }
+          }
+
+          loadPromptsInfo();
+      } catch (IOException e) {
+          throw new RuntimeException("Unable to initialize caches", e);
+      }
 
     addDataChangeListener(new DataChangeListener() {
       @Override
