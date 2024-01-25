@@ -366,9 +366,15 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
                 // This is for testing reading prompts from repo
                 // Should replace the file format implemented above
-                SystemPrompts tempSystemPrompt = new SystemPrompts(prompt, language);
-                tempSystemPrompt.findPrompts();
-                systemPromptsMap.put(prompt, tempSystemPrompt);
+                if (promptsInfoMap.containsKey(prompt)) {
+                    String id = promptsInfoMap.get(prompt).getId();
+                    String text = promptsInfoMap.get(prompt).getText();
+                    String title = promptsInfoMap.get(prompt).getFilename();
+                    String explanation = promptsInfoMap.get(prompt).getExplanation();
+                    SystemPrompts tempSystemPrompt = new SystemPrompts(title, language);
+                    tempSystemPrompt.findPrompts();
+                    systemPromptsMap.put(prompt, tempSystemPrompt);
+                }
             }
             if (!missing.isEmpty()) {
                 /*

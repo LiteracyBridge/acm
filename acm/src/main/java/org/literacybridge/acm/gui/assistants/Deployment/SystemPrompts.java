@@ -14,10 +14,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.Constants.CATEGORY_TB_CATEGORIES;
+import static org.literacybridge.acm.Constants.CATEGORY_TB_SYSTEM;
 
 public class SystemPrompts {
     public static final String SHORT_TITLE = "%s";
-    private MetadataStore store = ACMConfiguration.getInstance()
+    private static MetadataStore store = ACMConfiguration.getInstance()
             .getCurrentDB()
             .getMetadataStore();
     private String title;
@@ -31,6 +32,11 @@ public class SystemPrompts {
     public SystemPrompts(String promptTitle, String promptsLanguage) {
         this.title = promptTitle;
         this.language = promptsLanguage;
+        this.categoryId = "";
+        this.shortPromptFile = null;
+        this.longPromptFile = null;
+        this.shortPromptItem = null;
+        this.longPromptItem = null;
     }
 
     public SystemPrompts(String title, String languagecode, String categoryId, File shortPromptFile, AudioItem shortPromptItem, File longPromptFile, AudioItem longPromptItem) {
@@ -49,11 +55,8 @@ public class SystemPrompts {
 
     private void findPromptsInAcmContent() {
         List<Category> categoryList = Collections.singletonList(store.getTaxonomy()
-                .getCategory(CATEGORY_TB_CATEGORIES));
+                .getCategory(CATEGORY_TB_SYSTEM)); // CATEGORY_TB_CATEGORIES
         List<Locale> localeList = Collections.singletonList(new RFC3066LanguageCode(language).getLocale());
-
-        Map<String, PromptsInfo.PromptInfo> _prompts = store.getPromptsMap();
-        boolean b = _prompts.containsKey(categoryId);
 
         SearchResult searchResult = store.search(title, categoryList, localeList);
         Map<String, AudioItem> items = searchResult.getAudioItems()
