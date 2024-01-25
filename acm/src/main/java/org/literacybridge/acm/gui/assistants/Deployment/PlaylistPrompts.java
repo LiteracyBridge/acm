@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static org.literacybridge.acm.Constants.CATEGORY_SURVEY;
 import static org.literacybridge.acm.Constants.CATEGORY_TB_CATEGORIES;
 
 /**
@@ -62,6 +63,8 @@ public class PlaylistPrompts {
     // Audio items with titles like "Health" and "Health - invitation"
     AudioItem shortPromptItem;
     AudioItem longPromptItem;
+    // True if the short prompt has the "Scripted" category.
+    private boolean survey = false;
 
     public PlaylistPrompts(String playlistTitle, String languagecode) {
         this.title = playlistTitle;
@@ -130,6 +133,11 @@ public class PlaylistPrompts {
         // It would be very weird (and difficult) for this to happen.
         return hasBothPrompts() && !hasEitherPromptAmbiguity() &&
             ((shortPromptFile==null) != (longPromptFile==null));
+    }
+
+    // This is a hack to add the "survey" property to a playlist.
+    public boolean isSurvey() {
+        return survey;
     }
 
     /**
@@ -262,6 +270,8 @@ public class PlaylistPrompts {
                     if (categoryId == null) {
                         categoryId=shortPromptItem.getId();
                     }
+                    // This is a hack to add the "survey" property to a playlist.
+                    survey |= shortPromptItem.hasCategory(CATEGORY_SURVEY);
                 }
             }
         }

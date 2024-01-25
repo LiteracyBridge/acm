@@ -262,6 +262,8 @@ public class DeploymentInfo {
             private String categoryId;
             private boolean isUserFeedback;
             private boolean isLocked;
+            // This is a hack to add the "survey" property to a playlist.
+            private boolean isSurvey;
 
             public PlaylistBuilder withTitle(String title) {
                 this.title=title;
@@ -271,6 +273,9 @@ public class DeploymentInfo {
                 this.announcement = new PromptInfo(prompts.getShortItem(), prompts.getShortFile());
                 this.invitation = new PromptInfo(prompts.getLongItem(), prompts.getLongFile());
                 this.categoryId = prompts.getCategoryId();
+                // This is a hack to add the "survey" property to a playlist. Should come from somewhere
+                // other than a property of the short prompt.
+                this.isSurvey = prompts.isSurvey();
                 return this;
             }
             public PlaylistBuilder isUserFeedback(boolean isUserFeedback) {
@@ -293,6 +298,7 @@ public class DeploymentInfo {
             private final PromptInfo announcement;
             private final PromptInfo invitation;
             private final boolean isUserFeedback;
+            private final boolean isSurvey;
             private final List<String> content = new ArrayList<>();
 
             private PlaylistInfo(PlaylistBuilder playlistBuilder) {
@@ -302,6 +308,7 @@ public class DeploymentInfo {
                 this.invitation = playlistBuilder.invitation;
                 this.isUserFeedback = playlistBuilder.isUserFeedback;
                 boolean isLocked = playlistBuilder.isLocked;
+                this.isSurvey = playlistBuilder.isSurvey;
             }
 
             public void addContent(AudioItem audioItem) {
@@ -326,6 +333,10 @@ public class DeploymentInfo {
 
             public boolean isUserFeedback() {
                 return isUserFeedback;
+            }
+
+            public boolean isSurvey() {
+                return isSurvey;
             }
 
             public PlaylistPrompts getPlaylistPrompts() {

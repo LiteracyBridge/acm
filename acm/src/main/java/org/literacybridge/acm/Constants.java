@@ -29,6 +29,7 @@ public class Constants {
 
   public final static String USER_NAME = "USER_NAME";
   public final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";
+  @Deprecated
   public final static String GLOBAL_SHARE_PATH = "GLOBAL_SHARE_PATH";
   public final static String RECORDING_COUNTER_PROP = "RECORDING_COUNTER";
   public final static String DEVICE_ID_PROP = "DEVICE_ID";
@@ -64,6 +65,7 @@ public class Constants {
   public final static String CATEGORY_GENERAL_OTHER = "0-0";
   public final static String CATEGORY_TB_SYSTEM = "0-4-1";
   public final static String CATEGORY_TB_CATEGORIES = "0-4-2";
+  public final static String CATEGORY_SURVEY = "0-7";
   public final static String CATEGORY_INTRO_MESSAGE = "0-5";
   public final static String CATEGORY_UNCATEGORIZED_FEEDBACK = "9-0";
   public static final String CATEGORY_TOO_SHORT_FEEDBACK = "92-2";

@@ -1,8 +1,10 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="ACM" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="org.literacybridge.acm.gui.Application" />
+    <option name="MAIN_CLASS_NAME" value="ACM" />
     <module name="acm.main" />
-    <option name="PROGRAM_PARAMETERS" value="ACM-TEST" />
+    <option name="PROGRAM_PARAMETERS" value="survey-demo --autofix" />
+    <option name="VM_PARAMETERS" value="-cp acm.jar:lib/* " />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/dist" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

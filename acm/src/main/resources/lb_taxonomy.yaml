@@ -85,6 +85,9 @@ taxonomy:
             '0-6-16' :
               name: Update 16
               order: 16
+        '0-7' :
+          name: Survey
+          order: 40
     '0-7':
       name: Response to Feedback
       order: 800
