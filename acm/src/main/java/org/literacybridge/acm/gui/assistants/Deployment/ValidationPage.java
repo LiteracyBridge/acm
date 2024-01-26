@@ -338,7 +338,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private void validateSystemPrompts(Collection<String> languages) {
         List<String> required_messages = TBBuilder.getRequiredSystemMessages(context.includeTbTutorial);
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-        Map<String, PromptsInfo.PromptInfo> promptsInfoMap = store.getPromptsMap();
+        Map<String, PromptsInfo.PromptInfo> storePromptsInfoMap = store.getPromptsMap();
 
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         String languagesPath = "TB_Options" + File.separator + "languages";
@@ -366,11 +366,11 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
                 // This is for testing reading prompts from repo
                 // Should replace the file format implemented above
-                if (promptsInfoMap.containsKey(prompt)) {
-                    String id = promptsInfoMap.get(prompt).getId();
-                    String text = promptsInfoMap.get(prompt).getText();
-                    String title = promptsInfoMap.get(prompt).getFilename();
-                    String explanation = promptsInfoMap.get(prompt).getExplanation();
+                if (storePromptsInfoMap.containsKey(prompt)) {
+                    String id = storePromptsInfoMap.get(prompt).getId();
+                    String text = storePromptsInfoMap.get(prompt).getText();
+                    String title = storePromptsInfoMap.get(prompt).getFilename();
+                    String explanation = storePromptsInfoMap.get(prompt).getExplanation();
                     SystemPrompts tempSystemPrompt = new SystemPrompts(prompt, title, language);
                     tempSystemPrompt.findPrompts();
                     systemPromptsMap.put(prompt, tempSystemPrompt);
