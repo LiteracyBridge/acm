@@ -13,14 +13,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.Constants.CATEGORY_TB_CATEGORIES;
-import static org.literacybridge.acm.Constants.CATEGORY_TB_SYSTEM;
+import static org.literacybridge.acm.Constants.*;
 
 public class SystemPrompts {
     public static final String SHORT_TITLE = "%s";
     private static MetadataStore store = ACMConfiguration.getInstance()
             .getCurrentDB()
             .getMetadataStore();
+
+    String id;
     private String title;
     private String language;
     private String categoryId;
@@ -29,7 +30,8 @@ public class SystemPrompts {
     private File longPromptFile;
     AudioItem longPromptItem;
 
-    public SystemPrompts(String promptTitle, String promptsLanguage) {
+    public SystemPrompts(String id, String promptTitle, String promptsLanguage) {
+        this.id = id;
         this.title = promptTitle;
         this.language = promptsLanguage;
         this.categoryId = "";
@@ -55,15 +57,22 @@ public class SystemPrompts {
 
     private void findPromptsInAcmContent() {
         List<Category> categoryList = Collections.singletonList(store.getTaxonomy()
-                .getCategory(CATEGORY_TB_SYSTEM)); // CATEGORY_TB_CATEGORIES
+                .getCategory("0-4-1"));
         List<Locale> localeList = Collections.singletonList(new RFC3066LanguageCode(language).getLocale());
 
-        SearchResult searchResult = store.search(title, categoryList, localeList);
+        SearchResult searchResult = store.search(id, categoryList, localeList);
         Map<String, AudioItem> items = searchResult.getAudioItems()
                 .stream()
                 .map(store::getAudioItem)
                 .collect(Collectors.toMap(audioItem -> audioItem.getTitle().trim(), c -> c));
 
+        SearchResult _search = store.search(title, categoryList, localeList);
+        Map<String, AudioItem> _items = _search.getAudioItems()
+                .stream()
+                .map(store::getAudioItem)
+                .collect(Collectors.toMap(audioItem -> audioItem.getTitle().trim(), c -> c));
+
         // Items list returns null. Can't find our system prompt in store
+        String s = "result";
     }
 }

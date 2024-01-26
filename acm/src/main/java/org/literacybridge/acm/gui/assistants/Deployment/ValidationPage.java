@@ -371,7 +371,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     String text = promptsInfoMap.get(prompt).getText();
                     String title = promptsInfoMap.get(prompt).getFilename();
                     String explanation = promptsInfoMap.get(prompt).getExplanation();
-                    SystemPrompts tempSystemPrompt = new SystemPrompts(title, language);
+                    SystemPrompts tempSystemPrompt = new SystemPrompts(prompt, title, language);
                     tempSystemPrompt.findPrompts();
                     systemPromptsMap.put(prompt, tempSystemPrompt);
                 }
