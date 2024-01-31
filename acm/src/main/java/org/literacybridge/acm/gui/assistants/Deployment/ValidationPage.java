@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static org.literacybridge.acm.Constants.BELL_SOUND;
 import static org.literacybridge.acm.gui.assistants.common.AcmAssistantPage.getLanguageAndName;
 import static org.literacybridge.acm.tbbuilder.TBBuilder.MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
@@ -340,42 +341,29 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         Map<String, PromptsInfo.PromptInfo> storePromptsInfoMap = store.getPromptsMap();
 
-        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
-        String languagesPath = "TB_Options" + File.separator + "languages";
-        File languagesDir = new File(tbLoadersDir, languagesPath);
         // { id : description }
         PromptsInfo promptsInfo = null;
 
         for (String language : languages) {
-            File languageDir = IOUtils.FileIgnoreCase(languagesDir, language);
+            //File languageDir = IOUtils.FileIgnoreCase(languagesDir, language);
             List<Integer> missing = new ArrayList<>();
 
             Map<String, SystemPrompts> systemPromptsMap = new HashMap<>();
             context.systemprompts.put(language, systemPromptsMap);
 
             for (String prompt : required_messages) {
-                File p1 = new File(languageDir, prompt + ".a18");
-                //File p2 =
-                if (!p1.exists()) {
-                    // We know they're short integers.
-                    missing.add(Integer.parseInt(prompt));
-                    //System.out.print("System prompt ");
-                    //System.out.print(p1.getAbsolutePath());
-                    //System.out.println(" not found in file system");
-                }
-
-                // This is for testing reading prompts from repo
-                // Should replace the file format implemented above
                 if (storePromptsInfoMap.containsKey(prompt)) {
-                    String id = storePromptsInfoMap.get(prompt).getId();
-                    String text = storePromptsInfoMap.get(prompt).getText();
-                    String title = storePromptsInfoMap.get(prompt).getFilename();
-                    String explanation = storePromptsInfoMap.get(prompt).getExplanation();
-                    SystemPrompts tempSystemPrompt = new SystemPrompts(prompt, title, language);
-                    tempSystemPrompt.findPrompts();
-                    systemPromptsMap.put(prompt, tempSystemPrompt);
+                    SystemPrompts tempSystemPrompt = new SystemPrompts(prompt, language);
+                    if (!tempSystemPrompt.findPrompts()) {
+                        missing.add(Integer.parseInt(prompt));
+                    } else {
+                        systemPromptsMap.put(prompt, tempSystemPrompt);
+                    }
+                } else {
+                    missing.add(Integer.parseInt(prompt));
                 }
             }
+
             if (!missing.isEmpty()) {
                 /*
                  * Some system prompts are missing. Build a minimal description of which ones,

@@ -7,9 +7,14 @@ import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.Assistant;
 import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
+import org.literacybridge.acm.gui.assistants.ContentImport.AudioMessageTarget;
+import org.literacybridge.acm.gui.assistants.ContentImport.AudioTarget;
+import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.gui.util.UIUtils;
+import org.literacybridge.acm.importexport.AudioImporter;
+import org.literacybridge.acm.store.*;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
 import org.literacybridge.acm.utils.Version;
@@ -30,9 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
-import static org.literacybridge.acm.Constants.BELL_SOUND;
-import static org.literacybridge.acm.Constants.SILENCE;
-import static org.literacybridge.acm.Constants.TUTORIAL_LIST;
+import static org.literacybridge.acm.Constants.*;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
 public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
@@ -126,6 +129,30 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
             .filter((item)->item.getMatch().isMatch())
             .filter((item) -> item.getLeft().isImportable())
             .collect(Collectors.toList());
+
+        AudioImporter importer = AudioImporter.getInstance();
+        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+
+        // Debugging
+        for (PromptMatchable matchable : matches) {
+            // Get data of all previous items
+            PromptTarget left = matchable.getLeft();
+            String id = left.getPromptId();
+
+            // Get next data
+            File importableFile = matchable.getRight().getFile();
+
+            try {
+                Category systemCategory = store.getTaxonomy().getCategory(CATEGORY_TB_SYSTEM);
+                ImportHandler handler = new ImportHandler(systemCategory, matchable);
+
+                AudioItem audioItem = importer.importAudioItemFromFile(importableFile, handler);
+                matchable.getLeft().setItem(audioItem);
+                store.newAudioItem(audioItem);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+        }
 
         progressBar.setMaximum(matches.size()+1);
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -296,5 +323,44 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
     @Override
     protected String getTitle() {
         return "Import Results";
+    }
+
+    private class ImportHandler implements AudioImporter.AudioItemProcessor {
+
+        private final Category category;
+        private final PromptMatchable promptMatchable;
+
+        ImportHandler(Category category, PromptMatchable matchable) {
+            this.category = category;
+            this.promptMatchable = matchable;
+        }
+
+        @Override
+        public void process(AudioItem item) {
+            if (item != null) {
+                item.addCategory(category);
+            }
+
+            String existingLanguage = item.getLanguageCode();
+            if (!context.languagecode.equals(existingLanguage)) {
+                System.out.printf("Forcing language to '%s' was '%s'.%n",
+                        context.languagecode,
+                        existingLanguage);
+                item.getMetadata().put(MetadataSpecification.DC_LANGUAGE, context.languagecode);
+            }
+
+            String existingTitle = item.getTitle();
+            // Debugging
+            String _debug = promptMatchable.getLeft().getPromptId();
+            if (!promptMatchable.getLeft().getPromptId().equals(existingTitle)) {
+                System.out.printf("Renaming '%s' to '%s'.%n",
+                        existingTitle,
+                        promptMatchable.getLeft().getPromptId());
+                item.getMetadata()
+                        .put(MetadataSpecification.DC_TITLE, promptMatchable.getLeft().getPromptId());
+            }
+
+
+        }
     }
 }

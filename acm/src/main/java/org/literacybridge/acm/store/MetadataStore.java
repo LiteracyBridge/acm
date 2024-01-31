@@ -9,6 +9,7 @@ import java.util.*;
 import com.google.common.collect.Lists;
 import com.opencsv.CSVReader;
 import org.apache.commons.io.input.BOMInputStream;
+import org.literacybridge.acm.gui.assistants.Deployment.SystemPrompts;
 import org.literacybridge.acm.gui.assistants.PromptsImport.PromptImportAssistant;
 import org.literacybridge.acm.gui.assistants.PromptsImport.PromptTarget;
 import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
@@ -43,9 +44,17 @@ public abstract class MetadataStore {
         return this.promptsMap;
     }
 
+    public void updatePrompt(PromptsInfo.PromptInfo promptsInfo, String promptName) {
+        if (promptsMap.containsKey(promptName)) {
+            promptsMap.put(promptName, promptsInfo);
+        }
+    }
+
     public abstract Transaction newTransaction();
 
     public abstract AudioItem newAudioItem(String uid);
+
+    public abstract void newAudioItem(AudioItem audioItem);
 
     public abstract AudioItem getAudioItem(String uid);
 
@@ -136,4 +145,5 @@ public abstract class MetadataStore {
   public interface DataChangeListener {
     void dataChanged(List<DataChangeEvent> events);
   }
+
 }

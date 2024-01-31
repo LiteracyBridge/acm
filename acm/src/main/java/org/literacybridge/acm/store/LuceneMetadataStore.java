@@ -51,6 +51,7 @@ public class LuceneMetadataStore extends MetadataStore {
               }
           }
 
+          // This should only be called once
           loadPromptsInfo();
       } catch (IOException e) {
           throw new RuntimeException("Unable to initialize caches", e);
@@ -181,4 +182,9 @@ public class LuceneMetadataStore extends MetadataStore {
   public AudioItem newAudioItem(String uid) {
     return new AudioItem(uid);
   }
+
+    @Override
+    public void newAudioItem(AudioItem audioItem) {
+        audioItemCache.put(audioItem.getId(), audioItem);
+    }
 }

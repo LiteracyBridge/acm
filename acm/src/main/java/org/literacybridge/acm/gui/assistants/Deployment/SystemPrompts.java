@@ -14,11 +14,11 @@ import static org.literacybridge.acm.Constants.*;
 
 public class SystemPrompts {
     public static final String SHORT_TITLE = "%s";
+    public final static String SYSTEM_MESSAGE_CATEGORY = "System Messages";
     private static MetadataStore store = ACMConfiguration.getInstance()
             .getCurrentDB()
             .getMetadataStore();
 
-    String id;
     private String title;
     private String language;
     private String categoryId;
@@ -31,8 +31,7 @@ public class SystemPrompts {
     private static long itemCacheStoreChangeCount = -1;
     private static Locale itemCacheLocale = null;
 
-    public SystemPrompts(String id, String title, String languagecode) {
-        this.id = id;
+    public SystemPrompts(String title, String languagecode) {
         this.title = title;
         this.language = languagecode;
         this.categoryId = null;
@@ -42,9 +41,12 @@ public class SystemPrompts {
         this.longPromptItem = null;
     }
 
-    public SystemPrompts(String id, String title, String languagecode, String categoryId,
+    public SystemPrompts(String title) {
+        this.title = title;
+    }
+
+    public SystemPrompts(String title, String languagecode, String categoryId,
                          File shortPromptFile, AudioItem shortPromptItem, File longPromptFile, AudioItem longPromptItem) {
-        this.id = id;
         this.title = title;
         this.language = languagecode;
         this.categoryId = categoryId;
@@ -54,24 +56,39 @@ public class SystemPrompts {
         this.longPromptItem = longPromptItem;
     }
 
-    public void findPrompts() {
-        findPromptsInAcmContent();
+    public void setShortPromptFile(String filename) {
+
     }
 
-    private void findPromptsInAcmContent() {
+    public boolean findPrompts() {
+        return findPromptsInAcmContent();
+    }
+
+    public void addAudioItem(String name) {
+        AudioItem e = store.getAudioItem(name);
+        if (e != null) {
+            shortPromptItem = e;
+        }
+        return;
+    }
+
+    private boolean findPromptsInAcmContent() {
         List<Category> categoryList = Collections.singletonList(store.getTaxonomy()
-                .getCategory(CATEGORY_GENERAL_OTHER));    //   root
+                .getCategory(CATEGORY_TB_SYSTEM));    //   root
         List<Locale> localeList = Collections.singletonList(new RFC3066LanguageCode(language).getLocale());
 
-        SearchResult searchResult = store.search(id, categoryList, localeList);
+        SearchResult searchResult = store.search(title, categoryList, localeList);
         Map<String, AudioItem> items = searchResult.getAudioItems()
                 .stream()
                 .map(store::getAudioItem)
                 .collect(Collectors.toMap(audioItem -> audioItem.getTitle().trim(), c -> c));
 
         // Items list returns null. Can't find our system prompt in store
+        if (items.size() == 0) {
+            return false;
+        }
 
-        // Case insensitive, match pattern and optional " : description"
+        // match pattern and optional " : description"
         String regex = "(?i)^(" + Pattern.quote(title.trim()) + ")([: ]+(description|invite|invitation|prompt|long|action))?$";
         Pattern pattern = Pattern.compile(regex);
         for (Map.Entry<String, AudioItem> e : items.entrySet()) {
@@ -82,7 +99,8 @@ public class SystemPrompts {
                 } else {
                     shortPromptItem = e.getValue();
                     if (categoryId == null) {
-                        categoryId=shortPromptItem.getId();
+                        //categoryId=shortPromptItem.getId();
+                        categoryId = SYSTEM_MESSAGE_CATEGORY;
                     }
                 }
             }
@@ -92,7 +110,7 @@ public class SystemPrompts {
             searchIgnoringUnderscores(categoryList, localeList);
         }
 
-        String s = "";
+        return longPromptItem != null || shortPromptItem != null;
     }
 
     private void searchIgnoringUnderscores(List<Category> categoryList, List<Locale> localeList) {
