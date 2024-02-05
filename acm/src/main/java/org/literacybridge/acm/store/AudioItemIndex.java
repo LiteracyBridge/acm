@@ -61,9 +61,6 @@ public class AudioItemIndex {
   public static final String CATEGORIES_FIELD = "categories";
   public static final String CATEGORIES_FACET_FIELD = "categories_facet";
   public static final String SYSTEM_PROMPTS_FIELD = "systemprompts";
-  public static final String SYSTEM_PROMPTS_FACET_FIELD = "systemprompts_facet";
-  public static final String SYSTEM_PROMPT_NAMES_COMMIT_DATA = "systemprompts_names";
-  public static final String MAX_SYSTEM_PROMPTS_UID_COMMIT_DATA = "max_systemprompts_uuid";
   public static final String PLAYLISTS_FIELD = "playlists";
   public static final String PLAYLISTS_FACET_FIELD = "playlists_facet";
   public static final String LOCALES_FIELD = "locales";
@@ -98,7 +95,6 @@ public class AudioItemIndex {
       facetsConfig.setMultiValued(AudioItemIndex.CATEGORIES_FACET_FIELD, true);
       facetsConfig.setMultiValued(AudioItemIndex.LOCALES_FACET_FIELD, true);
       facetsConfig.setMultiValued(AudioItemIndex.PLAYLISTS_FACET_FIELD, true);
-      facetsConfig.setMultiValued(AudioItemIndex.SYSTEM_PROMPTS_FACET_FIELD, true);
 
       queryAnalyzer = new QueryAnalyzer();
       searcherManager = new SearcherManager(dir, new SearcherFactory());
@@ -621,7 +617,6 @@ public class AudioItemIndex {
       Map<String, Integer> categoryFacets = Maps.newHashMap();
       Map<String, Integer> localeFacets = Maps.newHashMap();
       Map<String, Integer> playlistFacets = Maps.newHashMap();
-      Map<String, Integer> promptsFacets = Maps.newHashMap();
 
       try {
         SortedSetDocValuesFacetCounts facetCounts = new SortedSetDocValuesFacetCounts(
@@ -646,11 +641,6 @@ public class AudioItemIndex {
             }
 
           }
-          if (r.dim.equals(SYSTEM_PROMPTS_FACET_FIELD)) {
-            for (LabelAndValue lv : r.labelValues) {
-              promptsFacets.put(lv.label, lv.value.intValue());
-            }
-          }
         }
       } catch (IllegalArgumentException e) {
         // With empty indexes it can happen that Lucene throws an exception here
@@ -659,7 +649,7 @@ public class AudioItemIndex {
 
       SearchResult result = new SearchResult(
           searcher.getIndexReader().numDocs(), categoryFacets, localeFacets,
-          playlistFacets, promptsFacets, Lists.newArrayList(results));
+          playlistFacets, Lists.newArrayList(results));
 
       return result;
     } finally {

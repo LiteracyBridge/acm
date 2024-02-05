@@ -150,7 +150,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                 matchable.getLeft().setItem(audioItem);
                 store.newAudioItem(audioItem);
             } catch (Exception e) {
-                System.out.println(e.getMessage());
+                //System.out.println(e.getMessage());
             }
         }
 

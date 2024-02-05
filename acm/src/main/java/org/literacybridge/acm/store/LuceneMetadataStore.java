@@ -1,6 +1,7 @@
 package org.literacybridge.acm.store;
 
 import com.google.common.collect.Maps;
+import org.literacybridge.acm.config.ACMConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,7 +52,7 @@ public class LuceneMetadataStore extends MetadataStore {
               }
           }
 
-          // This should only be called once
+          // This should only be called once - perhaps set on lock on it?
           loadPromptsInfo();
       } catch (IOException e) {
           throw new RuntimeException("Unable to initialize caches", e);
