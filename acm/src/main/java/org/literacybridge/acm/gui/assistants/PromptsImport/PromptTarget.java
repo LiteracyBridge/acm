@@ -42,6 +42,10 @@ public class PromptTarget extends Target {
         this.item = item;
     }
 
+    public boolean hasAudioItem() {
+        return this.item != null;
+    }
+
     public AudioItem getItem() {
         return item;
     }

@@ -23,9 +23,9 @@ public class SystemPrompts {
     private String language;
     private String categoryId;
     private File shortPromptFile;
-    AudioItem shortPromptItem;
+    public AudioItem shortPromptItem;
     private File longPromptFile;
-    AudioItem longPromptItem;
+    public AudioItem longPromptItem;
 
     private static final Map<String, AudioItem> itemCache = new HashMap<>();
     private static long itemCacheStoreChangeCount = -1;

@@ -9,6 +9,7 @@ import org.literacybridge.acm.gui.Assistant.Assistant;
 import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
 import org.literacybridge.acm.gui.assistants.ContentImport.AudioMessageTarget;
 import org.literacybridge.acm.gui.assistants.ContentImport.AudioTarget;
+import org.literacybridge.acm.gui.assistants.Deployment.SystemPrompts;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.gui.assistants.util.AudioUtils;
@@ -145,10 +146,21 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
             try {
                 Category systemCategory = store.getTaxonomy().getCategory(CATEGORY_TB_SYSTEM);
                 ImportHandler handler = new ImportHandler(systemCategory, matchable);
-
-                AudioItem audioItem = importer.importAudioItemFromFile(importableFile, handler);
-                matchable.getLeft().setItem(audioItem);
-                store.newAudioItem(audioItem);
+                SystemPrompts sysPrompts = new SystemPrompts(id, context.languagecode);
+                boolean isUpdate = sysPrompts.findPrompts();
+                if (isUpdate) {
+                    AudioItem audioItem = null;
+                    if (sysPrompts.longPromptItem != null) {
+                        audioItem = sysPrompts.longPromptItem;
+                    } else {
+                        audioItem = sysPrompts.shortPromptItem;
+                    }
+                    importer.updateAudioItemFromFile(audioItem, importableFile, handler);
+                } else {
+                    AudioItem audioItem = importer.importAudioItemFromFile(importableFile, handler);
+                    matchable.getLeft().setItem(audioItem);
+                    store.newAudioItem(audioItem);
+                }
             } catch (Exception e) {
                 //System.out.println(e.getMessage());
             }
