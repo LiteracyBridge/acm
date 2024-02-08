@@ -15,6 +15,7 @@ import org.literacybridge.acm.device.DeviceConnectEvent;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.MainWindow.PlaylistListModel.PlaylistLabel;
+import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.gui.dialogs.audioItemImportDialog.AudioItemImportDialog;
 import org.literacybridge.acm.gui.messages.AudioItemTableSortOrderMessage;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
@@ -85,7 +86,6 @@ public class SidebarView extends ACMContainer implements Observer {
     private final DefaultMutableTreeNode languageRootNode;
     private final DefaultMutableTreeNode deviceRootNode;
     private final DefaultTreeModel deviceTreeModel;
-    private final DefaultMutableTreeNode promptsRootNode;
 
     private JXTaskPaneContainer taskPaneContainer;
 
@@ -122,7 +122,6 @@ public class SidebarView extends ACMContainer implements Observer {
         deviceRootNode = new DefaultMutableTreeNode(LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL));
         languageRootNode = new DefaultMutableTreeNode();
         deviceTreeModel = new DefaultTreeModel(deviceRootNode);
-        promptsRootNode = new DefaultMutableTreeNode(LabelProvider.getLabel(LabelProvider.PROMPTS_ROOT_LABEL));
 
         createControls();
     }

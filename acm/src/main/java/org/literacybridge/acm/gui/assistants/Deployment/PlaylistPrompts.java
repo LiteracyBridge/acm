@@ -79,9 +79,9 @@ public class PlaylistPrompts {
         this.longPromptItem = longPromptItem;
     }
 
-    public void findPrompts() {
+    public boolean findPrompts() {
         findPromptsInLanguageFiles();
-        findPromptsInAcmContent();
+        return findPromptsInAcmContent();
     }
 
     public String getTitle() {
@@ -237,7 +237,7 @@ public class PlaylistPrompts {
      * Look in the content for audio items with a title that matches the playlist
      * title, and for one that matches the playlist title + " : description".
      */
-    private void findPromptsInAcmContent() {
+    private boolean findPromptsInAcmContent() {
         // Get any audio items in "TB Categories", given language, that textually match the playlist title.
         List<Category> categoryList = Collections.singletonList(store.getTaxonomy()
             .getCategory(CATEGORY_TB_CATEGORIES));
@@ -269,6 +269,8 @@ public class PlaylistPrompts {
         if (longPromptItem == null || shortPromptItem == null) {
             searchIgnoringUnderscores(categoryList, localeList);
         }
+
+        return longPromptItem != null || shortPromptItem != null;
     }
 
     /**
