@@ -108,8 +108,6 @@ task copySync(dependsOn: [copySync1, copySync2]) {
 }
 
 task copyUpdateScript(type: Copy, dependsOn: copyJars) {
-    // The update script is in 'scripts/deployToDbx.sh'
-    from "$projectDir/scripts/deployToDbx.sh"
     from "$projectDir/scripts/acm.sh"
     from "$projectDir/scripts/tbl.sh"
     from "$projectDir/scripts/builder.sh"

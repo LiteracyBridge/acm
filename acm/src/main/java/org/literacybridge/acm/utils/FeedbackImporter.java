@@ -266,7 +266,7 @@ public class FeedbackImporter {
    * open the ACM database for {PROJECT}-FB-{UPDATE} where {UPDATE} is the
    * update name, minus any leading text. The resulting ACM directory will be
    * named like:
-   *   ~/Dropbox / UWR-FB-2016-3
+   *   ~/Amplio/acm-dbs / UWR-FB-2016-3
    *
    * Will attempt to create the ACM database if it doesn't exist.
    *

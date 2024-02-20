@@ -9,7 +9,7 @@ public class TBLoaderConfig {
     // this device is the computer/tablet/phone that is running the TB Loader
     private final String tbLoaderId;
 
-    // A TbFile representing where the TB-Loader will copy its output (stats, signin recordings), like ~/Dropbox/tbcd000c/collected-data
+    // A TbFile representing where the TB-Loader will copy its output (stats, signin recordings), like ~/Amplio/collectiondir
     private final TbFile collectedDataDirectory;
 
     // A "TBFileSystem" object representing the root of a temporary gathering point.

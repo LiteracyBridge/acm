@@ -29,21 +29,20 @@ public class AccessControlTest {
     @Rule
     TemporaryFolder folder = new TemporaryFolder();
 
-    // These are created fresh for every test. Populate as needed.
-    private File home;  // Like ~/Literacybridge
     private File temp;  // Like ~/Literacybridge/temp
-    private File dbx;   // Like ~/Dropbox
-    private File acmDir; // Like ~/Dropbox/ACM-NADA
-    private File sandboxDir;
+    private File acmDir; // Like ~/Amplio/acm-dbs/NADA
 
     private DBConfiguration getMockDbConfig() throws IOException {
-        home = folder.newFolder("home");
+        // These are created fresh for every test. Populate as needed.
+        // Like ~/Literacybridge
+        File home = folder.newFolder("home");
         temp = new File(home, "temp");
         temp.mkdirs();
-        dbx = folder.newFolder("dbx");
-        acmDir = new File(dbx, "ACM-NADA");
+        // Like ~/Amplio/acm-dbs
+        File dbsDir = folder.newFolder("dbs-dir");
+        acmDir = new File(dbsDir, "NADA");
         acmDir.mkdirs();
-        sandboxDir = folder.newFolder("sandbox");
+        File sandboxDir = folder.newFolder("sandbox");
 
         AmplioHome testInstance = new AmplioHome() {
             @Override
@@ -53,7 +52,7 @@ public class AccessControlTest {
         };
         AmplioHome.getInstance(testInstance);
 
-        PathsProvider ppConfig = new PathsProvider("ACM-NADA", true) {
+        PathsProvider ppConfig = new PathsProvider("ACM-NADA") {
         };
         Sandbox sandbox = new Sandbox(acmDir, sandboxDir);
 

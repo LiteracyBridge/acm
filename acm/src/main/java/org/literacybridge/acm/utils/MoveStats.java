@@ -38,7 +38,7 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.USER_RECORDINGS
  * output will be written to the output directory in a subdirectory named with the timestamp. If
  * no stats or user feedback is found, the timestamp directory will not be created.
  * <p>
- * The input is a directory, like ~/Dropbox/stats, containing one or more subdirectories
+ * The input is a directory, generally a temp dir, containing one or more subdirectories
  * for tbloaders. The tbloader directories then contains a 'collected-data' directory,
  * and those contain directories for projects. The project directories may contain
  * userrecordings and talkingbookdata subdirectories, which are the actual directories
@@ -163,11 +163,11 @@ public class MoveStats {
     private int move() {
         MoveResults result = new MoveResults(), tmpResult;
 
-        // Generally, sourceDir is like ~/Dropbox/stats or ~Dropbox/outbox/stats
-        // Generally, targetDir is like ~/Dropbox/collected-data-processed
+        // Generally, sourceDir is a temporary directory
+        // Generally, targetDir is like ~/acm-stats/processed-data
 
         // Process any non-hidden subdirectories.
-        File children[] = params.sourceDir.listFiles();
+        File[] children = params.sourceDir.listFiles();
         if (children != null) {
             for (File tbLoaderDir : children) {
                 if (isGoodTbLoaderDir(tbLoaderDir)) {
@@ -217,14 +217,14 @@ public class MoveStats {
      * doesn't contain a timestamp, use the default timestamp.
      *
      * @param tbLoaderDir One TB-Loader directory like ...stats / tbde{tbcd id}
-     * @param targetDir Destination for stats, like Dropbox / collected-data-processed
+     * @param targetDir Destination for stats, like acm-stats / processed-data
      * @param defaultTimeStamp The timestamp under which to collect things with no other timestamp.
      */
     private MoveResults processOneTbLoaderDir(File tbLoaderDir, File targetDir,
                                               String defaultTimeStamp) {
         MoveResults result = new MoveResults(), tmpResult;
         // Process 'collected-data' subdirectories or {ISO 8601}.zip file children
-        File children[] = tbLoaderDir.listFiles();
+        File[] children = tbLoaderDir.listFiles();
         if (children != null) {
             // First look for an actual 'collected-data' directory, and process it. Then process
             // the timestamped directories; each will be processed as 'collected-data' (which is
@@ -255,7 +255,7 @@ public class MoveStats {
      *
      * @param collectedDataDir {tbcd id} / collected-data or {tbcd id} / {timestamp}, with
      *                         subdirectories like / {PROJ1},  / {PROJ2},  ...
-     * @param targetDir output directory from arguments, like Dropbox/collected-data-processed/2018/04/18
+     * @param targetDir output directory from arguments, like acm-stats/processed-data/2018/04/18
      * @param statsTimeStamp timestamp under which to collect statistics, 2017y06m19d13h20m20s or
      *                       20170619T132020.123
      * @param userFeedbackTimeStamp timestamp under which to collect user feedback, 2017y06m19d13h20m20s
@@ -267,7 +267,7 @@ public class MoveStats {
 
         String tbcdId = collectedDataDir.getParentFile().getName();
         // Get non-hidden subdirectories, convert to Strings, then collect in a List<String>
-        File projectDirs[] = collectedDataDir.listFiles(
+        File[] projectDirs = collectedDataDir.listFiles(
                 (fn) -> fn.isDirectory() && !fn.isHidden() && !fn.getName().startsWith("."));
         List<String> projects = Arrays.stream(projectDirs != null ? projectDirs : new File[0])
                 .map(File::getName)
@@ -428,7 +428,7 @@ public class MoveStats {
     private void moveStats(File collectedDataDir, File targetTbDataDir) throws IOException {
         targetTbDataDir.mkdir();
         File tbLoaderDir = collectedDataDir.getParentFile();
-        String zipDirs[] = new String[1];
+        String[] zipDirs = new String[1];
         zipDirs[0] = collectedDataDir.getName();
 
         // Zip the contents of one tbloader's reported stats directory
@@ -510,7 +510,7 @@ public class MoveStats {
      * @return True if there are any audio files, false if none found.
      */
     private static boolean hasAudioFile(File directory) {
-        File children[] = directory.listFiles();
+        File[] children = directory.listFiles();
         if (children != null) {
             for (File child : children) {
                 if (child.isDirectory()) {

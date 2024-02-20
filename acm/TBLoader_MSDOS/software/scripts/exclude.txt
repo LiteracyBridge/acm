@@ -1,8 +1,0 @@
-languages\
-messages\
-ostats\
-Inbox\
-:archive\
-.img
-.old
-config.bin

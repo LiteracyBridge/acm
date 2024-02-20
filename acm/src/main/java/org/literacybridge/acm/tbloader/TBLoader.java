@@ -346,7 +346,7 @@ public class TBLoader extends JFrame {
             .put("project", newProject)
             .finish();
 
-        // Looks in Dropbox and in ~/LiteracyBridge for deployments. May prompt user for which
+        // Looks in S3 and in ~/Amplio for deployments. May prompt user for which
         // Deployment version, or update to latest.
         deploymentChooser = new DeploymentChooser(this);
         deploymentChooser.select();
@@ -387,8 +387,7 @@ public class TBLoader extends JFrame {
      */
     private void authenticate() {
         Authenticator authInstance = Authenticator.getInstance();
-        authInstance.setLocallyAvailablePrograms(DeploymentsManager.getLocalPrograms(),
-                ACMConfiguration.getInstance().getLocalDbxDbs());
+        authInstance.setLocallyAvailablePrograms(DeploymentsManager.getLocalPrograms());
         Authenticator.LoginResult result = authInstance.authenticateAndChooseProgram(this,
             LabelProvider.getLabel("TBLOADER_PROGRAM_NAME"),
             newProject,

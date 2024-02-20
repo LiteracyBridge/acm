@@ -134,13 +134,7 @@ public class ACMConfiguration {
 
     private ACMConfiguration(CommandLineParams params) {
         this.params = params;
-        if (params.noS3Dbs && params.noDbxDbs) {
-            throw new IllegalArgumentException("Must not specify both --no-s3-dbs and --no-dbx-dbs");
-        }
-        AmplioHome.getDropboxDir();
-        
         loadUserProps();
-
         boolean propsChanged = false;
         for (String prop : Constants.OBSOLETE_PROPERTY_NAMES) {
             if (UsersConfigurationProperties.getProperty(prop) != null) {
@@ -197,21 +191,6 @@ public class ACMConfiguration {
         return knownDbs.entrySet()
             .stream()
             .collect(Collectors.toMap(e->ACMConfiguration.cannonicalProjectName(e.getKey()), e->e.getValue().getFriendlyName()));
-    }
-
-    /**
-     * Gets a list of dropbox ACM databases on this machine.
-     * @return the list of dropbox ACMs.
-     */
-    public List<String> getLocalDbxDbs() {
-        return knownDbs.entrySet()
-                .stream()
-                .filter(e->e.getValue().getPathProvider().isDropboxDb())
-                .map(Map.Entry::getKey)
-                .map(ACMConfiguration::cannonicalProjectName)
-                .filter(Objects::nonNull)
-                .sorted(String::compareToIgnoreCase)
-                .collect(Collectors.toList());
     }
 
     /**
@@ -288,7 +267,7 @@ public class ACMConfiguration {
 
         //noinspection MismatchedReadAndWriteOfArray
         boolean[] inSync = {true};
-        if (!dbPathProvider.isDropboxDb() && syncState==S3SyncState.REQUIRED_FOR_S3) {
+        if (syncState==S3SyncState.REQUIRED_FOR_S3) {
             // No permits, so acquire will wait until the release.
             Semaphore available = new Semaphore(0);
             waiter.accept(()-> inSync[0] = cloudStartAndSync(dbPathProvider.getProgramId()), available::release);
@@ -321,20 +300,6 @@ public class ACMConfiguration {
      *
      * TODO: Prompt the user before calling this.
      */
-//    public synchronized void commitCurrentDB() {
-//        if (currentDB != null && !currentDB.isSandboxed()) {
-//            if (isDisableUI()) {
-//                // Headless version, immediately commits changes.
-//                currentDB.commitDbChanges();
-//            } else {
-//                // Interactive version, prompts first.
-//                currentDB.updateDb();
-//            }
-//            if (!currentDB.getPathProvider().isDropboxDb()) {
-//                tryCloudSync(currentDB.getProgramName());
-//            }
-//        }
-//    }
 
     public enum DB_CLOSE_DISPOSITION {COMMIT, DISCARD}
 
@@ -462,7 +427,7 @@ public class ACMConfiguration {
 
     /**
      * The Global Shared Directory is where all the ACMs an supporting files are
-     * kept. In general, this will be in Dropbox. For testing, it will be
+     * kept. In general, this will be "Amplio". For testing, it may be
      * different, and it could be different for some specialized circumstances.
      * <p>
      * Side effect: globalShareDir is set to a directory, or the application
@@ -475,10 +440,6 @@ public class ACMConfiguration {
             appHomeDir.mkdirs();
         }
 
-        if (AmplioHome.isDropboxOverride()) {
-            noDbCheckout = true;
-            LOG.info("No database checkout will be performed (because of dropbox override).");
-        }
     }
 
     public synchronized DBConfiguration getDbConfiguration(String programId) {
@@ -502,23 +463,19 @@ public class ACMConfiguration {
             result = knownDb.getPathProvider();
         }
         if (result == null) {
-            result = new PathsProvider(programId, Authenticator.getInstance().isProgramS3(programId));
+            result = new PathsProvider(programId);
         }
         return result;
     }
 
     /**
-     * Find the ACM databases on the local computer. Look first in Dropbox, then in the Amplio / Literacybridge
-     * directory. If a database is found in both, the one in Amplio/Literacybridge takes precedence.
+     * Find the ACM databases on the local computer. Look in the Amplio directory.
      *
      * Populates the knownDbs map {programid : PathsProvider} structure.
      */
     private void discoverDBs() {
-        if (!params.noDbxDbs) {
-            knownDbs.putAll(findContainedAcmDbs(AmplioHome.getDropboxDir(), true));
-        }
         if (!AmplioHome.isOldStyleHomeDirectory() && !params.noS3Dbs) {
-            knownDbs.putAll(findContainedAcmDbs(AmplioHome.getHomeDbsRootDir(), false));
+            knownDbs.putAll(findContainedAcmDbs(AmplioHome.getHomeDbsRootDir()));
         }
     }
 
@@ -530,8 +487,8 @@ public class ACMConfiguration {
         program = cannonicalProjectName(program);
         assert program != null;
         File programDir = new File(AmplioHome.getHomeDbsRootDir(), program);
-        if (programDir.isDirectory() && (!knownDbs.containsKey(program) || knownDbs.get(program).getPathProvider().isDropboxDb()) ) {
-            knownDbs.put(program, new DBConfiguration(new PathsProvider(program, false)));
+        if (programDir.isDirectory() && (!knownDbs.containsKey(program)) ) {
+            knownDbs.put(program, new DBConfiguration(new PathsProvider(program)));
         }
     }
 
@@ -539,10 +496,9 @@ public class ACMConfiguration {
      * Find the ACM databases in the given directory. An ACM database is recognized by virtue of containing
      * at least one "db123.zip" file. False positives are possible.
      * @param containingDir to be searched.
-     * @param isDropbox true if this is the dropbox directory.
      * @return A map of {programid : PathsProvider}
      */
-    private Map<String, DBConfiguration> findContainedAcmDbs(File containingDir, boolean isDropbox) {
+    private Map<String, DBConfiguration> findContainedAcmDbs(File containingDir) {
         boolean debugFindDbs = isDevo();
         Map<String, DBConfiguration> result = new HashMap<>();
 
@@ -564,9 +520,9 @@ public class ACMConfiguration {
                                 contentDir.exists() && contentDir.isDirectory() &&
                                 dbFiles != null && dbFiles.length>0) {
                             if (debugFindDbs) {
-                                System.out.printf("is a program database in %s.\n", isDropbox?"dropbox":"s3");
+                                System.out.printf("is a program database.\n");
                             }
-                            PathsProvider pathsProvider = new PathsProvider(d.getName(), isDropbox);
+                            PathsProvider pathsProvider = new PathsProvider(d.getName());
                             result.put(cannonicalProjectName(d.getName()), new DBConfiguration(pathsProvider));
                         } else {
                             boolean config = dbConfigFile.exists() && dbConfigFile.isFile();
@@ -643,11 +599,11 @@ public class ACMConfiguration {
     }
 
     /**
-     * The Application's home directory, NOT the shared (dropbox) directory.
-     * @return ~/LiteracyBridge
+     * The Application's home directory.
+     * @return ~/Amplio
      */
     public File getApplicationHomeDirectory() {
-        // ~/LiteracyBridge
+        // ~/Amplio
         return AmplioHome.getDirectory();
     }
 

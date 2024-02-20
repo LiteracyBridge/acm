@@ -28,7 +28,7 @@ public class TBLoaderConstants {
 
 
     public static final String COLLECTED_DATA_SUBDIR_NAME = "collected-data";
-  public static final String COLLECTED_DATA_DROPBOXDIR_PREFIX = "tbcd";
+  public static final String COLLECTED_DATA_TBLOADERID_PREFIX = "tbcd";
   //public static final String COLLECTION_SUBDIR = "/"
   //    + COLLECTED_DATA_SUBDIR_NAME;
   //public static String TEMP_COLLECTION_DIR = "";

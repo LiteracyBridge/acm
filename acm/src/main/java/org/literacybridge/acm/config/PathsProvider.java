@@ -7,20 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /*
-    File structure of a Dropbox program.
-        ~/Dropbox (Amplio)
-            ACM-${programid             # various config files for the program
-                TB-Loaders              # bat files to run TB-Loader
-                    TB_Options          # various sub-directories used in creating a deployment
-                        activeLists, basic, config_files, firmware, languages, system_menus
-                    communities
-                    metadata            # Partial metadata snapshot (This is incomplete)
-                    packages            # "Packages" are exported here. These could be cleaned up immediately.
-                    published           # The published deployments go here
-                content                 # Deeply nested directory
-                programspec             # Currently active program spec is cached here
-
-    File structure of a Dropbox-less program.
+    File structure of a program.
         ~/Amplio
             acm-dbs
                 ${programid}
@@ -42,51 +29,33 @@ public class PathsProvider {
 
     private final String programId;
     private final String acmDbDirName;
-    private final boolean usesDropbox;
 
-    PathsProvider(String acmDbDirName, boolean usesDropbox) {
+    PathsProvider(String acmDbDirName) {
         programId = ACMConfiguration.cannonicalProjectName(acmDbDirName);
-        acmDbDirName = usesDropbox ? ACMConfiguration.cannonicalAcmDirectoryName(acmDbDirName) : acmDbDirName;
+        acmDbDirName = acmDbDirName;
         assert(acmDbDirName != null);
         this.acmDbDirName = acmDbDirName;
-        this.usesDropbox = usesDropbox;
 
-        if (usesDropbox) {
-            programHomeDir = new File(AmplioHome.getDropboxDir(), acmDbDirName);
-        } else {
-            programHomeDir = new File(AmplioHome.getHomeDbsRootDir(), acmDbDirName);
-        }
+        programHomeDir = new File(AmplioHome.getHomeDbsRootDir(), acmDbDirName);
         //noinspection ResultOfMethodCallIgnored
         programHomeDir.mkdirs();
     }
 
     /* ************************************************************************
-     * Directories and files of the ACM Database. These are either in dropbox
-     * or are synced with S3.
+     * Directories and files of the ACM Database. These are synced with S3.
      * These files are shared and synchronized among all users.
-     *
-     * Wherever you see only ~/Amplio, it might also be ~/LiteracyBridge, and
-     * only ~/Amplio/acm-dbs might also be ~/Dropbox
      * ************************************************************************/
 
     /**
      * Gets the home (or root) directory for the given program.
-     * @return ~/Dropbox/ACM-${programId} or ~/Amplio/acm-dbs/${programId}
+     * @return ~/Amplio/acm-dbs/${programId}
      */
     public File getProgramHomeDir() {
         return programHomeDir;
     }
 
     /**
-     * Is this database held in Dropbox?
-     * @return true if so.
-     */
-    public boolean isDropboxDb() {
-        return usesDropbox;
-    }
-
-    /**
-     * @return ${programId} (if in Amplio) or ACM-${programId} (if in Dropbox)
+     * @return ${programId}
      */
     public String getProgramDirName() {
         return programHomeDir.getName();
@@ -102,7 +71,7 @@ public class PathsProvider {
 
     /**
      * The directory with audio content.
-     * @return ~/Dropbox/ACM-${programId}/content or ~/Amplio/acm-dbs/${programId}/content
+     * @return ~/Amplio/acm-dbs/${programId}/content
      */
     public File getProgramContentDir() {
         return new File(programHomeDir, Constants.RepositoryHomeDir);
@@ -110,7 +79,7 @@ public class PathsProvider {
 
     /**
      * The directory with TB-Loaders.
-     * @return ~/Dropbox/ACM-${programId}/TB-Loaders or ~/Amplio/acm-dbs/${programId}
+     * @return ~/Amplio/acm-dbs/${programId}
      */
     public File getProgramTbLoadersDir() {
         return new File(programHomeDir, Constants.TBLoadersHomeDir);
@@ -165,7 +134,7 @@ public class PathsProvider {
     }
 
     /**
-     * @return ~/Amplio/ACM/temp/${acmDbDirName} (may include ACM-, for Dropbox programs)
+     * @return ~/Amplio/ACM/temp/${acmDbDirName}
      */
     File getLocalProgramTempDir() {
         File dir = new File(AmplioHome.getTempsDir(), acmDbDirName);
@@ -191,26 +160,19 @@ public class PathsProvider {
         return new File(AmplioHome.getCachesDir(), acmDbDirName);
     }
 
-    /**
-     * @return ~/Amplio/ACM/temp/${acmDbDirName}/content (acmDbDirName may include ACM-, for Dropbox programs)
-     */
-//    File getLocalAcmSandboxDir() {
-//        return new File(getLocalProgramTempDir(), Constants.RepositoryHomeDir);
-//    }
-
     File getSandboxDir() {
         return new File(AmplioHome.getSandboxesDir(), programId);
     }
 
     /**
-     * @return ~/Amplio/ACM/temp/${acmDbDirName}.lock (acmDbDirName may include ACM-. for Dropbox programs0
+     * @return ~/Amplio/ACM/temp/${acmDbDirName}.lock
      */
     public File getLocalLockFile() {
         return new File(AmplioHome.getTempsDir(), acmDbDirName + ".lock");
     }
 
     /**
-     * @return ~/Amplio/ACM/temp/${acmDbDirName}-checkedout.properties (acmDbDirName may include ACM-. for Dropbox programs0
+     * @return ~/Amplio/ACM/temp/${acmDbDirName}-checkedout.properties
      */
     public File getLocalCheckoutFile() {
         return new File(AmplioHome.getTempsDir(), acmDbDirName + Constants.CHECKOUT_PROPERTIES_SUFFIX);

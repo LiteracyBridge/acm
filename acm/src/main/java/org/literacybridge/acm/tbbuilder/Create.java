@@ -61,7 +61,7 @@ class Create {
     private void createDeployment() throws Exception {
         File stagedMetadataDir = new File(builderContext.stagingDir, "metadata" + File.separator + builderContext.deploymentName);
         String revFileName = String.format(TBLoaderConstants.UNPUBLISHED_REVISION_FORMAT, builderContext.buildTimestamp, builderContext.deploymentName);
-        // use LB Home Dir to create folder, then zip to Dropbox and delete the
+        // use Amplio Home Dir to create folder, then zip to acm-dbs/${PROGRAM}/TB-Loaders/published/ and delete the
         // folder
         IOUtils.deleteRecursive(builderContext.stagedDeploymentDir);
         builderContext.stagedDeploymentDir.mkdirs();

@@ -133,7 +133,7 @@ class TBLoaderCoreV1 extends TBLoaderCore {
     @Override
     protected synchronized TbFile getCollectedOpDataDir() {
         if (collectedOpDataDir == null) {
-            collectedOpDataDir = mCollectedDataDirectory         // like /Users/alice/Dropbox/tbcd000c
+            collectedOpDataDir = mCollectedDataDirectory         // like /Users/alice/Amplio/collectiondir
                 .open(mOldDeploymentInfo.getProjectName())  // {tbloaderConfig.project}
                 .open(OPERATIONAL_DATA)                     // "OperationalData"
                 .open(mTbLoaderConfig.getTbLoaderId())      // {tbloaderConfig.tbLoaderId}
