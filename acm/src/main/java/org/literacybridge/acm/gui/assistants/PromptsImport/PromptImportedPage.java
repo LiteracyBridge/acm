@@ -134,21 +134,21 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
         AudioImporter importer = AudioImporter.getInstance();
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
 
-        // Debugging
         for (PromptMatchable matchable : matches) {
             // Get data of all previous items
             PromptTarget left = matchable.getLeft();
             String id = left.getPromptId();
-
+            String desc = left.getPromptFilename();
             // Get next data
             File importableFile = matchable.getRight().getFile();
 
             try {
                 Category systemCategory = store.getTaxonomy().getCategory(CATEGORY_TB_SYSTEM);
                 ImportHandler handler = new ImportHandler(systemCategory, matchable);
-                SystemPrompts sysPrompts = new SystemPrompts(id, context.languagecode);
+                SystemPrompts sysPrompts = new SystemPrompts(id, desc, context.languagecode);
                 boolean isUpdate = sysPrompts.findPrompts();
                 if (isUpdate) {
+                    // Get the audio item of the existing file and update content repository
                     AudioItem audioItem = null;
                     if (sysPrompts.longPromptItem != null) {
                         audioItem = sysPrompts.longPromptItem;
@@ -157,6 +157,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                     }
                     importer.updateAudioItemFromFile(audioItem, importableFile, handler);
                 } else {
+                    // create a new audio item from the file and store in content repo
                     AudioItem audioItem = importer.importAudioItemFromFile(importableFile, handler);
                     matchable.getLeft().setItem(audioItem);
                     store.newAudioItem(audioItem);
@@ -362,8 +363,6 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
             }
 
             String existingTitle = item.getTitle();
-            // Debugging
-            String _debug = promptMatchable.getLeft().getPromptId();
             if (!promptMatchable.getLeft().getPromptId().equals(existingTitle)) {
                 System.out.printf("Renaming '%s' to '%s'.%n",
                         existingTitle,
@@ -372,6 +371,11 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                         .put(MetadataSpecification.DC_TITLE, promptMatchable.getLeft().getPromptId());
             }
 
+            // now let's rename file from id to readable text
+            item.getMetadata()
+                    .put(MetadataSpecification.DC_TITLE, promptMatchable.getLeft().getPromptFilename());
+            item.getMetadata()
+                    .put(MetadataSpecification.DC_IDENTIFIER, promptMatchable.getLeft().getPromptId());
 
         }
     }

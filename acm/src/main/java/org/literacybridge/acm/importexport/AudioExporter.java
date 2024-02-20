@@ -79,6 +79,9 @@ public class AudioExporter {
                 Metadata metadata = audioItem.getMetadata();
                 StringBuilder basename = new StringBuilder();
                 if (titleInFilename) {
+                    // Since we store the file metadata title in their human-readable form,
+                    // we actually have to use the identifier tag to store filenames
+                    // eg. 2.a18 instead of 'paused.18'
                     String title = metadata.getMetadataValue(MetadataSpecification.DC_TITLE).getValue();
                     basename.append(title);
                     if (idInFilename) {

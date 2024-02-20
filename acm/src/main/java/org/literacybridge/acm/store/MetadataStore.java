@@ -9,9 +9,7 @@ import java.util.*;
 import com.google.common.collect.Lists;
 import com.opencsv.CSVReader;
 import org.apache.commons.io.input.BOMInputStream;
-import org.literacybridge.acm.gui.assistants.Deployment.SystemPrompts;
 import org.literacybridge.acm.gui.assistants.PromptsImport.PromptImportAssistant;
-import org.literacybridge.acm.gui.assistants.PromptsImport.PromptTarget;
 import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
 
 public abstract class MetadataStore {
@@ -20,35 +18,6 @@ public abstract class MetadataStore {
     private final List<DataChangeListener> dataChangeListeners;
     private boolean haveChanges = false;
     private long changeCount = 0L;
-
-    Map<String, PromptsInfo.PromptInfo> promptsMap = new LinkedHashMap<>();
-
-    public static final String PROMPTS_FILE_NAME = "prompts_ex.csv";
-    public void loadPromptsInfo() {
-        InputStream csvStream = PromptImportAssistant.class.getClassLoader()
-                .getResourceAsStream(PROMPTS_FILE_NAME);
-        try (BOMInputStream bis = new BOMInputStream(csvStream);
-             Reader ir = new InputStreamReader(bis);
-             CSVReader reader = new CSVReader(ir)) {
-            Collection<PromptsInfo.PromptInfo> prompts = new LinkedList<>();
-            for (String[] line : reader.readAll()) {
-                prompts.add(new PromptsInfo.PromptInfo(line));
-            }
-            prompts.forEach(i->promptsMap.put(i.getId(), i));
-        } catch (Exception ignored) {
-            // Ignore
-        }
-    }
-
-    public Map<String, PromptsInfo.PromptInfo> getPromptsMap() {
-        return this.promptsMap;
-    }
-
-    public void updatePrompt(PromptsInfo.PromptInfo promptsInfo, String promptName) {
-        if (promptsMap.containsKey(promptName)) {
-            promptsMap.put(promptName, promptsInfo);
-        }
-    }
 
     public abstract Transaction newTransaction();
 
@@ -67,6 +36,8 @@ public abstract class MetadataStore {
     public abstract Playlist getPlaylist(String uid);
 
     public abstract Playlist findPlaylistByName(String name);
+
+    public abstract Playlist findPlaylistById(String id);
 
     public abstract void deletePlaylist(String uid);
 

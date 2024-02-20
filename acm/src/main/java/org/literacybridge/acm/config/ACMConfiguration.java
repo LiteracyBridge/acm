@@ -52,6 +52,8 @@ public class ACMConfiguration {
     private boolean devo;
     CommandLineParams params;
 
+    private PromptsDB promptsDB;
+
     private final Properties UsersConfigurationProperties = new Properties();
 
     private static final String ACM_PREFIX = Constants.ACM_DIR_NAME + "-";
@@ -297,6 +299,11 @@ public class ACMConfiguration {
         // TODO: Do something with value of inSync
         boolean initialized = dbConfig.init(accessControlResolver);
         currentDB = dbConfig;
+
+        // It seems ACM DB is accessible only after we've initilaized config file
+        // We can now go ahead and do the system prompts migration
+        promptsDB = new PromptsDB();
+        promptsDB.migrateSystemPrompts();
 
         return initialized;
     }

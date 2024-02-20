@@ -6,12 +6,7 @@ import org.apache.commons.io.input.BOMInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -70,10 +65,10 @@ public class PromptsInfo {
 
     // Map from the id (1, 2, 3, '9-0', '$0-1') to PromptInfo.
     Map<String, PromptInfo> promptsMap = new LinkedHashMap<>();
+    Map<String, PromptsInfo.PromptInfo> promptsInfo = new LinkedHashMap<>();
     List<String> ids;
-    public PromptsInfo() {
-        loadPromptsInfo();
-    }
+    public Map<Integer, String> systemPromptNamesMap = new HashMap<>();
+    public PromptsInfo() { loadPromptsInfo(); }
 
     public PromptInfo getPrompt(String id) {
         return promptsMap.get(id);

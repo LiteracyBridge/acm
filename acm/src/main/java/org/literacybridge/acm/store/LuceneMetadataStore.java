@@ -2,6 +2,7 @@ package org.literacybridge.acm.store;
 
 import com.google.common.collect.Maps;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,9 +52,6 @@ public class LuceneMetadataStore extends MetadataStore {
                   }
               }
           }
-
-          // This should only be called once - perhaps set on lock on it?
-          loadPromptsInfo();
       } catch (IOException e) {
           throw new RuntimeException("Unable to initialize caches", e);
       }
@@ -137,6 +135,15 @@ public class LuceneMetadataStore extends MetadataStore {
         return playlist;
     }
     return null;
+  }
+
+  @Override
+  public Playlist findPlaylistById(String id) {
+      for (Playlist playlist : playlistCache.values()) {
+          if (playlist.getId().equals(id))
+              return playlist;
+      }
+      return null;
   }
 
   @Override

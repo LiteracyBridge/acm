@@ -93,9 +93,7 @@ public class SidebarView extends ACMContainer implements Observer {
         CATEGORY(300, false),
         PLAYLIST(120, true),
         LANGUAGE(90, false),
-        DEVICE(50, true),
-
-        PROMPTS(120, true);
+        DEVICE(50, true);
 
         TaskPaneProps(int preferredHeight, boolean initiallyCollapsed) {
             this.preferredSize = new Dimension(150, preferredHeight);

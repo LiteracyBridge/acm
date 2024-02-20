@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import static org.literacybridge.acm.Constants.*;
 
 public class SystemPrompts {
-    public static final String SHORT_TITLE = "%s";
     public final static String SYSTEM_MESSAGE_CATEGORY = "System Messages";
     private static MetadataStore store = ACMConfiguration.getInstance()
             .getCurrentDB()
@@ -21,6 +20,7 @@ public class SystemPrompts {
 
     private String title;
     private String language;
+    private String description;
     private String categoryId;
     private File shortPromptFile;
     public AudioItem shortPromptItem;
@@ -33,7 +33,19 @@ public class SystemPrompts {
 
     public SystemPrompts(String title, String languagecode) {
         this.title = title;
+        this.description = "";
         this.language = languagecode;
+        this.categoryId = null;
+        this.shortPromptFile = null;
+        this.longPromptFile = null;
+        this.shortPromptItem = null;
+        this.longPromptItem = null;
+    }
+
+    public SystemPrompts(String title, String description, String language) {
+        this.title = title;
+        this.description = description;
+        this.language = language;
         this.categoryId = null;
         this.shortPromptFile = null;
         this.longPromptFile = null;
@@ -54,6 +66,10 @@ public class SystemPrompts {
         this.shortPromptItem = shortPromptItem;
         this.longPromptFile = longPromptFile;
         this.longPromptItem = longPromptItem;
+    }
+
+    public void renamePrompt(String newtitle) {
+        this.description = newtitle;
     }
 
     public void setShortPromptFile(String filename) {
@@ -77,11 +93,20 @@ public class SystemPrompts {
                 .getCategory(CATEGORY_TB_SYSTEM));    //   root
         List<Locale> localeList = Collections.singletonList(new RFC3066LanguageCode(language).getLocale());
 
-        SearchResult searchResult = store.search(title, categoryList, localeList);
+        // Names are displayed in human-readable forms
+        // so searches will have to take that form
+        // instead of the file id
+        SearchResult searchResult;
+        if (description.isEmpty()) {
+            searchResult = store.search(title, categoryList, localeList);
+        } else {
+            searchResult = store.search(description, categoryList, localeList);
+        }
+
         Map<String, AudioItem> items = searchResult.getAudioItems()
                 .stream()
                 .map(store::getAudioItem)
-                .collect(Collectors.toMap(audioItem -> audioItem.getTitle().trim(), c -> c));
+                .collect(Collectors.toMap(audioItem -> audioItem.getAudioId().trim(), c -> c)); // getTitle
 
         // Items list returns null. Can't find our system prompt in store
         if (items.size() == 0) {

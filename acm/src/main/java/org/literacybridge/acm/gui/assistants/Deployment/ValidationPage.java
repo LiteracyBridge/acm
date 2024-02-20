@@ -1,16 +1,12 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.store.IOContext;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
-import org.literacybridge.acm.gui.assistants.PromptsImport.PromptImportContext;
-import org.literacybridge.acm.gui.assistants.PromptsImport.PromptTarget;
 import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
-import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.store.Category;
@@ -35,7 +31,6 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.Constants.BELL_SOUND;
 import static org.literacybridge.acm.gui.assistants.common.AcmAssistantPage.getLanguageAndName;
 import static org.literacybridge.acm.tbbuilder.TBBuilder.MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
@@ -338,22 +333,24 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      */
     private void validateSystemPrompts(Collection<String> languages) {
         List<String> required_messages = TBBuilder.getRequiredSystemMessages(context.includeTbTutorial);
-        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-        Map<String, PromptsInfo.PromptInfo> storePromptsInfoMap = store.getPromptsMap();
+        PromptsInfo sysPromptsInfo = new PromptsInfo();
 
         // { id : description }
         PromptsInfo promptsInfo = null;
 
         for (String language : languages) {
-            //File languageDir = IOUtils.FileIgnoreCase(languagesDir, language);
+
             List<Integer> missing = new ArrayList<>();
 
             Map<String, SystemPrompts> systemPromptsMap = new HashMap<>();
             context.systemprompts.put(language, systemPromptsMap);
 
             for (String prompt : required_messages) {
-                if (storePromptsInfoMap.containsKey(prompt)) {
-                    SystemPrompts tempSystemPrompt = new SystemPrompts(prompt, language);
+                PromptsInfo.PromptInfo tempPromptInfo = sysPromptsInfo.getPrompt(prompt);
+                // If prompt doesn't exist in repo, report as missing
+                if (tempPromptInfo != null) {
+                    String desc = tempPromptInfo.getFilename();
+                    SystemPrompts tempSystemPrompt = new SystemPrompts(prompt, desc, language);
                     if (!tempSystemPrompt.findPrompts()) {
                         missing.add(Integer.parseInt(prompt));
                     } else {
