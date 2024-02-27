@@ -1,4 +1,4 @@
-package com.amplio.talkingbookapp
+package org.literacybridge.talkingbookapp
 
 import org.junit.Test
 

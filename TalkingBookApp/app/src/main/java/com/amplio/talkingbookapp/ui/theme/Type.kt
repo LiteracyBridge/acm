@@ -1,4 +1,4 @@
-package com.amplio.talkingbookapp.ui.theme
+package org.literacybridge.talkingbookapp.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
