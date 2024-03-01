@@ -150,7 +150,7 @@ public class PlaylistPrompts {
             // in the "control.txt", and is played right after "Welcome to the Talking Book!".
             this.categoryId = categoryIds.get(0);
 
-        } else if (categoryIds.size() > 0) {
+        } else if (!categoryIds.isEmpty()) {
             // Where to look for category prompts.
             File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
             String languagesPath =

@@ -14,11 +14,11 @@ import static org.literacybridge.acm.Constants.*;
 
 public class SystemPrompts {
     public final static String SYSTEM_MESSAGE_CATEGORY = "System Messages";
-    private static MetadataStore store = ACMConfiguration.getInstance()
+    private static final MetadataStore store = ACMConfiguration.getInstance()
             .getCurrentDB()
             .getMetadataStore();
 
-    private String title;
+    private final String title;
     private String language;
     private String description;
     private String categoryId;
@@ -85,7 +85,6 @@ public class SystemPrompts {
         if (e != null) {
             shortPromptItem = e;
         }
-        return;
     }
 
     private boolean findPromptsInAcmContent() {
@@ -109,8 +108,20 @@ public class SystemPrompts {
                 .collect(Collectors.toMap(audioItem -> audioItem.getAudioId().trim(), c -> c)); // getTitle
 
         // Items list returns null. Can't find our system prompt in store
-        if (items.size() == 0) {
-            return false;
+        if (items.isEmpty()) {
+            // Okay there can be instances where the description field is not NULL
+            // but the search through file desc returns an empty item
+            // In such cases just try searching with the file id
+            searchResult = store.search(title, categoryList, localeList);
+            items = searchResult.getAudioItems()
+                    .stream()
+                    .map(store::getAudioItem)
+                    .collect(Collectors.toMap(audioItem -> audioItem.getAudioId().trim(), c -> c));
+            // if we still get an empty item list then there is indeed no instance of the file
+            // in the content store
+            if (items.isEmpty()) {
+                return false;
+            }
         }
 
         // match pattern and optional " : description"

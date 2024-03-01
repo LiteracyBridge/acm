@@ -62,6 +62,8 @@ public class Constants {
                                 /*"USER_NAME", "USER_CONTACT_INFO"*/};
 
   public final static String CATEGORY_GENERAL_OTHER = "0-0";
+  public final static String CATGEORY_GENERAL_AGRICULTURE = "1-0";
+  public final static String CATEGORY_TB = "0-4";
   public final static String CATEGORY_TB_SYSTEM = "0-4-1";
   public final static String CATEGORY_TB_CATEGORIES = "0-4-2";
   public final static String CATEGORY_INTRO_MESSAGE = "0-5";
