@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -64,17 +65,18 @@ fun SignedInContent(state: SignedInState) {
 //                    .align(Alignment.CenterHorizontally)
             ) {
                 Image(
-                    painter = painterResource(R.mipmap.img_amplio_logo),
+                    painter = painterResource(R.drawable.amplio_logo),
                     contentDescription = null,
+                    modifier=Modifier.width(40.dp)
                 )
             }
         },
-//        footerContent = {
-//            Text(
-//                "© All Rights Reserved",
-//                modifier = Modifier.align(Alignment.CenterHorizontally)
-//            )
-//        }
+        footerContent = {
+            Text(
+                "© All Rights Reserved",
+//                modifier = Modifier.align(Alignment.Center)
+            )
+        }
     ) {
         // ...
     }
