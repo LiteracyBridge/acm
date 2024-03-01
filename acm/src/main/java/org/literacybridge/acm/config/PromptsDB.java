@@ -25,6 +25,8 @@ public class PromptsDB {
         Category systemCategory = store.getTaxonomy().getCategory(CATEGORY_TB_SYSTEM);
         Category tbCategories = store.getTaxonomy().getCategory(CATEGORY_TB_CATEGORIES);
         Category talkingBook = store.getTaxonomy().getCategory(CATEGORY_TB);
+        Category agricultureCategory = store.getTaxonomy().getCategory(CATGEORY_GENERAL_AGRICULTURE);
+
         AudioImporter importer = AudioImporter.getInstance();
         ACMConfiguration acm = ACMConfiguration.getInstance();
         DBConfiguration config = ACMConfiguration.getInstance().getCurrentDB();
@@ -48,7 +50,6 @@ public class PromptsDB {
                     // are there subdirectories in the language folders?
                     if (dirFile.isDirectory()) {
                         String dirname = dirFile.getName();
-                        Category agricultureCategory = store.getTaxonomy().getCategory(CATGEORY_GENERAL_AGRICULTURE);
                         if (dirname.equals("cat")) {
                             // playlist prompts
                             // Lookup names in General Agriculture
@@ -67,6 +68,8 @@ public class PromptsDB {
                                     } catch (Exception ignored) {
 
                                     }
+                                    // delete the file
+                                    catFile.delete();
                                 }
                             }
                         }
@@ -93,8 +96,6 @@ public class PromptsDB {
                                     //audioItem.getMetadata().put(MetadataSpecification.DC_LANGUAGE, languageCode);
                                     audioItem.getMetadata().put(MetadataSpecification.DC_TITLE, desc);
                                     audioItem.getMetadata().put(MetadataSpecification.DC_IDENTIFIER, fileId);
-                                    // now replace existing audio item with new item
-                                    //importer.updateAudioItemFromFile(audioItem, dirFile, handler);
                                 } else {
                                     // store the audio item in store
                                     AudioItem audioItem = importer.importAudioItemFromFile(dirFile, handler);
@@ -102,7 +103,7 @@ public class PromptsDB {
                                 }
                             }
                             // now delete the file from the Windows file system
-                            //dirFile.delete();
+                            dirFile.delete();
                         } catch (Exception ignored) {
 
                         }
