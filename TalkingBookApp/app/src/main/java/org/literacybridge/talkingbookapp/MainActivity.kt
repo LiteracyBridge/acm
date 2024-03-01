@@ -1,5 +1,6 @@
 package org.literacybridge.talkingbookapp
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -18,15 +19,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
-import com.amplifyframework.ui.authenticator.SignInState
 import com.amplifyframework.ui.authenticator.SignedInState
-import com.amplifyframework.ui.authenticator.rememberAuthenticatorState
 import com.amplifyframework.ui.authenticator.ui.Authenticator
+import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
+
+
+const val TAG = "TalkingBook";
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -41,15 +44,63 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Greeting("Android")
-                    Authenticator { state ->
+                    Authenticator(
+                        headerContent = {
+                            Box(
+//                                modifier = Modifier.size(80.dp).align(Alignment.CenterHorizontally)
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.amplio_logo),
+                                    contentDescription = null,
+                                )
+                            }
+                        },
+//                        footerContent = {
+//                            Text(
+//                                "© All Rights Reserved",
+//                                modifier = Modifier.align(Alignment.CenterHorizontally)
+//                            )
+//                        }
+                    ) { state ->
                         SignedInContent(state)
                     }
                 }
             }
         }
 
+        Amplify.Auth.getCurrentUser({
+            Log.i(TAG, "session = $it")
+        }, {
+            Log.e(TAG, "auth error = $it")
+        })
+
+//            .initialize(applicationContext, object : Callback<UserStateDetails?>() {
+//                fun onResult(userStateDetails: UserStateDetails) {
+//                    Log.i(TAG, userStateDetails.getUserState().toString())
+//                    when (userStateDetails.getUserState()) {
+//                        SIGNED_IN -> {
+//                            val i = Intent(this@AuthenticationActivity, MainActivity::class.java)
+//                            startActivity(i)
+//                        }
+//
+//                        SIGNED_OUT -> showSignIn()
+//                        else -> {
+//                            AWSMobileClient.getInstance().signOut()
+//                            showSignIn()
+//                        }
+//                    }
+//                }
+//
+//                fun onError(e: Exception) {
+//                    Log.e(TAG, e.toString())
+//                }
+//            })
+
         Amplify.Auth.fetchAuthSession(
-            { Log.i("AmplifyQuickstart", "Auth session = $it") },
+            { it ->
+                Log.i(TAG, it.isSignedIn.toString())
+            },
+//            { Log.i("AmplifyQuickstart", "Auth session = $it") },
             { error -> Log.e("AmplifyQuickstart", "Failed to fetch auth session", error) }
         )
     }
@@ -67,7 +118,7 @@ fun SignedInContent(state: SignedInState) {
                 Image(
                     painter = painterResource(R.drawable.amplio_logo),
                     contentDescription = null,
-                    modifier=Modifier.width(40.dp)
+                    modifier = Modifier.width(40.dp)
                 )
             }
         },
@@ -78,7 +129,7 @@ fun SignedInContent(state: SignedInState) {
             )
         }
     ) {
-        // ...
+        Text(text = "working me")
     }
 }
 
