@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -12,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
@@ -52,18 +55,20 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun SignedInContent(state: SignedInState){
+fun SignedInContent(state: SignedInState) {
     Authenticator(
-//        headerContent = {
-//            Box(
-//                modifier = Modifier.size(80.dp).align(Alignment.CenterHorizontally)
-//            ) {
-//                Image(
-//                    painter = painterResource(R.drawable.amplify),
-//                    contentDescription = null,
-//                )
-//            }
-//        },
+        headerContent = {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(80.dp)
+//                    .align(Alignment.CenterHorizontally)
+            ) {
+                Image(
+                    painter = painterResource(R.mipmap.img_amplio_logo),
+                    contentDescription = null,
+                )
+            }
+        },
 //        footerContent = {
 //            Text(
 //                "© All Rights Reserved",
@@ -74,6 +79,7 @@ fun SignedInContent(state: SignedInState){
         // ...
     }
 }
+
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(

@@ -15,6 +15,14 @@
             "Region": "us-west-2"
           }
         },
+        "CredentialsProvider": {
+          "CognitoIdentity": {
+            "Default": {
+              "PoolId": "us-west-2:c57e8e17-b2ab-404d-a4a2-29d3865e28f7",
+              "Region": "us-west-2"
+            }
+          }
+        },
         "Auth": {
           "Default": {
             "authenticationFlowType": "USER_SRP_AUTH",
@@ -24,17 +32,21 @@
             "signupAttributes": [
               "EMAIL"
             ],
-            "passwordProtectionSettings": {
-              "passwordPolicyMinLength": 8,
-              "passwordPolicyCharacters": []
-            },
             "mfaConfiguration": "OFF",
             "mfaTypes": [
               "SMS"
             ],
             "verificationMechanisms": [
               "EMAIL"
-            ]
+            ],
+            "passwordProtectionSettings": {
+              "passwordPolicyMinLength": 8,
+              "passwordPolicyCharacters": [
+                "REQUIRES_LOWERCASE",
+                "REQUIRES_UPPERCASE",
+                "REQUIRES_NUMBERS"
+              ]
+            }
           }
         }
       }
