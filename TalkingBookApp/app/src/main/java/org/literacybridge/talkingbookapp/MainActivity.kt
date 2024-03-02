@@ -1,5 +1,6 @@
 package org.literacybridge.talkingbookapp
 
+import AppNavHost
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.rememberNavController
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.ui.authenticator.SignedInState
@@ -36,6 +38,13 @@ class MainActivity : ComponentActivity() {
         Amplify.addPlugin(AWSCognitoAuthPlugin())
         Amplify.configure(applicationContext)
 
+//        val navController = rememberNavController()
+//        NavHost(navController = navController, startDestination = "profile") {
+//            composable("profile") { Profile(/*...*/) }
+//            composable("friendslist") { FriendsList(/*...*/) }
+//            /*...*/
+//        }
+
         setContent {
             TalkingBookAppTheme {
                 // A surface container using the 'background' color from the theme
@@ -43,27 +52,28 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting("Android")
-                    Authenticator(
-                        headerContent = {
-                            Box(
-//                                modifier = Modifier.size(80.dp).align(Alignment.CenterHorizontally)
-                            ) {
-                                Image(
-                                    painter = painterResource(R.drawable.amplio_logo),
-                                    contentDescription = null,
-                                )
-                            }
-                        },
-//                        footerContent = {
-//                            Text(
-//                                "© All Rights Reserved",
-//                                modifier = Modifier.align(Alignment.CenterHorizontally)
-//                            )
-//                        }
-                    ) { state ->
-                        SignedInContent(state)
-                    }
+                    AppNavHost(navController = rememberNavController())
+//                    Greeting("Android")
+//                    Authenticator(
+//                        headerContent = {
+//                            Box(
+////                                modifier = Modifier.size(80.dp).align(Alignment.CenterHorizontally)
+//                            ) {
+//                                Image(
+//                                    painter = painterResource(R.drawable.amplio_logo),
+//                                    contentDescription = null,
+//                                )
+//                            }
+//                        },
+////                        footerContent = {
+////                            Text(
+////                                "© All Rights Reserved",
+////                                modifier = Modifier.align(Alignment.CenterHorizontally)
+////                            )
+////                        }
+//                    ) { state ->
+//                        SignedInContent(state)
+//                    }
                 }
             }
         }

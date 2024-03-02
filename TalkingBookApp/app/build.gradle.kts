@@ -51,6 +51,11 @@ android {
 }
 
 dependencies {
+    val navVersion = "2.7.7"
+
+    implementation("androidx.navigation:navigation-compose:$navVersion")
+
+
     // Amplify
     implementation("com.amplifyframework:aws-auth-cognito:2.14.11")
     implementation("com.amplifyframework:core:2.14.11")
