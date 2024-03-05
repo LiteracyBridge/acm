@@ -42,44 +42,13 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             Log.i(LOG_TAG, "Amplify plugin already configured")
         }
 
-
         // Setup dfu
         dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
         dfu.setListener(this)
 
-//        val navController = rememberNavController()
-//        NavHost(navController = navController, startDestination = "profile") {
-//            composable("profile") { Profile(/*...*/) }
-//            composable("friendslist") { FriendsList(/*...*/) }
-//            /*...*/
-//        }
 
         val permissions = arrayOf<String>(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         requestPermissions(permissions, 12)
-
-//        when {
-//            ContextCompat.checkSelfPermission(
-//                this,
-//                Manifest.permission.WRITE_EXTERNAL_STORAGE
-//            ) == PackageManager.PERMISSION_GRANTED -> {
-//                // You can use the API that requires the permission.
-//            }
-//            ActivityCompat.shouldShowRequestPermissionRationale(
-//                this, Manifest.permission.REQUESTED_PERMISSION) -> {
-//                // In an educational UI, explain to the user why your app requires this
-//                // permission for a specific feature to behave as expected, and what
-//                // features are disabled if it's declined. In this UI, include a
-//                // "cancel" or "no thanks" button that lets the user continue
-//                // using your app without granting the permission.
-//                showInContextUI(...)
-//            }
-//            else -> {
-//                // You can directly ask for the permission.
-//                // The registered ActivityResultCallback gets the result of this request.
-//                requestPermissionLauncher.launch(
-//                    Manifest.permission.REQUESTED_PERMISSION)
-//            }
-//        }
 
         setContent {
             TalkingBookAppTheme {
@@ -208,7 +177,8 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
     override fun onStart() {
         super.onStart()
 
-        /* Setup USB */usb = Usb(this)
+        /* Setup USB */
+        usb = Usb(this)
         usb.setUsbManager(getSystemService(USB_SERVICE) as UsbManager)
         usb.setOnUsbChangeListener(this)
 
@@ -217,25 +187,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         registerReceiver(usb.getmUsbReceiver(), IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED))
         registerReceiver(usb.getmUsbReceiver(), IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
 
-
-        // Handle case where USB device is connected before app launches;
-        // hence ACTION_USB_DEVICE_ATTACHED will not occur so we explicitly call for permission
-
-        // lets request for write access first
-
-        // Setup Pending Intent
-//        val permissionIntent =
-//            PendingIntent.getBroadcast(this, 0, Intent(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-//                PendingIntent.FLAG_IMMUTABLE)
-//        val device = getUsbDevice(vendorId, productId)
-
-
-//        Log.d(LOG_TAG, "New device detected $device")
-//        if (device != null) {
-//            usb!!.mUsbManager.requestPermission(device, permissionIntent)
-//        }
-
-//        usb.requestPermission(this, Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
+        usb.requestPermission(this, Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
     }
 
     override fun onStop() {
@@ -267,22 +219,6 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 //        status.setText(deviceInfo)
         dfu.setUsb(usb)
     }
-
-
-//   override fun onRequestPermissionsResult(
-//        requestCode: Int,
-//        permissions: Array<String>,
-//        grantResults: IntArray
-//    ) {
-////       super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-//       when (requestCode) {
-//            12 -> if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                //Granted.
-//            } else {
-//                //Denied.
-//            }
-//        }
-//    }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,

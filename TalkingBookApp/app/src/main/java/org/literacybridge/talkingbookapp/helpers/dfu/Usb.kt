@@ -23,12 +23,13 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
+import android.os.Build
 import android.util.Log
 import org.literacybridge.talkingbookapp.helpers.LOG_TAG
 
 class Usb(private val mContext: Context) {
-     var mUsbManager: UsbManager? = null
-        private  set
+    var mUsbManager: UsbManager? = null
+        private set
 
     var usbDevice: UsbDevice? = null
         private set
@@ -53,7 +54,12 @@ class Usb(private val mContext: Context) {
     private val mUsbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
-            Log.d(LOG_TAG, "permission action $action, equals $ACTION_USB_PERMISSION, ${ACTION_USB_PERMISSION.equals(action)}")
+            Log.d(
+                LOG_TAG,
+                "permission action $action, equals $ACTION_USB_PERMISSION, ${
+                    ACTION_USB_PERMISSION.equals(action)
+                }"
+            )
             if (ACTION_USB_PERMISSION.equals(action)) {
                 synchronized(this) {
                     val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
@@ -98,10 +104,19 @@ class Usb(private val mContext: Context) {
     }
 
     fun requestPermission(context: Context?, vendorId: Int, productId: Int) {
-        // Setup Pending Intent
+        // FLAG_MUTABLE intent flag has to be used in some API levels (Bug in Android?)
+        // refer to https://stackoverflow.com/questions/73267829/androidstudio-usb-extra-permission-granted-returns-false-always
+        // for more details
+        var flag = PendingIntent.FLAG_IMMUTABLE;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            flag = PendingIntent.FLAG_MUTABLE
+        }
+
         val permissionIntent =
-            PendingIntent.getBroadcast(context, 0, Intent(ACTION_USB_PERMISSION),
-                PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.getBroadcast(
+                context, 0, Intent(ACTION_USB_PERMISSION),
+                flag
+            )
         val device = getUsbDevice(vendorId, productId)
 
         Log.d(LOG_TAG, "New device detected $device")

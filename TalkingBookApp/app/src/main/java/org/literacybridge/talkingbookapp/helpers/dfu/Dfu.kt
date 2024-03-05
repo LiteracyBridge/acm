@@ -50,7 +50,10 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
     fun setUsb(usb: Usb?) {
         this.usb = usb
         Log.d(LOG_TAG, "Device found $usb");
-        deviceVersion = this.usb!!.deviceVersion
+
+        if (usb != null) {
+            deviceVersion = usb.deviceVersion
+        }
     }
 
     /* One-Click Programming Method to fully flash the connected device
