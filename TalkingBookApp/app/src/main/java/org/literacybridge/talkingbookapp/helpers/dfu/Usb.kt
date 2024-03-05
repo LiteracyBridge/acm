@@ -24,9 +24,12 @@ import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
 import android.util.Log
+import org.literacybridge.talkingbookapp.helpers.LOG_TAG
 
 class Usb(private val mContext: Context) {
-    private var mUsbManager: UsbManager? = null
+     var mUsbManager: UsbManager? = null
+        private  set
+
     var usbDevice: UsbDevice? = null
         private set
 
@@ -50,9 +53,11 @@ class Usb(private val mContext: Context) {
     private val mUsbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
-            if (ACTION_USB_PERMISSION == action) {
+            Log.d(LOG_TAG, "permission action $action, equals $ACTION_USB_PERMISSION, ${ACTION_USB_PERMISSION.equals(action)}")
+            if (ACTION_USB_PERMISSION.equals(action)) {
                 synchronized(this) {
                     val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                    Log.d(LOG_TAG, "extra permission grated ${UsbManager.EXTRA_PERMISSION_GRANTED}")
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                         if (device != null) {
                             //call method to set up device communication
@@ -98,6 +103,8 @@ class Usb(private val mContext: Context) {
             PendingIntent.getBroadcast(context, 0, Intent(ACTION_USB_PERMISSION),
                 PendingIntent.FLAG_IMMUTABLE)
         val device = getUsbDevice(vendorId, productId)
+
+        Log.d(LOG_TAG, "New device detected $device")
         if (device != null) {
             mUsbManager!!.requestPermission(device, permissionIntent)
         }

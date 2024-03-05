@@ -1,7 +1,9 @@
 package org.literacybridge.talkingbookapp
 
 import AppNavHost
+import android.Manifest
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.os.Handler
@@ -9,24 +11,14 @@ import android.os.Message
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
-import com.amplifyframework.ui.authenticator.SignedInState
-import com.amplifyframework.ui.authenticator.ui.Authenticator
+import org.literacybridge.talkingbookapp.helpers.LOG_TAG
 import org.literacybridge.talkingbookapp.helpers.dfu.Dfu
 import org.literacybridge.talkingbookapp.helpers.dfu.Usb
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
@@ -43,8 +35,13 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Amplify.addPlugin(AWSCognitoAuthPlugin())
-        Amplify.configure(applicationContext)
+        try {
+            Amplify.addPlugin(AWSCognitoAuthPlugin())
+            Amplify.configure(applicationContext)
+        } catch (e: Amplify.AlreadyConfiguredException) {
+            Log.i(LOG_TAG, "Amplify plugin already configured")
+        }
+
 
         // Setup dfu
         dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
@@ -55,6 +52,33 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 //            composable("profile") { Profile(/*...*/) }
 //            composable("friendslist") { FriendsList(/*...*/) }
 //            /*...*/
+//        }
+
+        val permissions = arrayOf<String>(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        requestPermissions(permissions, 12)
+
+//        when {
+//            ContextCompat.checkSelfPermission(
+//                this,
+//                Manifest.permission.WRITE_EXTERNAL_STORAGE
+//            ) == PackageManager.PERMISSION_GRANTED -> {
+//                // You can use the API that requires the permission.
+//            }
+//            ActivityCompat.shouldShowRequestPermissionRationale(
+//                this, Manifest.permission.REQUESTED_PERMISSION) -> {
+//                // In an educational UI, explain to the user why your app requires this
+//                // permission for a specific feature to behave as expected, and what
+//                // features are disabled if it's declined. In this UI, include a
+//                // "cancel" or "no thanks" button that lets the user continue
+//                // using your app without granting the permission.
+//                showInContextUI(...)
+//            }
+//            else -> {
+//                // You can directly ask for the permission.
+//                // The registered ActivityResultCallback gets the result of this request.
+//                requestPermissionLauncher.launch(
+//                    Manifest.permission.REQUESTED_PERMISSION)
+//            }
 //        }
 
         setContent {
@@ -118,13 +142,66 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 //                }
 //            })
 
-        Amplify.Auth.fetchAuthSession(
-            { it ->
-                Log.i(TAG, it.isSignedIn.toString())
-            },
-//            { Log.i("AmplifyQuickstart", "Auth session = $it") },
-            { error -> Log.e("AmplifyQuickstart", "Failed to fetch auth session", error) }
-        )
+//        Amplify.Auth.fetchAuthSession(
+//            { it ->
+//                Log.i(TAG, it.isSignedIn.toString())
+//            },
+////            { Log.i("AmplifyQuickstart", "Auth session = $it") },
+//            { error -> Log.e("AmplifyQuickstart", "Failed to fetch auth session", error) }
+//        )
+
+
+//        todo: add usb manager code here
+        // Get the USB manager service
+        // Get the USB manager service
+        val usbManager = (getSystemService(USB_SERVICE) as UsbManager)!!
+
+        // Get a list of connected USB devices
+        for (usbDevice in usbManager!!.deviceList.values) {
+            // Check if the device matches the STM32Fx vendor and product IDs
+            if ( /*usbDevice.getVendorId() == 1155 &&*/usbDevice.productId == 57105) {
+                // Process the connected STM32 device
+                val deviceId = usbDevice.deviceId
+                val deviceName = usbDevice.deviceName
+                //                String deviceManufacturer = usbDevice.getManufacturerName();
+//                String deviceProduct = usbDevice.getProductName();
+
+                // Perform actions based on the connected STM32 device
+                // ...
+
+                // Log or display information about the connected STM32 device
+                val deviceInfo = """
+        Device ID: $deviceId
+        Device Name: $deviceName
+        """.trimIndent()
+                //                        "\nManufacturer: " + deviceManufacturer +
+//                        "\nProduct: " + deviceProduct;
+
+                // Log the STM32 device information
+                // You can also display this information in your app as needed
+                Log.d(LOG_TAG, "$deviceInfo")
+
+                usb = Usb(this)
+                usb.setUsbManager(usbManager)
+                usb.setOnUsbChangeListener(this)
+
+                // Handle two types of intents. Device attachment and permission
+                registerReceiver(usb.getmUsbReceiver(), IntentFilter(Usb.ACTION_USB_PERMISSION))
+                registerReceiver(
+                    usb.getmUsbReceiver(),
+                    IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED)
+                )
+                registerReceiver(
+                    usb.getmUsbReceiver(),
+                    IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED)
+                )
+                usb.setDevice(usbDevice)
+                dfu.setUsb(usb)
+                //                device = usbDevice;
+                Log.d("Device Finder", "device found$deviceInfo")
+                break
+            }
+        }
     }
 
 
@@ -143,7 +220,22 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 
         // Handle case where USB device is connected before app launches;
         // hence ACTION_USB_DEVICE_ATTACHED will not occur so we explicitly call for permission
-        usb.requestPermission(this, Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
+
+        // lets request for write access first
+
+        // Setup Pending Intent
+//        val permissionIntent =
+//            PendingIntent.getBroadcast(this, 0, Intent(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+//                PendingIntent.FLAG_IMMUTABLE)
+//        val device = getUsbDevice(vendorId, productId)
+
+
+//        Log.d(LOG_TAG, "New device detected $device")
+//        if (device != null) {
+//            usb!!.mUsbManager.requestPermission(device, permissionIntent)
+//        }
+
+//        usb.requestPermission(this, Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
     }
 
     override fun onStop() {
@@ -174,5 +266,54 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         Log.d(TAG, "$deviceInfo")
 //        status.setText(deviceInfo)
         dfu.setUsb(usb)
+    }
+
+
+//   override fun onRequestPermissionsResult(
+//        requestCode: Int,
+//        permissions: Array<String>,
+//        grantResults: IntArray
+//    ) {
+////       super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//       when (requestCode) {
+//            12 -> if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                //Granted.
+//            } else {
+//                //Denied.
+//            }
+//        }
+//    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            12 -> {
+                // If request is cancelled, the result arrays are empty.
+                if ((grantResults.isNotEmpty() &&
+                            grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                ) {
+                    // Permission is granted. Continue the action or workflow
+                    // in your app.
+                    Log.d(LOG_TAG, "storage permission granted")
+                } else {
+                    // Explain to the user that the feature is unavailable because
+                    // the feature requires a permission that the user has denied.
+                    // At the same time, respect the user's decision. Don't link to
+                    // system settings in an effort to convince the user to change
+                    // their decision.
+                }
+                return
+            }
+
+            // Add other 'when' lines to check for other
+            // permissions this app might request.
+            else -> {
+                // Ignore all other requests.
+            }
+        }
     }
 }

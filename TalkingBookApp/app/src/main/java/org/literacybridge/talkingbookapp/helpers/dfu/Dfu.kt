@@ -18,6 +18,7 @@ package org.literacybridge.talkingbookapp.helpers.dfu
 import android.nfc.FormatException
 import android.os.Environment
 import android.util.Log
+import org.literacybridge.talkingbookapp.helpers.LOG_TAG
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
@@ -48,6 +49,7 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
 
     fun setUsb(usb: Usb?) {
         this.usb = usb
+        Log.d(LOG_TAG, "Device found $usb");
         deviceVersion = this.usb!!.deviceVersion
     }
 
