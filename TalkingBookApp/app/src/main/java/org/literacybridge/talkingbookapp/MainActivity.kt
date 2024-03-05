@@ -47,6 +47,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         dfu.setListener(this)
 
 
+        // TODO: implement permission write request
         val permissions = arrayOf<String>(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         requestPermissions(permissions, 12)
 
@@ -193,7 +194,8 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
     override fun onStop() {
         super.onStop()
 
-        /* USB */dfu.setUsb(null)
+        /* USB */
+        dfu.setUsb(null)
         usb.release()
         try {
             unregisterReceiver(usb.getmUsbReceiver())

@@ -63,9 +63,11 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
     @Throws(Exception::class)
     fun programFirmware(filePath: String?): Boolean {
         val MAX_ALLOWED_RETRIES = 5
+
         openFile(filePath)
         verifyFile()
         checkCompatibility()
+
         if (isDeviceProtected) {
             Log.i(TAG, "Device is protected")
             Log.i(TAG, "Removing Read Protection")
@@ -73,6 +75,7 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
             Log.i(TAG, "Device is resetting")
             return false // device will reset
         }
+
         for (i in MAX_ALLOWED_RETRIES + 1 downTo 1) {
             if (isDeviceBlank) break
             if (i == 1) {
@@ -81,7 +84,9 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
             Log.i(TAG, "Device not blank, erasing")
             massErase()
         }
+
         writeImage()
+
         for (i in MAX_ALLOWED_RETRIES + 1 downTo 1) {
             if (isWrittenImageOk) {
                 Log.i(TAG, "Writing Option Bytes, will self-reset")
@@ -102,7 +107,7 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
 
     @get:Throws(Exception::class)
     private val isDeviceBlank: Boolean
-        private get() {
+        get() {
             val readContent = ByteArray(dfuFile.elementLength)
             readImage(readContent)
             val read = ByteBuffer.wrap(readContent) // wrap whole array
@@ -113,7 +118,7 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
     @get:Throws(Exception::class)
     private val isWrittenImageOk: Boolean
         // similar to verify()
-        private get() {
+        get() {
             val deviceFirmware = ByteArray(dfuFile.elementLength)
             val startTime = System.currentTimeMillis()
             readImage(deviceFirmware)
@@ -129,7 +134,7 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
             return result
         }
 
-    fun massErase() {
+    private fun massErase() {
         if (!isUsbConnected) return
         val dfuStatus = DfuStatus()
         val startTime = System.currentTimeMillis() // note current time

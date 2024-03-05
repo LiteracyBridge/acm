@@ -54,29 +54,18 @@ class Usb(private val mContext: Context) {
     private val mUsbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
-            Log.d(
-                LOG_TAG,
-                "permission action $action, equals $ACTION_USB_PERMISSION, ${
-                    ACTION_USB_PERMISSION.equals(action)
-                }"
-            )
+
             if (ACTION_USB_PERMISSION.equals(action)) {
                 synchronized(this) {
                     val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
-                    Log.d(LOG_TAG, "extra permission grated ${UsbManager.EXTRA_PERMISSION_GRANTED}")
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                         if (device != null) {
-                            //call method to set up device communication
+                            // call method to set up device communication
                             setDevice(device)
                             if (mOnUsbChangeListener != null) {
                                 mOnUsbChangeListener!!.onUsbConnected()
-                            } else {
                             }
-                        } else {
-
                         }
-                    } else {
-                        Log.d(TAG, "permission denied for device $device")
                     }
                 }
             } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED == action) {
@@ -125,10 +114,11 @@ class Usb(private val mContext: Context) {
         }
     }
 
-    fun getUsbDevice(vendorId: Int, productId: Int): UsbDevice? {
+    private fun getUsbDevice(vendorId: Int, productId: Int): UsbDevice? {
         val deviceList = mUsbManager!!.deviceList
         val deviceIterator: Iterator<UsbDevice> = deviceList.values.iterator()
         var device: UsbDevice
+
         while (deviceIterator.hasNext()) {
             device = deviceIterator.next()
             if (device.vendorId == vendorId && device.productId == productId) {
@@ -145,11 +135,13 @@ class Usb(private val mContext: Context) {
             mConnection!!.close()
             mConnection = null
         }
+
         return isReleased
     }
 
     fun setDevice(device: UsbDevice?) {
-        Log.d("usb", "permission granted --")
+        Log.d(LOG_TAG, "permission granted --")
+
         if (!mUsbManager!!.hasPermission(device)) {
             // Request permission from the user
             val pendingIntent = PendingIntent.getBroadcast(
@@ -159,10 +151,10 @@ class Usb(private val mContext: Context) {
                 PendingIntent.FLAG_IMMUTABLE
             )
             mUsbManager!!.requestPermission(device, pendingIntent)
-            Log.d("usb", "permission granted lol")
+
             return
         }
-        Log.d("usb", "permission granted")
+
         usbDevice = device
 
         // The first interface is the one we want
@@ -189,6 +181,7 @@ class Usb(private val mContext: Context) {
     val isConnected: Boolean
         get() = mConnection != null
 
+    // FIXME: remove this function
     fun getDeviceInfo(device: UsbDevice?): String {
         if (device == null) return "No device found."
         val sb = StringBuilder()
@@ -255,7 +248,7 @@ class Usb(private val mContext: Context) {
     }
 
     companion object {
-        const val TAG = "Umbrela Client: USB"
+        const val TAG = "$LOG_TAG: USB"
 
         /* USB DFU ID's (may differ by device) */
         const val USB_VENDOR_ID = 1155 // VID while in DFU mode 0x0483
