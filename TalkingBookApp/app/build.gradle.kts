@@ -60,7 +60,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:$lifecycle_version")
-    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 
     // Amplify
     implementation("com.amplifyframework:aws-auth-cognito:2.14.11")

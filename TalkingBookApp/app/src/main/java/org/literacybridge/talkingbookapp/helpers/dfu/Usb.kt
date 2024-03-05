@@ -42,6 +42,8 @@ class Usb(private val mContext: Context) {
     /* Callback Interface */
     interface OnUsbChangeListener {
         fun onUsbConnected()
+
+        fun onUsbDisconnected()
     }
 
     fun setOnUsbChangeListener(l: OnUsbChangeListener?) {
@@ -78,6 +80,7 @@ class Usb(private val mContext: Context) {
                     val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
                     if (usbDevice != null && usbDevice == device) {
                         release()
+                        mOnUsbChangeListener?.onUsbDisconnected()
                     }
                 }
             }
@@ -96,7 +99,7 @@ class Usb(private val mContext: Context) {
         // FLAG_MUTABLE intent flag has to be used in some API levels (Bug in Android?)
         // refer to https://stackoverflow.com/questions/73267829/androidstudio-usb-extra-permission-granted-returns-false-always
         // for more details
-        var flag = PendingIntent.FLAG_IMMUTABLE;
+        var flag = PendingIntent.FLAG_IMMUTABLE
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             flag = PendingIntent.FLAG_MUTABLE
         }

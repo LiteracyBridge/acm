@@ -58,8 +58,8 @@ fun HomeScreen(navController: NavController,
             Row {
                 Text("Instructions", style = TextStyle(fontWeight = FontWeight.Bold))
                 Text("Press 'tree', 'table' & “plus” buttons at the same time to connect")
-                Text("${uiState.device}")
             }
+            Text("${uiState.device?.deviceName}")
             Image(
                 painter = painterResource(R.drawable.tb_table_image),
                 contentDescription = "Tree"

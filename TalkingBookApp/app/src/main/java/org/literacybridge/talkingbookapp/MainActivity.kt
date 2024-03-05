@@ -1,7 +1,6 @@
 package org.literacybridge.talkingbookapp
 
 import AppNavHost
-import android.Manifest
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbManager
@@ -16,13 +15,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
-import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.helpers.LOG_TAG
 import org.literacybridge.talkingbookapp.helpers.dfu.Dfu
 import org.literacybridge.talkingbookapp.helpers.dfu.Usb
@@ -217,6 +212,8 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 
         /* USB */
         dfu.setUsb(null)
+        talkingBookViewModel.disconnected()
+
         usb.release()
         try {
             unregisterReceiver(usb.getmUsbReceiver())
@@ -243,6 +240,13 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         Log.d(TAG, "$deviceInfo")
 //        status.setText(deviceInfo)
         dfu.setUsb(usb)
+    }
+
+    override fun onUsbDisconnected() {
+        dfu.setUsb(null)
+
+        talkingBookViewModel.disconnected()
+        usb.release()
     }
 
     override fun onRequestPermissionsResult(

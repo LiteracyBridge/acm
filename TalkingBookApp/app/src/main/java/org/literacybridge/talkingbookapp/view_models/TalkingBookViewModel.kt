@@ -3,10 +3,11 @@ package org.literacybridge.talkingbookapp.view_models
 import android.hardware.usb.UsbDevice
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
+//import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import org.literacybridge.talkingbookapp.helpers.LOG_TAG
 
@@ -30,7 +31,7 @@ class TalkingBookViewModel : ViewModel() {
 //        }
 //    }
 
-    fun getDevice(): UsbDevice?{
+    fun getDevice(): UsbDevice? {
         return deviceState.value.device
     }
 
@@ -41,6 +42,12 @@ class TalkingBookViewModel : ViewModel() {
             state.copy(
                 device = device
             )
+        }
+    }
+
+    fun disconnected() {
+        _deviceState.update { state ->
+            state.copy(device = null)
         }
     }
 }
