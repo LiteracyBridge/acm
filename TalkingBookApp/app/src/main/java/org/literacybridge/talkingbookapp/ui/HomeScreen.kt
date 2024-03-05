@@ -1,3 +1,4 @@
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,15 +21,26 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import org.literacybridge.talkingbookapp.R
+import org.literacybridge.talkingbookapp.helpers.LOG_TAG
+import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController,
+               viewModel: TalkingBookViewModel = viewModel()
+
+) {
     // Retrieve data from next screen
     val msg =
         navController.currentBackStackEntry?.savedStateHandle?.get<String>("msg")
+//    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+//    val talkingBookViewModel = viewModel<TalkingBookViewModel>()
+    val uiState by viewModel.deviceState.collectAsStateWithLifecycle()
 
+    Log.d(LOG_TAG, "Device updated/set ${uiState.device}");
 
     Column(
         Modifier.fillMaxSize(),
@@ -45,6 +58,7 @@ fun HomeScreen(navController: NavController) {
             Row {
                 Text("Instructions", style = TextStyle(fontWeight = FontWeight.Bold))
                 Text("Press 'tree', 'table' & “plus” buttons at the same time to connect")
+                Text("${uiState.device}")
             }
             Image(
                 painter = painterResource(R.drawable.tb_table_image),

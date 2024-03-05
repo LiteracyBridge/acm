@@ -11,17 +11,23 @@ import android.os.Message
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
+import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.helpers.LOG_TAG
 import org.literacybridge.talkingbookapp.helpers.dfu.Dfu
 import org.literacybridge.talkingbookapp.helpers.dfu.Usb
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
+import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 
 
 const val TAG = "TalkingBook";
@@ -31,6 +37,8 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 
     private lateinit var usb: Usb
     private lateinit var dfu: Dfu
+//    private val  talkingBookViewModel = TalkingBookViewModel();
+    private val talkingBookViewModel: TalkingBookViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,10 +54,23 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
         dfu.setListener(this)
 
+        // Setup view models
+//        val viewModel: TalkingBookViewModel by viewModels()
+//        lifecycleScope.launch {
+//            repeatOnLifecycle(Lifecycle.State.STARTED) {
+//                talkingBookViewModel = viewModel
+//
+//                viewModel.deviceState.collect {
+////                    // Update UI elements
+//                }
+//            }
+//        }
+
+
 
         // TODO: implement permission write request
-        val permissions = arrayOf<String>(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        requestPermissions(permissions, 12)
+//        val permissions = arrayOf<String>(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+//        requestPermissions(permissions, 12)
 
         setContent {
             TalkingBookAppTheme {
@@ -84,11 +105,11 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             }
         }
 
-        Amplify.Auth.getCurrentUser({
-            Log.i(TAG, "session = $it")
-        }, {
-            Log.e(TAG, "auth error = $it")
-        })
+//        Amplify.Auth.getCurrentUser({
+//            Log.i(TAG, "session = $it")
+//        }, {
+//            Log.e(TAG, "auth error = $it")
+//        })
 
 //            .initialize(applicationContext, object : Callback<UserStateDetails?>() {
 //                fun onResult(userStateDetails: UserStateDetails) {
@@ -124,54 +145,54 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 //        todo: add usb manager code here
         // Get the USB manager service
         // Get the USB manager service
-        val usbManager = (getSystemService(USB_SERVICE) as UsbManager)!!
-
-        // Get a list of connected USB devices
-        for (usbDevice in usbManager!!.deviceList.values) {
-            // Check if the device matches the STM32Fx vendor and product IDs
-            if ( /*usbDevice.getVendorId() == 1155 &&*/usbDevice.productId == 57105) {
-                // Process the connected STM32 device
-                val deviceId = usbDevice.deviceId
-                val deviceName = usbDevice.deviceName
-                //                String deviceManufacturer = usbDevice.getManufacturerName();
-//                String deviceProduct = usbDevice.getProductName();
-
-                // Perform actions based on the connected STM32 device
-                // ...
-
-                // Log or display information about the connected STM32 device
-                val deviceInfo = """
-        Device ID: $deviceId
-        Device Name: $deviceName
-        """.trimIndent()
-                //                        "\nManufacturer: " + deviceManufacturer +
-//                        "\nProduct: " + deviceProduct;
-
-                // Log the STM32 device information
-                // You can also display this information in your app as needed
-                Log.d(LOG_TAG, "$deviceInfo")
-
-                usb = Usb(this)
-                usb.setUsbManager(usbManager)
-                usb.setOnUsbChangeListener(this)
-
-                // Handle two types of intents. Device attachment and permission
-                registerReceiver(usb.getmUsbReceiver(), IntentFilter(Usb.ACTION_USB_PERMISSION))
-                registerReceiver(
-                    usb.getmUsbReceiver(),
-                    IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED)
-                )
-                registerReceiver(
-                    usb.getmUsbReceiver(),
-                    IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED)
-                )
-                usb.setDevice(usbDevice)
-                dfu.setUsb(usb)
-                //                device = usbDevice;
-                Log.d("Device Finder", "device found$deviceInfo")
-                break
-            }
-        }
+//        val usbManager = (getSystemService(USB_SERVICE) as UsbManager)!!
+//
+//        // Get a list of connected USB devices
+//        for (usbDevice in usbManager!!.deviceList.values) {
+//            // Check if the device matches the STM32Fx vendor and product IDs
+//            if ( /*usbDevice.getVendorId() == 1155 &&*/usbDevice.productId == 57105) {
+//                // Process the connected STM32 device
+//                val deviceId = usbDevice.deviceId
+//                val deviceName = usbDevice.deviceName
+//                //                String deviceManufacturer = usbDevice.getManufacturerName();
+////                String deviceProduct = usbDevice.getProductName();
+//
+//                // Perform actions based on the connected STM32 device
+//                // ...
+//
+//                // Log or display information about the connected STM32 device
+//                val deviceInfo = """
+//        Device ID: $deviceId
+//        Device Name: $deviceName
+//        """.trimIndent()
+//                //                        "\nManufacturer: " + deviceManufacturer +
+////                        "\nProduct: " + deviceProduct;
+//
+//                // Log the STM32 device information
+//                // You can also display this information in your app as needed
+//                Log.d(LOG_TAG, "$deviceInfo")
+//
+//                usb = Usb(this)
+//                usb.setUsbManager(usbManager)
+//                usb.setOnUsbChangeListener(this)
+//
+//                // Handle two types of intents. Device attachment and permission
+//                registerReceiver(usb.getmUsbReceiver(), IntentFilter(Usb.ACTION_USB_PERMISSION))
+//                registerReceiver(
+//                    usb.getmUsbReceiver(),
+//                    IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED)
+//                )
+//                registerReceiver(
+//                    usb.getmUsbReceiver(),
+//                    IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED)
+//                )
+//                usb.setDevice(usbDevice)
+//                dfu.setUsb(usb)
+//                //                device = usbDevice;
+//                Log.d("Device Finder", "device found$deviceInfo")
+//                break
+//            }
+//        }
     }
 
 
@@ -216,6 +237,8 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
     }
 
     override fun onUsbConnected() {
+        talkingBookViewModel.setDevice(usb.usbDevice)
+
         val deviceInfo = usb.getDeviceInfo(usb.usbDevice)
         Log.d(TAG, "$deviceInfo")
 //        status.setText(deviceInfo)
