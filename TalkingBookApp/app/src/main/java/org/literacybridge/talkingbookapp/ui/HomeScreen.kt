@@ -10,10 +10,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,16 +36,16 @@ import org.literacybridge.talkingbookapp.helpers.LOG_TAG
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 
 @Composable
-fun HomeScreen(navController: NavController,
-               viewModel: TalkingBookViewModel = viewModel()
-
+fun HomeScreen(
+    navController: NavController,
+    viewModel: TalkingBookViewModel = viewModel()
 ) {
     // Retrieve data from next screen
     val msg =
         navController.currentBackStackEntry?.savedStateHandle?.get<String>("msg")
-//    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-//    val talkingBookViewModel = viewModel<TalkingBookViewModel>()
+
     val uiState by viewModel.deviceState.collectAsStateWithLifecycle()
+    val showProgramsDialog = remember { mutableStateOf(false) }
 
     Log.d(LOG_TAG, "Device updated/set ${uiState.device}");
 
@@ -91,7 +98,10 @@ fun HomeScreen(navController: NavController,
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Button(onClick = { /*TODO*/ }) {
+                Button(onClick = {
+                    showProgramsDialog.value = true;
+                    /*TODO*/
+                }) {
                     Text("Collect Data")
                 }
                 Button(onClick = { /*TODO*/ }) {
@@ -108,5 +118,57 @@ fun HomeScreen(navController: NavController,
 //        }
     }
 
+    if (showProgramsDialog.value) {
+        AlertDialogExample(
+            onDismissRequest = { showProgramsDialog.value = false },
+            onConfirmation = {
+                showProgramsDialog.value = false
+                println("Confirmation registered") // Add logic here to handle confirmation.
+            },
+        )
+//        return ProgramsDropdown(visible = true);
+    }
 //    return ProgramsDropdown();
+}
+
+@Composable
+fun AlertDialogExample(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+) {
+    AlertDialog(
+        icon = {
+            Icon(Icons.Default.Info, contentDescription = "Example Icon")
+        },
+        title = {
+            Text(text = "Select Program")
+        },
+        text = {
+            Text(
+                text =
+                "This is an example of an alert dialog with buttons.",
+            )
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirmation()
+                }
+            ) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                }
+            ) {
+                Text("Dismiss")
+            }
+        }
+    )
 }
