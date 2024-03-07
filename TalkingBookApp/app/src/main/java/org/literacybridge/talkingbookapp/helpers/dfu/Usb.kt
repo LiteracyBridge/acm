@@ -124,6 +124,7 @@ class Usb(private val mContext: Context) {
 
         while (deviceIterator.hasNext()) {
             device = deviceIterator.next()
+            Log.d(LOG_TAG, "Detected device $device")
             if (device.vendorId == vendorId && device.productId == productId) {
                 return device
             }
@@ -143,8 +144,9 @@ class Usb(private val mContext: Context) {
     }
 
     fun setDevice(device: UsbDevice?) {
-        Log.d(LOG_TAG, "permission granted --")
 
+        Log.d(LOG_TAG, "permission granted --")
+        Log.d(LOG_TAG, "Mass storage device $device")
         if (!mUsbManager!!.hasPermission(device)) {
             // Request permission from the user
             val pendingIntent = PendingIntent.getBroadcast(
