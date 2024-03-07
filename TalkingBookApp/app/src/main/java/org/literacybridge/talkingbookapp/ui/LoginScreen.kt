@@ -1,13 +1,9 @@
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,34 +17,27 @@ import org.literacybridge.talkingbookapp.R
 fun LoginScreen(navController: NavController) {
     return Authenticator(
         headerContent = {
-            Box(
-                modifier = Modifier.fillMaxWidth()
-//                    .height(IntrinsicSize.Min) //important
-//                    .align(Alignment.Center)
-
-//                    .align(Alignment.Horizontal)
-            ) {
-//                Column(
-//                    modifier = Modifier.padding(top = 5.dp, bottom = 5.dp).fillMaxWidth(),
-//                    verticalArrangement = Arrangement.Center,
-//                    horizontalAlignment = Alignment.CenterHorizontally
-//                ) {
-                    Image(
-                        painter = painterResource(R.drawable.amplio_logo),
-                        contentDescription = null,
-                        modifier = Modifier.size(200.dp)
-                            .align(Alignment.Center)
-                    )
-//                }
-            }
-        },
-//                        footerContent = {
-//                            Text(
-//                                "© All Rights Reserved",
-//                                modifier = Modifier.align(Alignment.CenterHorizontally)
-//                            )
-//                        }
-    ) { state ->
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 5.dp)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.amplio_logo),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(180.dp)
+                    .align(Alignment.Center)
+            )
+        }
+    },
+//        footerContent = {
+//        Text(
+//            "© All Rights Reserved", modifier = Modifier.align(Alignment.CenterHorizontally)
+//        )
+//    }
+    )
+    { state ->
         navController.navigate(Screen.HOME.name);
 //        SignedInContent(state)
     }
