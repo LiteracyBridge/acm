@@ -9,12 +9,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.amplifyframework.auth.cognito.AWSCognitoAuthSession
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.ui.authenticator.ui.Authenticator
+import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.R
+import org.literacybridge.talkingbookapp.helpers.DataStoreManager
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
 @Composable
@@ -50,8 +53,14 @@ fun LoginScreen(
         Amplify.Auth.fetchAuthSession(
             { result ->
                 val cognitoAuthSession = result as AWSCognitoAuthSession
-                val accessToken = cognitoAuthSession.accessToken
-                viewModel.setToken(accessToken!!)
+                val accessToken = cognitoAuthSession.tokensResult.value?.idToken
+
+//                val dataStoreManager = DataStoreManager();
+//                async {
+//                    dataStoreManager.setAccessToken(token)
+//                }
+
+                viewModel.setToken(accessToken!!, navController)
 
                 // Use the access token for your API calls or other authorized actions
                 Log.i("AuthToken", "Access token: $accessToken")
@@ -63,7 +72,7 @@ fun LoginScreen(
                 Log.e("AuthError", "Failed to fetch access token: $error")
             }
         )
-        navController.navigate(Screen.HOME.name);
+//        navController.navigate(Screen.HOME.name);
 //        SignedInContent(state)
     }
     // Retrieve data from next screen

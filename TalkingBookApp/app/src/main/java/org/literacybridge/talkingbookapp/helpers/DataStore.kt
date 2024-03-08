@@ -16,17 +16,21 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 
 
 class DataStoreManager() {
+     var accessToken: String? = null
+//         private set
+
     companion object {
-        var accessToken: String? = null;
 
         private val KE_ACCESS_TOKEN = stringPreferencesKey("access_token");
     }
 
-    suspend fun setAccessToken(token: String) {
+    suspend fun setAccessToken(token: String): String {
         accessToken = token;
         App.context.dataStore.edit {
             it[KE_ACCESS_TOKEN] = token;
         }
+
+        return token
     }
 
     fun getAccessToken(): Flow<String?> {

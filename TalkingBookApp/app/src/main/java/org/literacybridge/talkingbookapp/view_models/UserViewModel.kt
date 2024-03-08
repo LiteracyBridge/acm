@@ -1,13 +1,16 @@
 package org.literacybridge.talkingbookapp.view_models
 
+import Screen
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.api_services.NetworkModule
 import org.literacybridge.talkingbookapp.helpers.DataStoreManager
 import org.literacybridge.talkingbookapp.helpers.LOG_TAG
+import org.literacybridge.talkingbookapp.helpers.dataStoreManager
 import javax.inject.Inject
 
 @HiltViewModel
@@ -15,33 +18,44 @@ class UserViewModel @Inject constructor() : ViewModel() {
 //    private val _user = mutableStateOf(UserModel())
 //    val users: State<ApiState<List<User>>> = _users
 
-    fun setToken(token: String) {
+    fun setToken(token: String, navController: NavController) {
         viewModelScope.launch {
-            val dataStoreManager = DataStoreManager();
             dataStoreManager.setAccessToken(token)
-        }
-
-        fetchUser()
-    }
-
-
-    fun fetchUser() {
-        viewModelScope.launch {
-            try {
-//                var service = NetworkModule()
-//                val retro = Retrofit.Builder()
-//                    .baseUrl(API_URL)
-//                    .client(service.provideOkHttpClient())
-//                    .addConverterFactory(GsonConverterFactory.create())
-//                    .build()
-                val response = NetworkModule().instance().getUser()
-                Log.d(LOG_TAG, "${response.data}")
-            } catch (e: Exception) {
-                Log.d(LOG_TAG, "$e")
-//                _users.value = ApiState.Error("Failed to fetch data")
+        }.invokeOnCompletion {
+            viewModelScope.launch {
+                try {
+                    // TODO; If the user is set, don't trigger api call
+                    // FIXME: the function is executed multiple times due to ui re-rendering
+                    val response = NetworkModule().instance().getUser()
+                    navController.navigate(Screen.HOME.name);
+                    Log.d(LOG_TAG, "${response.data}")
+                } catch (e: Exception) {
+                    Log.d(LOG_TAG, "$e")
+                }
             }
+
         }
     }
+
+
+//    fun fetchUser() {
+//        viewModelScope.launch {
+//            try {
+////                var service = NetworkModule()
+////                val retro = Retrofit.Builder()
+////                    .baseUrl(API_URL)
+////                    .client(service.provideOkHttpClient())
+////                    .addConverterFactory(GsonConverterFactory.create())
+////                    .build()
+//                val response = NetworkModule().instance().getUser()
+////                return response.data
+//                Log.d(LOG_TAG, "${response.data}")
+//            } catch (e: Exception) {
+//                Log.d(LOG_TAG, "$e")
+////                _users.value = ApiState.Error("Failed to fetch data")
+//            }
+//        }
+//    }
 
     fun test() {
         Log.d(LOG_TAG, "View model working")
