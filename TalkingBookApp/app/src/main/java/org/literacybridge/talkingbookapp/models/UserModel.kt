@@ -9,14 +9,14 @@ data class UserProgramModel(
 )
 
 data class UserModel(
-    val email: String,
-    val first_name: String,
-    val id: Int,
-    val last_name: String?,
-    val organisation: Organisation,
-    val organisation_id: Int,
-    val permissions: Map<String, Boolean>,
-    val phone_number: String?,
-    val programs: List<UserProgramModel>,
-    val roles: List<Any>
+    val email: String? = null,
+    val first_name: String? = null,
+    val id: Int? = null,
+    val last_name: String? = null,
+    val organisation: Organisation? = null,
+    val organisation_id: Int? = null,
+    val permissions: Map<String, Boolean>? = null,
+    val phone_number: String? = null,
+    val programs: List<UserProgramModel> = listOf(),
+//    val roles: List<Any> = intArrayOf()
 )

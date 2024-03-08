@@ -60,8 +60,12 @@ dependencies {
     val navVersion = "2.7.7"
     val lifecycleVersion = "2.7.0"
 
+    // Others
+    implementation("com.google.code.gson:gson:2.10")
+    
+    // Hilt
     implementation("com.google.dagger:hilt-android:2.51")
-//    implementation("androidx.hilt:hilt-navigation-fragment:1.2.0")
+    // implementation("androidx.hilt:hilt-navigation-fragment:1.2.0")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     ksp("com.google.dagger:hilt-compiler:2.51")
 
