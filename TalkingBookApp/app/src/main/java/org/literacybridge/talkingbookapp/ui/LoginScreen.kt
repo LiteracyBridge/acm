@@ -9,15 +9,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.amplifyframework.auth.cognito.AWSCognitoAuthSession
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.ui.authenticator.ui.Authenticator
-import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.R
-import org.literacybridge.talkingbookapp.helpers.DataStoreManager
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
 @Composable
@@ -25,7 +22,6 @@ fun LoginScreen(
     navController: NavController,
     viewModel: UserViewModel = viewModel()
 ) {
-    viewModel.test();
 
     return Authenticator(
         headerContent = {
@@ -55,40 +51,15 @@ fun LoginScreen(
                 val cognitoAuthSession = result as AWSCognitoAuthSession
                 val accessToken = cognitoAuthSession.tokensResult.value?.idToken
 
-//                val dataStoreManager = DataStoreManager();
-//                async {
-//                    dataStoreManager.setAccessToken(token)
-//                }
-
                 viewModel.setToken(accessToken!!, navController)
 
-                // Use the access token for your API calls or other authorized actions
-                Log.i("AuthToken", "Access token: $accessToken")
-
-//                TODO; save to datastore
             },
             { error ->
                 // Handle any errors that might occur during token fetching
                 Log.e("AuthError", "Failed to fetch access token: $error")
             }
         )
-//        navController.navigate(Screen.HOME.name);
-//        SignedInContent(state)
+
+        // TODO: show a loading indicator while fetching user details
     }
-    // Retrieve data from next screen
-//    val msg =
-//        navController.currentBackStackEntry?.savedStateHandle?.get<String>("msg")
-//    Column(
-//        Modifier.fillMaxSize(),
-//        horizontalAlignment = Alignment.CenterHorizontally,
-//        verticalArrangement = Arrangement.Center
-//    ) {
-//        Button(onClick = { navController.navigate("secondscreen") }) {
-//            Text("Go to next screen")
-//        }
-//        Spacer(modifier = Modifier.height(8.dp))
-//        msg?.let {
-//            Text(it)
-//        }
-//    }
 }

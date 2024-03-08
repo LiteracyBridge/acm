@@ -1,12 +1,9 @@
 package org.literacybridge.talkingbookapp.api_services
 
-import aws.smithy.kotlin.runtime.util.asyncLazy
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.literacybridge.talkingbookapp.helpers.API_URL
@@ -15,18 +12,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
-
-//val httpClient = OkHttpClient.Builder().addInterceptor { chain ->
-//    val original = chain.request()
-//    val requestBuilder = original.newBuilder()
-//        .header("Accept", "application/json")
-//        .header("Content-Type", "application/json")
-//        .header("Authorization", "Bearer ${dataStoreManager.getAccessToken()}")
-//        .method(original.method, original.body)
-//
-//    val request = requestBuilder.build()
-//    chain.proceed(request)
-//}.build()
 
 @Module
 @InstallIn(SingletonComponent::class)
