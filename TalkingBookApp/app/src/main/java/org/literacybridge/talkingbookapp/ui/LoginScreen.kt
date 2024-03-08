@@ -1,10 +1,15 @@
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -46,20 +51,34 @@ fun LoginScreen(
 //    }
     )
     { state ->
-        Amplify.Auth.fetchAuthSession(
-            { result ->
-                val cognitoAuthSession = result as AWSCognitoAuthSession
-                val accessToken = cognitoAuthSession.tokensResult.value?.idToken
+        LaunchedEffect("login") {
+            Amplify.Auth.fetchAuthSession(
+                { result ->
+                    val cognitoAuthSession = result as AWSCognitoAuthSession
+                    val accessToken = cognitoAuthSession.tokensResult.value?.idToken
 
-                viewModel.setToken(accessToken!!, navController)
+                    viewModel.setToken(accessToken!!, navController)
 
-            },
-            { error ->
-                // Handle any errors that might occur during token fetching
-                Log.e("AuthError", "Failed to fetch access token: $error")
+                },
+                { error ->
+                    // Handle any errors that might occur during token fetching
+                    Log.e("AuthError", "Failed to fetch access token: $error")
+                }
+            )
+        }
+
+        // Show a loading indicator while fetching user details
+        if (viewModel.isLoading.value) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.width(100.dp),
+//                color = MaterialTheme.colorScheme.secondary,
+//                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
             }
-        )
-
-        // TODO: show a loading indicator while fetching user details
+        }
     }
 }
