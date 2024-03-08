@@ -30,11 +30,11 @@ fun AppNavHost(
         composable(NavigationItem.Home.route) {
 //            val viewModel = hiltViewModel<TalkingBookViewModel>()
 
-            CompositionLocalProvider(
-                LocalViewModelStoreOwner provides viewModelStoreOwner
-            ) {
+//            CompositionLocalProvider(
+//                LocalViewModelStoreOwner provides viewModelStoreOwner
+//            ) {
                 HomeScreen(navController)
-            }
+//            }
         }
     }
 }

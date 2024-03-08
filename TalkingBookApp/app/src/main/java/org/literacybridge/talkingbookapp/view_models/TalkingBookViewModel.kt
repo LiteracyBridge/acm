@@ -3,20 +3,23 @@ package org.literacybridge.talkingbookapp.view_models
 import android.hardware.usb.UsbDevice
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 //import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
+import org.literacybridge.talkingbookapp.api_services.ApiService
 import org.literacybridge.talkingbookapp.helpers.LOG_TAG
+import javax.inject.Inject
 
 data class DeviceState(
     var device: UsbDevice? = null,
 )
 
-//@HiltViewModel
-class TalkingBookViewModel : ViewModel() {
+@HiltViewModel
+class TalkingBookViewModel @Inject constructor() : ViewModel() {
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState.asStateFlow()
 
