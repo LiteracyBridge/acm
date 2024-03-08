@@ -75,8 +75,6 @@ fun LoginScreen(
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.width(100.dp),
-//                color = MaterialTheme.colorScheme.secondary,
-//                trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 )
             }
         }

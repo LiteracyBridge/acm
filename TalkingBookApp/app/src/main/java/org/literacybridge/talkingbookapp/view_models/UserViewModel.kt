@@ -28,10 +28,8 @@ class UserViewModel @Inject constructor() : ViewModel() {
         }.invokeOnCompletion {
             viewModelScope.launch {
                 try {
-                    // TODO; If the user is set, don't trigger api call
-                    // FIXME: the function is executed multiple times due to ui re-rendering
                     val response = NetworkModule().instance().getUser()
-
+                    // TODO: cache user response
                     navController.navigate(Screen.HOME.name);
                     Log.d(LOG_TAG, "${response.data}")
                 } catch (e: Exception) {
