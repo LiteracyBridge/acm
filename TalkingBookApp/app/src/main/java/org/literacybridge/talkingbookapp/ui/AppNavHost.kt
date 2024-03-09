@@ -1,12 +1,11 @@
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.Modifier
 //import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
+import org.literacybridge.talkingbookapp.ui.ProgramSelectionScreen
 
 @Composable
 fun AppNavHost(
@@ -33,8 +32,11 @@ fun AppNavHost(
 //            CompositionLocalProvider(
 //                LocalViewModelStoreOwner provides viewModelStoreOwner
 //            ) {
-                HomeScreen(navController)
+            HomeScreen(navController)
 //            }
+        }
+        composable(NavigationItem.ProgramSelection.route) {
+            ProgramSelectionScreen(navController)
         }
     }
 }

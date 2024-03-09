@@ -24,18 +24,22 @@ class DataStoreManager() {
         private set
     var cognitoSubjectId: String? = null
         private set
+    var activeProgramId: String? = null
+        private set
 
     companion object {
 
         private val KEY_ACCESS_TOKEN = stringPreferencesKey("access_token");
         private val KEY_COGNITO_SUB_ID = stringPreferencesKey("cognito_sub_id")
         private val KEY_USER = stringPreferencesKey("user")
+        private val KEY_ACTIVE_PROGRAM_ID = stringPreferencesKey("active_program")
     }
 
     init {
         App.context.dataStore.data.map { pref ->
             this.accessToken = pref[KEY_ACCESS_TOKEN] ?: null
             this.cognitoSubjectId = pref[KEY_COGNITO_SUB_ID]
+            this.activeProgramId = pref[KEY_ACTIVE_PROGRAM_ID]
 
             this.currentUser =
                 Gson().fromJson(pref[KEY_ACCESS_TOKEN] ?: "{}", UserModel::class.java)
@@ -60,6 +64,16 @@ class DataStoreManager() {
         }
 
         return token
+    }
+
+    suspend fun setActiveProgramId(id: String): String {
+        this.activeProgramId = id
+
+        App.context.dataStore.edit {
+            it[KEY_ACTIVE_PROGRAM_ID] = id;
+        }
+
+        return id
     }
 
     fun getCurrentUser(): Flow<UserModel?> {

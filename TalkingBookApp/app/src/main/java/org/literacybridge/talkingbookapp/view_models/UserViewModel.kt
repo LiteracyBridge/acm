@@ -16,6 +16,7 @@ import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.api_services.NetworkModule
 import org.literacybridge.talkingbookapp.helpers.LOG_TAG
 import org.literacybridge.talkingbookapp.helpers.dataStoreManager
+import org.literacybridge.talkingbookapp.models.Program
 import org.literacybridge.talkingbookapp.models.UserModel
 import javax.inject.Inject
 
@@ -23,8 +24,26 @@ import javax.inject.Inject
 class UserViewModel @Inject constructor() : ViewModel() {
     val isLoading = mutableStateOf(false)
 
+    val activeProgramId = mutableStateOf(dataStoreManager.activeProgramId)
     private val _user = MutableStateFlow(UserModel())
     val user: StateFlow<UserModel> = _user.asStateFlow()
+
+
+    fun getPrograms(): List<Program> {
+        return _user.value.programs.map { it ->
+            it.program
+        }
+    }
+
+    fun setActiveProgram( program: Program, navController: NavController) {
+        activeProgramId.value = program.program_id
+
+        viewModelScope.launch {
+            dataStoreManager.setActiveProgramId(program.program_id)
+        }
+
+        navController.navigate(Screen.HOME.name)
+    }
 
     fun setToken(token: String, cognitoSubId: String, navController: NavController) {
         isLoading.value = true
@@ -38,7 +57,7 @@ class UserViewModel @Inject constructor() : ViewModel() {
                     val resp = dataStoreManager.getCurrentUser().firstOrNull()
                     if (resp != null) {
                         _user.value = resp
-                        navController.navigate(Screen.HOME.name);
+                        navigateToNextScreen(navController)
                     } else {
                         // TODO: navigate to error page
                     }
@@ -53,8 +72,7 @@ class UserViewModel @Inject constructor() : ViewModel() {
                         _user.value = response.data[0]
                         dataStoreManager.setUser(_user.value)
 
-                        navController.navigate(Screen.HOME.name);
-                        Log.d(LOG_TAG, "${response.data}")
+                        navigateToNextScreen(navController)
                     } catch (e: Exception) {
                         // TODO: navigate to error page
                         Log.d(LOG_TAG, "$e")
@@ -66,5 +84,13 @@ class UserViewModel @Inject constructor() : ViewModel() {
             }
 
         }
+    }
+
+    private fun navigateToNextScreen(navController: NavController) {
+        if (activeProgramId.value == null) {
+            return navController.navigate(Screen.PROGRAM_SELECTION.name)
+        }
+
+        return navController.navigate(Screen.HOME.name);
     }
 }
