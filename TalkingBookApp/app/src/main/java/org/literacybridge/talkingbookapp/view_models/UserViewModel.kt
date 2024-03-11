@@ -23,11 +23,8 @@ import javax.inject.Inject
 @HiltViewModel
 class UserViewModel @Inject constructor() : ViewModel() {
     val isLoading = mutableStateOf(false)
-    val deployment = mutableStateOf<Deployment?>(null)
-    val program = mutableStateOf<Program?>(null)
-
-
-//    val activeProgramId = mutableStateOf(dataStoreManager.activeProgramId)
+    private val deployment = mutableStateOf<Deployment?>(null)
+    private val program = mutableStateOf<Program?>(null)
 
     private val _user = MutableStateFlow(UserModel())
     val user: StateFlow<UserModel> = _user.asStateFlow()
