@@ -25,6 +25,7 @@ import org.literacybridge.talkingbookapp.helpers.dfu.Dfu
 import org.literacybridge.talkingbookapp.helpers.dfu.Usb
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
+import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
 
 const val TAG = "TalkingBook";
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
     private lateinit var dfu: Dfu
 //    private val  talkingBookViewModel = TalkingBookViewModel();
     private val talkingBookViewModel: TalkingBookViewModel by viewModels()
+    private val userViewModel: UserViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

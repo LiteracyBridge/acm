@@ -1,5 +1,5 @@
-//import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavHostController
@@ -24,19 +24,28 @@ fun AppNavHost(
         startDestination = startDestination
     ) {
         composable(NavigationItem.Login.route) {
-            LoginScreen(navController)
+//            val model: UserViewModel = viewModel(viewModelStoreOwner = viewModelStoreOwner)
+            CompositionLocalProvider(
+                LocalViewModelStoreOwner provides viewModelStoreOwner
+            ) {
+                LoginScreen(navController)
+            }
         }
         composable(NavigationItem.Home.route) {
 //            val viewModel = hiltViewModel<TalkingBookViewModel>()
-
-//            CompositionLocalProvider(
-//                LocalViewModelStoreOwner provides viewModelStoreOwner
-//            ) {
-            HomeScreen(navController)
-//            }
+//
+            CompositionLocalProvider(
+                LocalViewModelStoreOwner provides viewModelStoreOwner
+            ) {
+                HomeScreen(navController)
+            }
         }
         composable(NavigationItem.ProgramSelection.route) {
-            ProgramSelectionScreen(navController)
+            CompositionLocalProvider(
+                LocalViewModelStoreOwner provides viewModelStoreOwner
+            ) {
+                ProgramSelectionScreen(navController)
+            }
         }
     }
 }
