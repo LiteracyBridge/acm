@@ -24,7 +24,7 @@ import javax.inject.Inject
 class UserViewModel @Inject constructor() : ViewModel() {
     val isLoading = mutableStateOf(false)
     private val deployment = mutableStateOf<Deployment?>(null)
-    private val program = mutableStateOf<Program?>(null)
+    val program = mutableStateOf<Program?>(null)
 
     private val _user = MutableStateFlow(UserModel())
     val user: StateFlow<UserModel> = _user.asStateFlow()
@@ -68,7 +68,8 @@ class UserViewModel @Inject constructor() : ViewModel() {
                         // TODO: navigate to error page
                     }
 
-                } else { // Network available, re-fetch data from server
+                } else {
+                    // Network available, re-fetch data from server
                     try {
                         val response = NetworkModule().instance().getUser()
 
@@ -94,6 +95,7 @@ class UserViewModel @Inject constructor() : ViewModel() {
         // The user has already selected a program/deployment, skip to home screen
         if (dataStoreManager.program != null && dataStoreManager.deployment != null) {
             this.deployment.value = dataStoreManager.deployment
+            this.program.value = dataStoreManager.program
 
             return navController.navigate(Screen.HOME.name);
         }

@@ -11,16 +11,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,14 +38,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.R
 import org.literacybridge.talkingbookapp.helpers.LOG_TAG
+import org.literacybridge.talkingbookapp.ui.components.NavigationDrawer
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
+import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
-    viewModel: TalkingBookViewModel = viewModel()
+    viewModel: TalkingBookViewModel = viewModel(),
+    userViewModel: UserViewModel = viewModel()
 ) {
     // Retrieve data from next screen
     val msg =
@@ -49,126 +61,99 @@ fun HomeScreen(
 
     Log.d(LOG_TAG, "Device updated/set ${uiState.device}");
 
-    Column(
-        Modifier.fillMaxSize(),
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    NavigationDrawer(drawerState) {
+        Scaffold(
+            topBar = {
+                TopAppBar(colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = Color.White,
+                ),
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            scope.launch {
+                                drawerState.apply {
+                                    if (isClosed) open() else close()
+                                }
+                            }
+                        }) {
+                            Icon(Icons.Filled.Menu, tint = Color.White, contentDescription = null)
+                        }
+                    },
+                    title = {
+                        userViewModel.program.value?.project?.name?.let { Text(it) }
+                    })
+            },
+        ) { contentPadding ->
+            // Screen content
+
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding),
 //        Modifier.fillMaxHeight(),
-        verticalArrangement = Arrangement.SpaceBetween
+                verticalArrangement = Arrangement.SpaceBetween
 //        horizontalAlignment = Alignment.CenterHorizontally,
 //        verticalArrangement = Arrangement.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .weight(1f, false)
-        ) {
-            Text("Connect the Talking Book")
-            Row {
-                Text("Instructions", style = TextStyle(fontWeight = FontWeight.Bold))
-                Text("Press 'tree', 'table' & “plus” buttons at the same time to connect")
-            }
-            Text("${uiState.device?.deviceName}")
-            Image(
-                painter = painterResource(R.drawable.tb_table_image),
-                contentDescription = "Tree"
+            ) {
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .weight(1f, false)
+                ) {
+                    Text("Connect the Talking Book")
+                    Row {
+                        Text("Instructions", style = TextStyle(fontWeight = FontWeight.Bold))
+                        Text("Press 'tree', 'table' & “plus” buttons at the same time to connect")
+                    }
+                    Text("${uiState.device?.deviceName}")
+                    Image(
+                        painter = painterResource(R.drawable.tb_table_image),
+                        contentDescription = "Tree"
 //                contentDescription = stringResource(id = R.string.bus_content_description)
-            )
-            Box(
-                modifier = Modifier
-                    .border(width = 2.dp, color = Color.Blue)
-                    .align(Alignment.CenterHorizontally)
-            ) {
-                Text(
-                    "[Display TB info once connected]\n" +
-                            "TB ID\n" +
-                            "Current recipient\n" +
-                            "Current content deployment\n"
-                )
+                    )
+                    Box(
+                        modifier = Modifier
+                            .border(width = 2.dp, color = Color.Blue)
+                            .align(Alignment.CenterHorizontally)
+                    ) {
+                        Text(
+                            "[Display TB info once connected]\n" +
+                                    "TB ID\n" +
+                                    "Current recipient\n" +
+                                    "Current content deployment\n"
+                        )
 
+                    }
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("What would you like to do?", modifier = Modifier.padding(vertical = 4.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(onClick = {
+                            showProgramsDialog.value = true;
+                            /*TODO*/
+                        }) {
+                            Text("Collect Data")
+                        }
+                        Button(onClick = { /*TODO*/ }) {
+                            Text("Update Talking Book")
+                        }
+                    }
+                }
             }
         }
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("What would you like to do?", modifier = Modifier.padding(vertical = 4.dp))
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(onClick = {
-                    showProgramsDialog.value = true;
-                    /*TODO*/
-                }) {
-                    Text("Collect Data")
-                }
-                Button(onClick = { /*TODO*/ }) {
-                    Text("Update Talking Book")
-                }
-            }
-        }
-//        Button(onClick = { navController.navigate("secondscreen") }) {
-//            Text("Go to next screen")
-//        }
-//        Spacer(modifier = Modifier.height(8.dp))
-//        msg?.let {
-//            Text(it)
-//        }
     }
 
-    if (showProgramsDialog.value) {
-        AlertDialogExample(
-            onDismissRequest = { showProgramsDialog.value = false },
-            onConfirmation = {
-                showProgramsDialog.value = false
-                println("Confirmation registered") // Add logic here to handle confirmation.
-            },
-        )
-//        return ProgramsDropdown(visible = true);
-    }
-//    return ProgramsDropdown();
-}
 
-@Composable
-fun AlertDialogExample(
-    onDismissRequest: () -> Unit,
-    onConfirmation: () -> Unit,
-) {
-    AlertDialog(
-        icon = {
-            Icon(Icons.Default.Info, contentDescription = "Example Icon")
-        },
-        title = {
-            Text(text = "Select Program")
-        },
-        text = {
-            Text(
-                text =
-                "This is an example of an alert dialog with buttons.",
-            )
-        },
-        onDismissRequest = {
-            onDismissRequest()
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirmation()
-                }
-            ) {
-                Text("Confirm")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismissRequest()
-                }
-            ) {
-                Text("Dismiss")
-            }
-        }
-    )
 }

@@ -2,6 +2,8 @@ package org.literacybridge.talkingbookapp.ui.components
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
@@ -11,8 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun NavigationDrawer() {
+fun NavigationDrawer(
+    drawerState: DrawerState,
+    content: @Composable () -> Unit
+) {
     ModalNavigationDrawer(
+        drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
                 Text("Drawer title", modifier = Modifier.padding(16.dp))
@@ -26,6 +32,6 @@ fun NavigationDrawer() {
             }
         }
     ) {
-        // Screen content
+        content()
     }
 }
