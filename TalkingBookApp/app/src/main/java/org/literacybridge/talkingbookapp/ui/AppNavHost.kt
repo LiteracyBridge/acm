@@ -24,7 +24,6 @@ fun AppNavHost(
         startDestination = startDestination
     ) {
         composable(NavigationItem.Login.route) {
-//            val model: UserViewModel = viewModel(viewModelStoreOwner = viewModelStoreOwner)
             CompositionLocalProvider(
                 LocalViewModelStoreOwner provides viewModelStoreOwner
             ) {
@@ -32,8 +31,6 @@ fun AppNavHost(
             }
         }
         composable(NavigationItem.Home.route) {
-//            val viewModel = hiltViewModel<TalkingBookViewModel>()
-//
             CompositionLocalProvider(
                 LocalViewModelStoreOwner provides viewModelStoreOwner
             ) {

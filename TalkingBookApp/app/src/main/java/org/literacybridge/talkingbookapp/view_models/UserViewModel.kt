@@ -28,24 +28,12 @@ class UserViewModel @Inject constructor() : ViewModel() {
     val isLoading = mutableStateOf(false)
 
     val activeProgramId = mutableStateOf(dataStoreManager.activeProgramId)
-    private val _programs = MutableStateFlow<List<Program>>(listOf())
-    val programsState: StateFlow<List<Program>> = _programs.asStateFlow()
 
     private val _user = MutableStateFlow(UserModel())
     val user: StateFlow<UserModel> = _user.asStateFlow()
-//    val test = _user.value
-
-    private var _courseList = MutableLiveData<UserModel>()
-    var courseList: LiveData<UserModel> = _courseList
-
-//    val value: String by liveData.observeAsState("initial")
-
-
 
     fun getPrograms(): List<Program> {
-        if(courseList.value == null) return emptyList()
-
-        return courseList.value!!.programs.map { it ->
+        return _user.value.programs.map { it ->
             it.program
         }
     }
@@ -84,22 +72,9 @@ class UserViewModel @Inject constructor() : ViewModel() {
                         val response = NetworkModule().instance().getUser()
 
                         // Cache user object
-                        _user.value = response.data[0]
-//                        _user.updateAndGet { state ->
-//                            state.copy(
-//                                programs = response.data[0].programs
-//                            )
-//                        }
-                        _courseList.value = response.data[0]
-//                        _user.value = _user.value.copy(programs = response.data[0].programs)
-//                        _user.compareAndSet(_user.value, response.data[0])
-                        _programs.compareAndSet(
-                            _programs.value,
-                            response.data[0].programs.map { it.program })
-//                        _programs.updateAndGet { state ->
-//                            state.set
-//                        }
                         dataStoreManager.setUser(_user.value)
+
+                        _user.value = response.data[0]
 
                         navigateToNextScreen(navController)
                     } catch (e: Exception) {
