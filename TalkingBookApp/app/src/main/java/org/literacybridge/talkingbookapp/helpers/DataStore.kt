@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
@@ -32,14 +33,15 @@ class DataStoreManager() {
         private val KEY_ACCESS_TOKEN = stringPreferencesKey("access_token");
         private val KEY_COGNITO_SUB_ID = stringPreferencesKey("cognito_sub_id")
         private val KEY_USER = stringPreferencesKey("user")
-        private val KEY_ACTIVE_PROGRAM_ID = stringPreferencesKey("active_program")
+        private val KEY_PROGRAM_ID = stringPreferencesKey("program")
+        private val KEY_DEPLOYMENT = intPreferencesKey("deployment")
     }
 
     init {
         App.context.dataStore.data.map { pref ->
             this.accessToken = pref[KEY_ACCESS_TOKEN] ?: null
             this.cognitoSubjectId = pref[KEY_COGNITO_SUB_ID]
-            this.activeProgramId = pref[KEY_ACTIVE_PROGRAM_ID]
+            this.activeProgramId = pref[KEY_PROGRAM_ID]
 
             this.currentUser =
                 Gson().fromJson(pref[KEY_ACCESS_TOKEN] ?: "{}", UserModel::class.java)
@@ -66,14 +68,15 @@ class DataStoreManager() {
         return token
     }
 
-    suspend fun setActiveProgramId(id: String): String {
-        this.activeProgramId = id
+    suspend fun setProgramAndDeployment(programCode: String, deploymentNumber: Int): String {
+        this.activeProgramId = programCode
 
         App.context.dataStore.edit {
-            it[KEY_ACTIVE_PROGRAM_ID] = id;
+            it[KEY_PROGRAM_ID] = programCode
+            it[KEY_DEPLOYMENT] = deploymentNumber
         }
 
-        return id
+        return programCode
     }
 
     fun getCurrentUser(): Flow<UserModel?> {

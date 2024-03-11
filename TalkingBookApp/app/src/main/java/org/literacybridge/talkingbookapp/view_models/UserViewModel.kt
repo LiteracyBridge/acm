@@ -3,8 +3,6 @@ package org.literacybridge.talkingbookapp.view_models
 import Screen
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
@@ -13,12 +11,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.api_services.NetworkModule
 import org.literacybridge.talkingbookapp.helpers.LOG_TAG
 import org.literacybridge.talkingbookapp.helpers.dataStoreManager
+import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
 import org.literacybridge.talkingbookapp.models.UserModel
 import javax.inject.Inject
@@ -26,6 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class UserViewModel @Inject constructor() : ViewModel() {
     val isLoading = mutableStateOf(false)
+    val deployment = mutableStateOf<Deployment?>(null)
 
     val activeProgramId = mutableStateOf(dataStoreManager.activeProgramId)
 
@@ -38,12 +37,16 @@ class UserViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun setActiveProgram(program: Program, navController: NavController) {
-        activeProgramId.value = program.program_id
-
+    fun setActiveProgram(program: Program, deployment: Deployment, navController: NavController) {
         viewModelScope.launch {
-            dataStoreManager.setActiveProgramId(program.program_id)
+            dataStoreManager.setProgramAndDeployment(
+                program.program_id,
+                deployment.deploymentnumber
+            )
         }
+
+        activeProgramId.value = program.program_id
+        this.deployment.value = deployment
 
         navController.navigate(Screen.HOME.name)
     }
@@ -72,7 +75,7 @@ class UserViewModel @Inject constructor() : ViewModel() {
                         val response = NetworkModule().instance().getUser()
 
                         // Cache user object
-                        dataStoreManager.setUser(_user.value)
+                        dataStoreManager.setUser(response.data[0])
 
                         _user.value = response.data[0]
 
