@@ -67,10 +67,11 @@ fun HomeScreen(
     NavigationDrawer(drawerState) {
         Scaffold(
             topBar = {
-                TopAppBar(colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = Color.White,
-                ),
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = Color.White,
+                    ),
                     navigationIcon = {
                         IconButton(onClick = {
                             scope.launch {
@@ -140,8 +141,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Button(onClick = {
-                            showProgramsDialog.value = true;
-                            /*TODO*/
+                            navController.navigate(Screen.COLLECT_DATA.name)
                         }) {
                             Text("Collect Data")
                         }
