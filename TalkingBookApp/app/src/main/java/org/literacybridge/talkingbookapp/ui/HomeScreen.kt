@@ -87,7 +87,6 @@ fun HomeScreen(
                     })
             },
         ) { contentPadding ->
-            // Screen content
 
             Column(
                 Modifier
