@@ -41,6 +41,17 @@ fun NavigationDrawer(
                     onClick = { /*TODO*/ }
                 )
                 NavigationDrawerItem(
+                    label = { Text(text = "Change Program") },
+                    icon = {
+                        Icon(
+                            Icons.Outlined.Build,
+                            contentDescription = "Change currently selected program"
+                        )
+                    },
+                    selected = false,
+                    onClick = { /*TODO*/ }
+                )
+                NavigationDrawerItem(
                     label = { Text(text = "Upload Status") },
                     icon = {
                         Icon(

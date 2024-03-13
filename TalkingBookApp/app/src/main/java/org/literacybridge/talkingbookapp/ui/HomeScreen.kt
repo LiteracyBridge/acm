@@ -25,8 +25,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,7 +55,6 @@ fun HomeScreen(
         navController.currentBackStackEntry?.savedStateHandle?.get<String>("msg")
 
     val uiState by viewModel.deviceState.collectAsStateWithLifecycle()
-    val showProgramsDialog = remember { mutableStateOf(false) }
 
     Log.d(LOG_TAG, "Device updated/set ${uiState.device}");
 
@@ -92,6 +89,7 @@ fun HomeScreen(
             Column(
                 Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(contentPadding),
 //        Modifier.fillMaxHeight(),
                 verticalArrangement = Arrangement.SpaceBetween
