@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import org.literacybridge.talkingbookapp.helpers.SCREEN_MARGIN
+import org.literacybridge.talkingbookapp.util.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
 import org.literacybridge.talkingbookapp.view_models.UserViewModel

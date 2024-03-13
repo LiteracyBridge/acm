@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.literacybridge.talkingbookapp.helpers.dfu
+package org.literacybridge.talkingbookapp.util.dfu
 
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -25,7 +25,7 @@ import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
 import android.os.Build
 import android.util.Log
-import org.literacybridge.talkingbookapp.helpers.LOG_TAG
+import org.literacybridge.talkingbookapp.util.LOG_TAG
 
 class Usb(private val mContext: Context) {
     var mUsbManager: UsbManager? = null

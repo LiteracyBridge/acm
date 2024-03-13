@@ -6,8 +6,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import org.literacybridge.talkingbookapp.helpers.API_URL
-import org.literacybridge.talkingbookapp.helpers.dataStoreManager
+import org.literacybridge.talkingbookapp.util.API_URL
+import org.literacybridge.talkingbookapp.util.dataStoreManager
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton

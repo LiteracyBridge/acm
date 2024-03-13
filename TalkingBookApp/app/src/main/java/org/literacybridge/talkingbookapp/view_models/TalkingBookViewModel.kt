@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import org.literacybridge.talkingbookapp.api_services.ApiService
-import org.literacybridge.talkingbookapp.helpers.LOG_TAG
+import org.literacybridge.talkingbookapp.util.LOG_TAG
 import javax.inject.Inject
 
 data class DeviceState(

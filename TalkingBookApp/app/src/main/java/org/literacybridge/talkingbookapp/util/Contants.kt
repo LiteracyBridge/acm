@@ -1,4 +1,4 @@
-package org.literacybridge.talkingbookapp.helpers
+package org.literacybridge.talkingbookapp.util
 
 import androidx.compose.ui.unit.dp
 

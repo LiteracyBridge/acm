@@ -20,9 +20,9 @@ import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
-import org.literacybridge.talkingbookapp.helpers.LOG_TAG
-import org.literacybridge.talkingbookapp.helpers.dfu.Dfu
-import org.literacybridge.talkingbookapp.helpers.dfu.Usb
+import org.literacybridge.talkingbookapp.util.LOG_TAG
+import org.literacybridge.talkingbookapp.util.dfu.Dfu
+import org.literacybridge.talkingbookapp.util.dfu.Usb
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 import org.literacybridge.talkingbookapp.view_models.UserViewModel

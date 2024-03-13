@@ -20,7 +20,7 @@ import com.amplifyframework.auth.cognito.AWSCognitoAuthSession
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.ui.authenticator.ui.Authenticator
 import org.literacybridge.talkingbookapp.R
-import org.literacybridge.talkingbookapp.helpers.LOG_TAG
+import org.literacybridge.talkingbookapp.util.LOG_TAG
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
 @Composable

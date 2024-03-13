@@ -13,8 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.api_services.NetworkModule
-import org.literacybridge.talkingbookapp.helpers.LOG_TAG
-import org.literacybridge.talkingbookapp.helpers.dataStoreManager
+import org.literacybridge.talkingbookapp.util.LOG_TAG
+import org.literacybridge.talkingbookapp.util.dataStoreManager
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
 import org.literacybridge.talkingbookapp.models.UserModel

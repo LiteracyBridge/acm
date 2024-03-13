@@ -38,7 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.R
-import org.literacybridge.talkingbookapp.helpers.LOG_TAG
+import org.literacybridge.talkingbookapp.util.LOG_TAG
 import org.literacybridge.talkingbookapp.ui.components.NavigationDrawer
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 import org.literacybridge.talkingbookapp.view_models.UserViewModel

@@ -1,8 +1,8 @@
 package org.literacybridge.talkingbookapp.api_services
 
 import okhttp3.OkHttpClient
-import org.literacybridge.talkingbookapp.helpers.API_URL
-import org.literacybridge.talkingbookapp.helpers.dataStoreManager
+import org.literacybridge.talkingbookapp.util.API_URL
+import org.literacybridge.talkingbookapp.util.dataStoreManager
 import org.literacybridge.talkingbookapp.models.ApiResponseModel
 import org.literacybridge.talkingbookapp.models.UserModel
 import retrofit2.converter.gson.GsonConverterFactory

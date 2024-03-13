@@ -1,4 +1,4 @@
-package org.literacybridge.talkingbookapp.helpers.dfu
+package org.literacybridge.talkingbookapp.util.dfu
 
 import android.util.Log
 import java.io.File

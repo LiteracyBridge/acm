@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.literacybridge.talkingbookapp.helpers.dfu
+package org.literacybridge.talkingbookapp.util.dfu
 
 import android.nfc.FormatException
 import android.os.Environment
 import android.util.Log
-import org.literacybridge.talkingbookapp.helpers.LOG_TAG
+import org.literacybridge.talkingbookapp.util.LOG_TAG
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
