@@ -33,5 +33,13 @@
         }
       }
     }
+  },
+  "storage": {
+    "plugins": {
+      "awsS3StoragePlugin": {
+        "bucket": "[BUCKET NAME]",
+        "region": "us-west-2"
+      }
+    }
   }
 }

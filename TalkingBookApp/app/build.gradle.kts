@@ -62,7 +62,8 @@ dependencies {
 
     // Others
     implementation("com.google.code.gson:gson:2.10")
-    
+    implementation(project(":core"))
+
     // Hilt
     implementation("com.google.dagger:hilt-android:2.51")
     // implementation("androidx.hilt:hilt-navigation-fragment:1.2.0")
@@ -84,6 +85,7 @@ dependencies {
     implementation("com.amplifyframework:aws-auth-cognito:2.14.11")
     implementation("com.amplifyframework:core:2.14.11")
     implementation("com.amplifyframework.ui:authenticator:1.1.0")
+    implementation("com.amazonaws:aws-android-sdk-s3:2.2.22")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("androidx.datastore:datastore-preferences:1.0.0")

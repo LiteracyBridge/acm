@@ -5,13 +5,20 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import dagger.hilt.android.HiltAndroidApp
+import org.literacybridge.talkingbookapp.util.Config
 
 
 @HiltAndroidApp
 class App : Application() {
+    var config: Config? = null
+        private set
+
+
     override fun onCreate() {
         super.onCreate()
         application = this
+
+        config = Config(this);
     }
 
     companion object {
