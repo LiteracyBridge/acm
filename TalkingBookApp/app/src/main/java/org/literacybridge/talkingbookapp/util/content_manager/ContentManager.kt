@@ -1,8 +1,5 @@
 package org.literacybridge.talkingbookapp.util.content_manager
 
-//import com.amazonaws.services.s3.model.ListObjectsV2Request
-
-//import com.amazonaws.services.s3.model.ListObjectsV2Result
 import android.content.Intent
 import android.os.AsyncTask
 import android.util.Log
@@ -61,6 +58,7 @@ class ContentManager(private val applicationContext: App) {
 
     // A cache of community names for projects, as contained in the Deployments.
     private var mProjectCommunitiesCache: Map<String, Map<String, CommunityInfo>>? = null
+    
     fun onSignOut() {
         mContentList.clear()
         mContentListTime = 0
@@ -372,7 +370,7 @@ class ContentManager(private val applicationContext: App) {
     ) : AsyncTask<Void?, Void?, Void?>() {
         protected override fun doInBackground(vararg params: Void?): Void? {
             Log.i(TAG, "Removing obsolete projects and content")
-            val projectsDir = PathsProvider.getLocalContentDirectory()
+            val projectsDir = PathsProvider.localContentDirectory
             try {
                 // Projects
                 for (project in projectsToRemove) {
@@ -643,9 +641,11 @@ class ContentManager(private val applicationContext: App) {
      * determined. In that case, we'll need to consider the content stale.
      */
     private fun findLocalContent(): Map<String, ContentInfo> {
-        // Projects are kept in /tbloader/projects
-        val projectsDir = PathsProvider.getLocalContentDirectory()
         val localVersions: MutableMap<String, ContentInfo> = HashMap()
+
+        // Projects are kept in /tbloader/projects
+        val projectsDir = PathsProvider.localContentDirectory ?: return localVersions
+
         if (projectsDir.exists() && projectsDir.isDirectory) {
             val projects = projectsDir.listFiles()
             // Iterate over the projects, and find local versions...

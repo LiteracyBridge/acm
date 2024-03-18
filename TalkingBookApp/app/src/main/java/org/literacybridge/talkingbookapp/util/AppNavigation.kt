@@ -2,7 +2,8 @@ enum class Screen {
     HOME,
     LOGIN,
     PROGRAM_SELECTION,
-    COLLECT_DATA
+    COLLECT_DATA,
+    CONTENT_DOWNLOADER,
 }
 
 sealed class NavigationItem(val route: String) {
@@ -10,4 +11,5 @@ sealed class NavigationItem(val route: String) {
     object Login : NavigationItem(Screen.LOGIN.name)
     object ProgramSelection : NavigationItem(Screen.PROGRAM_SELECTION.name)
     object CollectData : NavigationItem(Screen.COLLECT_DATA.name)
+    object ContentDownloader : NavigationItem(Screen.CONTENT_DOWNLOADER.name)
 }

@@ -85,7 +85,9 @@ dependencies {
     implementation("com.amplifyframework:aws-auth-cognito:2.14.11")
     implementation("com.amplifyframework:core:2.14.11")
     implementation("com.amplifyframework.ui:authenticator:1.1.0")
+    implementation("com.amplifyframework:aws-storage-s3:2.14.11")
     implementation("com.amazonaws:aws-android-sdk-s3:2.2.22")
+
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("androidx.datastore:datastore-preferences:1.0.0")

@@ -13,11 +13,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.api_services.NetworkModule
-import org.literacybridge.talkingbookapp.util.LOG_TAG
-import org.literacybridge.talkingbookapp.util.dataStoreManager
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
 import org.literacybridge.talkingbookapp.models.UserModel
+import org.literacybridge.talkingbookapp.util.LOG_TAG
+import org.literacybridge.talkingbookapp.util.dataStoreManager
 import javax.inject.Inject
 
 @HiltViewModel
@@ -97,7 +97,12 @@ class UserViewModel @Inject constructor() : ViewModel() {
             this.deployment.value = dataStoreManager.deployment
             this.program.value = dataStoreManager.program
 
-            return navController.navigate(Screen.HOME.name);
+            return if (App().isNetworkAvailable()) {
+                navController.navigate(Screen.CONTENT_DOWNLOADER.name);
+            } else {
+                // We're offline, skip content sync
+                navController.navigate(Screen.HOME.name);
+            }
         }
 
         return navController.navigate(Screen.PROGRAM_SELECTION.name)
