@@ -59,6 +59,13 @@ android {
 dependencies {
     val navVersion = "2.7.7"
     val lifecycleVersion = "2.7.0"
+    val roomVersion = "2.6.1"
+
+    // Room
+    implementation("androidx.room:room-runtime:$roomVersion")
+    annotationProcessor("androidx.room:room-compiler:$roomVersion")
+    ksp("androidx.room:room-compiler:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
 
     // Others
     implementation("com.google.code.gson:gson:2.10")

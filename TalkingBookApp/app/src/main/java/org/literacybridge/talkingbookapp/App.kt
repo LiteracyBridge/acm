@@ -4,7 +4,9 @@ import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import androidx.room.Room
 import dagger.hilt.android.HiltAndroidApp
+import org.literacybridge.talkingbookapp.database.AppDatabase
 import org.literacybridge.talkingbookapp.util.Config
 
 
@@ -13,17 +15,25 @@ class App : Application() {
     var config: Config? = null
         private set
 
+    lateinit var db: AppDatabase
+        private set
 
     override fun onCreate() {
         super.onCreate()
         application = this
 
-        config = Config(this);
+        db = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java, "tbloader_db"
+        ).build()
+
+        config = Config(this)
     }
 
     companion object {
         var application: Application? = null
             private set
+
         val context: Context
             get() = application!!.applicationContext
     }
