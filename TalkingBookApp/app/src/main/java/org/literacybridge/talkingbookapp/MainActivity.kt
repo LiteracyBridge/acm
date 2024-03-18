@@ -1,9 +1,11 @@
 package org.literacybridge.talkingbookapp
 
 import AppNavHost
+import android.Manifest
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
@@ -18,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
-import com.amplifyframework.core.plugin.Plugin
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import dagger.hilt.android.AndroidEntryPoint
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
@@ -26,8 +27,6 @@ import org.literacybridge.talkingbookapp.util.LOG_TAG
 import org.literacybridge.talkingbookapp.util.dfu.Dfu
 import org.literacybridge.talkingbookapp.util.dfu.Usb
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
-import org.literacybridge.talkingbookapp.view_models.UserViewModel
-
 
 const val TAG = "TalkingBook";
 
@@ -35,11 +34,12 @@ const val TAG = "TalkingBook";
 class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListener,
     Dfu.DfuListener {
 
+    val PERMISSION_WRITE_STORAGE_CODE = 12
+    val PERMISSION_READ_AUDIO_CODE = 13
+
     private lateinit var usb: Usb
     private lateinit var dfu: Dfu
-//    private val  talkingBookViewModel = TalkingBookViewModel();
     private val talkingBookViewModel: TalkingBookViewModel by viewModels()
-    private val userViewModel: UserViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,27 +52,19 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             Log.i(LOG_TAG, "Amplify plugin already configured")
         }
 
+        // Request write storage is on  api level <32
+        // https://developer.android.com/about/versions/13/behavior-changes-13#granular-media-permissions
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S_V2) {
+            val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            requestPermissions(permissions, PERMISSION_WRITE_STORAGE_CODE)
+        } else {
+            val permissions = arrayOf(Manifest.permission.READ_MEDIA_AUDIO)
+            requestPermissions(permissions, PERMISSION_READ_AUDIO_CODE)
+        }
+
         // Setup dfu
         dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
         dfu.setListener(this)
-
-        // Setup view models
-//        val viewModel: TalkingBookViewModel by viewModels()
-//        lifecycleScope.launch {
-//            repeatOnLifecycle(Lifecycle.State.STARTED) {
-//                talkingBookViewModel = viewModel
-//
-//                viewModel.deviceState.collect {
-////                    // Update UI elements
-//                }
-//            }
-//        }
-
-
-
-        // TODO: implement permission write request
-//        val permissions = arrayOf<String>(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-//        requestPermissions(permissions, 12)
 
         setContent {
             TalkingBookAppTheme {
@@ -82,27 +74,6 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
                     color = MaterialTheme.colorScheme.background
                 ) {
                     AppNavHost(navController = rememberNavController())
-//                    Greeting("Android")
-//                    Authenticator(
-//                        headerContent = {
-//                            Box(
-////                                modifier = Modifier.size(80.dp).align(Alignment.CenterHorizontally)
-//                            ) {
-//                                Image(
-//                                    painter = painterResource(R.drawable.amplio_logo),
-//                                    contentDescription = null,
-//                                )
-//                            }
-//                        },
-////                        footerContent = {
-////                            Text(
-////                                "© All Rights Reserved",
-////                                modifier = Modifier.align(Alignment.CenterHorizontally)
-////                            )
-////                        }
-//                    ) { state ->
-//                        SignedInContent(state)
-//                    }
                 }
             }
         }
@@ -112,7 +83,6 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 //        }, {
 //            Log.e(TAG, "auth error = $it")
 //        })
-
 //            .initialize(applicationContext, object : Callback<UserStateDetails?>() {
 //                fun onResult(userStateDetails: UserStateDetails) {
 //                    Log.i(TAG, userStateDetails.getUserState().toString())
@@ -224,7 +194,8 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         usb.release()
         try {
             unregisterReceiver(usb.getmUsbReceiver())
-        } catch (e: IllegalArgumentException) { /* Already unregistered */
+        } catch (e: IllegalArgumentException) {
+            /* Already unregistered */
         }
     }
 
@@ -263,7 +234,25 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         when (requestCode) {
-            12 -> {
+            PERMISSION_WRITE_STORAGE_CODE -> {
+                // If request is cancelled, the result arrays are empty.
+                if ((grantResults.isNotEmpty() &&
+                            grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                ) {
+                    // Permission is granted. Continue the action or workflow
+                    // in your app.
+                    Log.d(LOG_TAG, "storage permission granted")
+                } else {
+                    // Explain to the user that the feature is unavailable because
+                    // the feature requires a permission that the user has denied.
+                    // At the same time, respect the user's decision. Don't link to
+                    // system settings in an effort to convince the user to change
+                    // their decision.
+                }
+                return
+            }
+
+            PERMISSION_READ_AUDIO_CODE -> {
                 // If request is cancelled, the result arrays are empty.
                 if ((grantResults.isNotEmpty() &&
                             grantResults[0] == PackageManager.PERMISSION_GRANTED)

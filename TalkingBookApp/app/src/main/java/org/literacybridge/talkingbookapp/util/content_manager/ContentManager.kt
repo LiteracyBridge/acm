@@ -58,7 +58,7 @@ class ContentManager(private val applicationContext: App) {
 
     // A cache of community names for projects, as contained in the Deployments.
     private var mProjectCommunitiesCache: Map<String, Map<String, CommunityInfo>>? = null
-    
+
     fun onSignOut() {
         mContentList.clear()
         mContentListTime = 0
@@ -454,6 +454,8 @@ class ContentManager(private val applicationContext: App) {
                 // Examine all the objects, and figure out the projects, their sizes, and current update.
                 findDeploymentsAndSizes(s3ObjectSummaries, projects, PUBLISH_FORMAT.DEPLOYMENT)
                 // Examine the S3 hosted (Smart Sync) programs for the user.
+
+                //TODO: pass the project id directly
                 findCloudContent2(projectsListener, projects)
             }
 
