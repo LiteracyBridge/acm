@@ -11,6 +11,7 @@ import com.amplifyframework.auth.AuthException
 import com.amplifyframework.auth.CognitoCredentialsProvider
 import com.amplifyframework.auth.cognito.AWSCognitoAuthSession
 import com.amplifyframework.core.Amplify
+import com.amplifyframework.storage.options.StoragePagedListOptions
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.literacybridge.talkingbookapp.App
@@ -97,29 +98,29 @@ class ContentDownloaderViewModel @Inject constructor(application: Application) :
 //
 //        }
 
-//        val options = StoragePagedListOptions.builder()
+        val options = StoragePagedListOptions.builder()
 //            .accessLevel(StorageAccessLevel.PRIVATE)
-//            .setPageSize(1000)
-//            .build()
-//
-//
-//        Amplify.Storage.list("${model.program.value!!.program_id}/TB-Loaders/published", options,
-//
-//            { result ->
-//
-//                result.items.forEach { item ->
-//
-//                    Log.i("MyAmplifyApp", "Item: ${item.key}")
-//
-//                }
-//
-//                Log.i("MyAmplifyApp", "Next Token: ${result.nextToken}")
-//
-//            },
-//
-//            { Log.e("MyAmplifyApp", "List failure", it) }
-//
-//        )
+            .setPageSize(1000)
+            .build()
+
+
+        Amplify.Storage.list("", options,
+
+            { result ->
+
+                result.items.forEach { item ->
+
+                    Log.i("MyAmplifyApp", "Item: ${item.key}")
+
+                }
+
+                Log.i("MyAmplifyApp", "Next Token: ${result.nextToken}")
+
+            },
+
+            { Log.e("MyAmplifyApp", "List failure", it) }
+
+        )
 //
 //       client.builder {
 //
@@ -142,7 +143,7 @@ class ContentDownloaderViewModel @Inject constructor(application: Application) :
 
         val credentialsProvider = CognitoCredentialsProvider(
         )
-        credentialsProvider.
+//        credentialsProvider.
         Log.d(LOG_TAG, "aws IDENTITY ${credentialsProvider.getIdentityId()}")
         val s3Client = S3Client {
                 this.region = "us-west-2"

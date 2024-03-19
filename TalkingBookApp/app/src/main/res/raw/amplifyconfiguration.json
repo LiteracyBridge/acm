@@ -1,45 +1,74 @@
 {
-  "UserAgent": "aws-amplify-cli/2.0",
-  "Version": "1.0",
-  "auth": {
-    "plugins": {
-      "awsCognitoAuthPlugin": {
-        "UserAgent": "aws-amplify-cli/0.1.0",
-        "Version": "0.1.0",
-        "IdentityManager": {
-          "Default": {}
-        },
-        "CognitoUserPool": {
-          "Default": {
-            "PoolId": "us-west-2_3evpQGyi5",
-            "AppClientId": "115fkn7c7089gveb3f2n0rop4a",
-            "Region": "us-west-2"
-          }
-        },
-        "Auth": {
-          "Default": {
-            "authenticationFlowType": "USER_SRP_AUTH",
-            "socialProviders": [],
-            "usernameAttributes": [],
-            "signupAttributes": [],
-            "passwordProtectionSettings": {
-              "passwordPolicyMinLength": 6,
-              "passwordPolicyCharacters": []
-            },
-            "mfaConfiguration": "OFF",
-            "mfaTypes": [],
-            "verificationMechanisms": []
-          }
+    "UserAgent": "aws-amplify-cli/2.0",
+    "Version": "1.0",
+    "auth": {
+        "plugins": {
+            "awsCognitoAuthPlugin": {
+                "UserAgent": "aws-amplify-cli/0.1.0",
+                "Version": "0.1.0",
+                "IdentityManager": {
+                    "Default": {}
+                },
+                "CredentialsProvider": {
+                    "CognitoIdentity": {
+                        "Default": {
+                            "PoolId": "us-west-2:48d2e3e2-9b5a-4c7e-8287-3bce344b4d07",
+                            "Region": "us-west-2"
+                        }
+                    }
+                },
+                "CognitoUserPool": {
+                    "Default": {
+                        "PoolId": "us-west-2_PtxBjo1si",
+                        "AppClientId": "22ocu2lc31sj6395bbhimimg88",
+                        "Region": "us-west-2"
+                    }
+                },
+                "Auth": {
+                    "Default": {
+                        "authenticationFlowType": "USER_SRP_AUTH",
+                        "socialProviders": [],
+                        "usernameAttributes": [
+                            "EMAIL"
+                        ],
+                        "signupAttributes": [
+                            "EMAIL"
+                        ],
+                        "passwordProtectionSettings": {
+                            "passwordPolicyMinLength": 8,
+                            "passwordPolicyCharacters": []
+                        },
+                        "mfaConfiguration": "OFF",
+                        "mfaTypes": [
+                            "SMS"
+                        ],
+                        "verificationMechanisms": [
+                            "EMAIL"
+                        ]
+                    }
+                },
+                "S3TransferUtility": {
+                    "Default": {
+                        "Bucket": "talkingbookapp3f4a5c5847334a6a9b1aede9159a31dd113706-dev",
+                        "Region": "us-west-2"
+                    }
+                },
+                "Storage": {
+                    "Default": {
+                        "bucket": "amplio-program-content",
+                        "region": "us-west-2"
+                    }
+                }
+            }
         }
-      }
+    },
+    "storage": {
+        "plugins": {
+            "awsS3StoragePlugin": {
+                "bucket": "talkingbookapp3f4a5c5847334a6a9b1aede9159a31dd113706-dev",
+                "region": "us-west-2",
+                "defaultAccessLevel": "guest"
+            }
+        }
     }
-  },
-  "storage": {
-    "plugins": {
-      "awsS3StoragePlugin": {
-        "bucket": "[BUCKET NAME]",
-        "region": "us-west-2"
-      }
-    }
-  }
 }

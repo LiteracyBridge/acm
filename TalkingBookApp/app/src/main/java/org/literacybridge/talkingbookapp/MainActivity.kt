@@ -25,6 +25,7 @@ import androidx.navigation.compose.rememberNavController
 //import com.amazonaws.mobileconnectors.s3.transferutility.TransferService
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
+import com.amplifyframework.storage.options.StoragePagedListOptions
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import dagger.hilt.android.AndroidEntryPoint
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
@@ -113,6 +114,29 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             }
         }
 
+        val options = StoragePagedListOptions.builder()
+//            .accessLevel(StorageAccessLevel.PRIVATE)
+            .setPageSize(1000)
+            .build()
+
+
+        Amplify.Storage.list("", options,
+
+            { result ->
+
+                result.items.forEach { item ->
+
+                    Log.i("MyAmplifyApp", "Item: ${item.key}")
+
+                }
+
+                Log.i("MyAmplifyApp", "Next Token: ${result.nextToken}")
+
+            },
+
+            { Log.e("MyAmplifyApp", "List failure", it) }
+
+        )
 //        Amplify.Auth.getCurrentUser({
 //            Log.i(TAG, "session = $it")
 //        }, {

@@ -22,6 +22,9 @@
         android:name="org.literacybridge.talkingbookapp.App"
         tools:targetApi="34">
 
+        <!-- Enable S3 transfer service -->
+        <service android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService" android:enabled="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
