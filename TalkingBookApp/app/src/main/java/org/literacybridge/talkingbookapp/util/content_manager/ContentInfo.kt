@@ -215,10 +215,10 @@ class ContentInfo internal constructor(// Like "UWR"
      * @return true if a download was started, false if one was already in progress
      */
     fun startDownload(
-        applicationContext: App?,
         listener: ContentDownloader.DownloadListener?
     ): Boolean {
         if (mContentDownloader != null) return false
+
         mListener = listener
         mOpLog = OperationLog.startOperation("DownloadContent")
             .put("projectname", programId)

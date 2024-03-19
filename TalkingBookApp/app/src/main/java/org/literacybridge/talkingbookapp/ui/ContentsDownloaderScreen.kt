@@ -6,16 +6,24 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import org.literacybridge.talkingbookapp.view_models.ContentDownloaderViewModel
+import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
 @Composable
-fun ContentDownloaderScreen(navController: NavController, viewModel: ContentDownloaderViewModel = viewModel()) {
+fun ContentDownloaderScreen(
+    navController: NavController, viewModel: ContentDownloaderViewModel = viewModel(),
+    userViewModel: UserViewModel = viewModel()
+) {
+    LaunchedEffect(key1 = "content-download") {
+        viewModel.startDownload(userViewModel)
+    }
+
     return Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally

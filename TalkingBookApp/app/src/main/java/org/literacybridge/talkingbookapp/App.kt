@@ -2,9 +2,11 @@ package org.literacybridge.talkingbookapp
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.room.Room
+//import com.amazonaws.mobileconnectors.s3.transferutility.TransferService
 import dagger.hilt.android.HiltAndroidApp
 import org.literacybridge.talkingbookapp.database.AppDatabase
 import org.literacybridge.talkingbookapp.util.Config
@@ -31,7 +33,7 @@ class App : Application() {
     }
 
     companion object {
-        var application: Application? = null
+        var  application: Application? = null
             private set
 
         val context: Context

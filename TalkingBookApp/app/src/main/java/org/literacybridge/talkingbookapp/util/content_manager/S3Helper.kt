@@ -1,16 +1,18 @@
 package org.literacybridge.talkingbookapp.util.content_manager
 
-import android.os.AsyncTask
 import aws.sdk.kotlin.services.s3.S3Client
 import aws.sdk.kotlin.services.s3.model.ListObjectsV2Request
-import aws.sdk.kotlin.services.s3.model.ListObjectsV2Response
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.ListObjectsV2Result
+import com.amplifyframework.annotations.InternalAmplifyApi
+import com.amplifyframework.auth.CognitoCredentialsProvider
 import com.amplifyframework.core.Amplify
-import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import org.literacybridge.talkingbookapp.App
+import com.amazonaws.auth.CognitoCachingCredentialsProvider
+import com.amazonaws.mobile.config.AWSConfiguration
+
 
 //import com.amazonaws.services.s3.model.ListObjectsV2Request;
 /**
@@ -27,16 +29,48 @@ object S3Helper {
         sApplicationContext = applicationContext
     }
 
-    private val s3Client: S3Client
+    @OptIn(InternalAmplifyApi::class)
+    val s3Client: S3Client
         /**
          * Gets an instance of a S3 client which is constructed using the given
          * Context.
          *
          * @return A default S3 client.
          */
-        private get() {
-            val plugin = Amplify.Storage.getPlugin("awsS3StoragePlugin") as AWSS3StoragePlugin
-            return plugin.escapeHatch
+        get() {
+//            val credentialsProvider = CognitoCredentialsProvider(
+//                "us-west-2_3evpQGyi5",
+//                "5oviumtu4cmhspn9qt2bvn130s",
+//                // You can leave refresh token blank if not using refresh flow
+//                refreshToken = "",
+//                "us-west-2"
+//            )
+//            val cong = AWSCognitoIdentityProvider()
+            val config = AWSConfiguration(App.context)
+            val credentialsProvider = CognitoCachingCredentialsProvider(
+                App.context,
+                config,
+//                "us-west-2:a544b58b-8be0-46db-aece-e6fe14d29124",
+//                "us-west-2"
+            )
+//            val cred = CredentialsProvider()
+//                        AWSCredentialsProvider credentialsProvider = crede
+
+
+// 2. Configure S3 Client
+            val s3Client = S3Client {
+                this.region = "us-west-2"
+//                this.credentialsProvider = credentialsProvider
+//                this.credentialsProvider = CognitoCredentialsProvider(
+//                    Amplify.Auth
+//                )
+//                credentialsProvider = credentialsProvider
+            }
+
+            return s3Client
+
+//            val plugin = Amplify.Storage.getPlugin("awsS3StoragePlugin") as AWSS3StoragePlugin
+//            return plugin.escapeHatch
             //        if (sS3Client == null) {
 //            ClientConfiguration config = new ClientConfiguration();
 //            config.setConnectionTimeout(60 * 1000);
@@ -47,6 +81,7 @@ object S3Helper {
 //        }
 //        return sS3Client;
         }
+
     @JvmStatic
     val transferUtility: TransferUtility?
         /**

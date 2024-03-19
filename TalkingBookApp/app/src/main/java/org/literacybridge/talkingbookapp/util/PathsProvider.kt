@@ -1,7 +1,9 @@
 package org.literacybridge.talkingbookapp.util
 
+import android.util.Log
 import org.literacybridge.talkingbookapp.App
 import java.io.File
+
 
 /**
  * The Deployments are stored locallin in a directory structure like this:
@@ -11,10 +13,11 @@ import java.io.File
  */
 object PathsProvider {
     private const val TAG = "TBL!:" + "PathsProvider"
-    private var sTbLoaderAppContext: App? = null
-    fun init(applicationContext: App?) {
-        sTbLoaderAppContext = applicationContext
-    }
+    private var sTbLoaderAppContext: App = App()
+
+//    fun init(applicationContext: App) {
+//        sTbLoaderAppContext = applicationContext
+//    }
 
     val localContentDirectory: File?
         /**
@@ -23,7 +26,7 @@ object PathsProvider {
          *
          * @return the directory's File.
          */
-        get() = sTbLoaderAppContext!!.getExternalFilesDir("localrepository")
+        get() = sTbLoaderAppContext.getExternalFilesDir("localrepository")
 
     /**
      * Gets the {externalFilesDirectory}/localrepository/{project} directory for a specific project.
@@ -31,8 +34,20 @@ object PathsProvider {
      * @param project The name of the project.
      * @return the project's directory's File.
      */
-    fun getLocalContentProjectDirectory(project: String?): File {
-        return File(sTbLoaderAppContext!!.getExternalFilesDir("localrepository"), project)
+    fun getLocalContentProjectDirectory(project: String): File {
+//        val dir: File? = App().getExternalFilesDir("localrepository")
+        val dir = File(App.context.getExternalFilesDir("localrepository"), project)
+        if (!dir.exists()) {
+            Log.w(TAG, "path to pending downloads are not accessible")
+            dir.mkdirs()
+            Log.w(TAG, "dir created")
+
+            // One of the following paths are not accessible ¿unmounted internal memory?
+            //        /storage/emulated/0/Android/data/org.schabi.newpipe[.debug]/pending_downloads
+            //        /sdcard/Android/data/org.schabi.newpipe[.debug]/pending_downloads
+        }
+        return dir
+//        return File(App().getExternalFilesDir("localrepository"), project)
     }
 
     val locationsCacheDirectory: File?
@@ -41,7 +56,7 @@ object PathsProvider {
          *
          * @return the directory's File.
          */
-        get() = sTbLoaderAppContext!!.getExternalFilesDir("locations")
+        get() = sTbLoaderAppContext.getExternalFilesDir("locations")
 
     /**
      * Gets the {externalFilesDirectory}/localrepository/{project}/content/{Deployment name} directory
@@ -51,7 +66,7 @@ object PathsProvider {
      * @param project The desired project.
      * @return The Deployment directory for the project.
      */
-    fun getLocalDeploymentDirectory(project: String?): File? {
+    fun getLocalDeploymentDirectory(project: String): File? {
         val projectDir = getLocalContentProjectDirectory(project)
         val contentDir = File(projectDir, "content")
         var deployments: Array<File?>? = null
@@ -64,7 +79,7 @@ object PathsProvider {
         return null
     }
 
-    fun getProgramSpecDir(project: String?): File {
+    fun getProgramSpecDir(project: String): File {
         val deploymentDir = getLocalDeploymentDirectory(project)
         return File(deploymentDir, "programspec")
     }
@@ -76,7 +91,7 @@ object PathsProvider {
          *
          * @return the temporary directory's File.
          */
-        get() = sTbLoaderAppContext!!.externalCacheDir
+        get() = sTbLoaderAppContext.externalCacheDir
     val uploadDirectory: File?
         /**
          * Gets a File object that represents a directory into which files intended to be uploaded
@@ -84,7 +99,7 @@ object PathsProvider {
          *
          * @return the staging directory's File.
          */
-        get() = sTbLoaderAppContext!!.getExternalFilesDir("upload")
+        get() = sTbLoaderAppContext.getExternalFilesDir("upload")
     val logDirectory: File?
         /**
          * Gets a File object that represents a directory into which log files should be placed. The
@@ -92,7 +107,7 @@ object PathsProvider {
          *
          * @return the staging directory's File.
          */
-        get() = sTbLoaderAppContext!!.getExternalFilesDir("log")
+        get() = sTbLoaderAppContext.getExternalFilesDir("log")
     val srnDirectory: File?
         /**
          * Gets a File object that represents a directory into which srn files should be placed. The
@@ -100,5 +115,5 @@ object PathsProvider {
          *
          * @return the staging directory's File.
          */
-        get() = sTbLoaderAppContext!!.getExternalFilesDir("srn")
+        get() = sTbLoaderAppContext.getExternalFilesDir("srn")
 }

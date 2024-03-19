@@ -2,6 +2,7 @@ package org.literacybridge.talkingbookapp
 
 import AppNavHost
 import android.Manifest
+import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbManager
@@ -18,6 +19,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+//import com.amazonaws.mobile.client.AWSMobileClient
+//import com.amazonaws.mobile.client.Callback
+//import com.amazonaws.mobile.client.UserStateDetails
+//import com.amazonaws.mobileconnectors.s3.transferutility.TransferService
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
@@ -27,6 +32,7 @@ import org.literacybridge.talkingbookapp.util.LOG_TAG
 import org.literacybridge.talkingbookapp.util.dfu.Dfu
 import org.literacybridge.talkingbookapp.util.dfu.Usb
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
+
 
 const val TAG = "TalkingBook";
 
@@ -48,6 +54,8 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             Amplify.addPlugin(AWSCognitoAuthPlugin())
             Amplify.addPlugin(AWSS3StoragePlugin())
             Amplify.configure(applicationContext)
+            Amplify.Logging.enable()
+//            = LogLevel.DEBUG
         } catch (e: Amplify.AlreadyConfiguredException) {
             Log.i(LOG_TAG, "Amplify plugin already configured")
         }
@@ -61,6 +69,33 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             val permissions = arrayOf(Manifest.permission.READ_MEDIA_AUDIO)
             requestPermissions(permissions, PERMISSION_READ_AUDIO_CODE)
         }
+
+        try {
+            // Start S3 transfer utility
+//            applicationContext.startService(
+//                Intent(
+//                    applicationContext,
+//                    TransferService::class.java
+//                )
+//            )
+//            // Initialize the AWSMobileClient if not initialized
+//            AWSMobileClient.getInstance()
+//                .initialize(applicationContext, object : Callback<UserStateDetails?> {
+//                    override fun onResult(result: UserStateDetails?) {
+//                        Log.i(
+//                            TAG,
+//                            "AWSMobileClient initialized. User State is ${result?.userState}"
+//                        )
+//                    }
+//
+//                    override fun onError(e: Exception?) {
+//                        Log.e(TAG, "Initialization error.", e)
+//                    }
+//                })
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, e.stackTraceToString())
+        }
+
 
         // Setup dfu
         dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)

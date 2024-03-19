@@ -1,5 +1,6 @@
 package org.literacybridge.talkingbookapp.util.content_manager
 
+import android.content.Context
 import android.content.Intent
 import android.os.AsyncTask
 import android.util.Log
@@ -21,7 +22,7 @@ import java.util.regex.Pattern
 /**
  * Manages lists of available Deployments for projects.
  */
-class ContentManager(private val applicationContext: App) {
+class ContentManager(private val app: App) {
     enum class Flags {
         ForUser,
 
@@ -64,8 +65,8 @@ class ContentManager(private val applicationContext: App) {
         mContentListTime = 0
     }
 
-    fun startDownload(info: ContentInfo, listener: ContentDownloader.DownloadListener) {
-        info.startDownload(applicationContext, object : ContentDownloader.DownloadListener {
+    fun startDownload(context: Context, info: ContentInfo, listener: ContentDownloader.DownloadListener) {
+        info.startDownload(object : ContentDownloader.DownloadListener {
             override fun onUnzipProgress(id: Int, current: Long, total: Long) {
                 listener.onUnzipProgress(id, current, total)
             }
@@ -510,7 +511,7 @@ class ContentManager(private val applicationContext: App) {
                             revision
                         )
                     )
-                    if (applicationContext.config!!.isProgramIdForUser(programId)) {
+                    if (app.config!!.isProgramIdForUser(programId)) {
                         val info = ContentInfo(programId)
                             .withBucketName(summary.bucketName)
                             .withDeployment(deployment)
@@ -630,7 +631,7 @@ class ContentManager(private val applicationContext: App) {
         projectsListener: ListContentListener,
         partialResult: MutableMap<String, ContentInfo>
     ) {
-        val programids = applicationContext.config!!.programIdsForUser
+        val programids = app.config!!.programIdsForUser
         val listener = ChainingListener(projectsListener, programids, partialResult)
         listener.next()
     }

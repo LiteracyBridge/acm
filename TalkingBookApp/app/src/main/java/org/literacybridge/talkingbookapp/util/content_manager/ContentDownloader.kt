@@ -5,6 +5,8 @@ import android.util.Log
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState
+import com.amplifyframework.core.Amplify
+import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import org.literacybridge.core.fs.ZipUnzip
 import org.literacybridge.talkingbookapp.util.PathsProvider
 import org.literacybridge.talkingbookapp.util.content_manager.S3Helper.transferUtility
@@ -70,6 +72,13 @@ class ContentDownloader(
     private fun start2() {
         mProjectDir = PathsProvider.getLocalContentProjectDirectory(mContentInfo.programId)
         Log.d(TAG, "Starting download of content")
+
+//        val plugin = Amplify.Storage.getPlugin("awsS3StoragePlugin") as AWSS3StoragePlugin
+//       val client =  plugin.escapeHatch.listObjectsV2 {
+//            this.bucket = s3BucketName
+//            this.prefix = path
+//        }
+
         val listener: TransferListener = object : TransferListener {
             override fun onStateChanged(id: Int, state: TransferState) {
                 if (state == TransferState.COMPLETED) {
