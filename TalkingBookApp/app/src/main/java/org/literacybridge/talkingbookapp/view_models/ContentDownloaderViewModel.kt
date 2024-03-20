@@ -2,31 +2,35 @@ package org.literacybridge.talkingbookapp.view_models
 
 import Screen
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
 import aws.sdk.kotlin.services.s3.model.Object
 import com.amplifyframework.core.Amplify
+import com.amplifyframework.storage.options.StorageDownloadFileOptions
 import com.amplifyframework.storage.options.StoragePagedListOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
 import org.literacybridge.talkingbookapp.util.LOG_TAG
+import org.literacybridge.talkingbookapp.util.PathsProvider
 import java.io.File
 import javax.inject.Inject
 
 
 @HiltViewModel
 class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
+    val downloadProgress = mutableStateOf(0.0F)
+    val syncState = mutableStateOf("comparing")
 
-    suspend fun startDownload(
+    fun syncProgramContent(
         program: Program,
         deployment: Deployment,
         navController: NavController
     ) {
         Log.d(LOG_TAG, "Started download")
 
-        val dir = File(App.context.getExternalFilesDir("localrepository"), program.program_id)
 
 //        val contentInfo = ContentInfo(model.program.value!!.program_id)
 //
@@ -56,8 +60,6 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
             { result ->
                 Log.d(LOG_TAG, "Program content ${result.items.size}")
 
-//                navController.navigate(Screen.HOME.name);
-
                 if (result.items.isEmpty()) {
                     Log.d(LOG_TAG, "Program content empty")
                     // TODO: show error
@@ -67,7 +69,8 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                 val latest = result.items.sortedByDescending { it.key }.first()
                 val revisionName = getLatestRevisionName(latest.key)
 
-                val lastDownload = App().db.programContentDao().findLatestRevision(deployment.deploymentname)
+                val lastDownload =
+                    App().db.programContentDao().findLatestRevision(deployment.deploymentname)
                 if (lastDownload != null && lastDownload.latestRevision == revisionName) {
                     // Content is up to date, no need to download
                     navController.navigate(Screen.HOME.name);
@@ -80,8 +83,6 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
             },
             { Log.e("MyAmplifyApp", "List failure", it) }
         )
-//                val data = S3Helper.listObjects(request)
-
 
 //            }
 //        }
@@ -92,6 +93,27 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         val basePath = latest.key!!.split("/programspec").first()
 
         return "$basePath/content-${basePath.split("/").last()}.zip"
+    }
+
+    private fun downloadContent(s3key: String, deploymentName: String, projectId: String) {
+        syncState.value = "downloading"
+
+        val dest = File("${PathsProvider.getProjectDirectory(projectId).path}/$deploymentName")
+        if (!dest.exists()) {
+            dest.mkdirs()
+        }
+
+        val file = File("${dest.path}/content.zip")
+        val options = StorageDownloadFileOptions.defaultInstance()
+        Amplify.Storage.downloadFile(s3key, file, options,
+            { progress ->
+                downloadProgress.value = progress.fractionCompleted.toFloat()
+            },
+            { done ->
+                Log.i("MyAmplifyApp", "Successfully downloaded: ${done.file.name}")
+            },
+            { Log.e("MyAmplifyApp", "Download Failure", it) }
+        )
     }
 
     /**

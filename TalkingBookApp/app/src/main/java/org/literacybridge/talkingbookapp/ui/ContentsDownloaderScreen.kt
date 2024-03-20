@@ -21,16 +21,26 @@ fun ContentDownloaderScreen(
     userViewModel: UserViewModel = viewModel()
 ) {
     LaunchedEffect(key1 = "content-download") {
-        viewModel.startDownload(userViewModel.program.value!!, userViewModel.deployment.value!!, navController)
+        viewModel.syncProgramContent(
+            userViewModel.program.value!!,
+            userViewModel.deployment.value!!,
+            navController
+        )
     }
 
     return Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        CircularProgressIndicator(
-            modifier = Modifier.width(100.dp),
-        )
+        if (viewModel.syncState.value == "comparing") {
+            CircularProgressIndicator(modifier = Modifier.width(100.dp))
+        } else {
+            CircularProgressIndicator(
+                modifier = Modifier.width(100.dp),
+                progress = viewModel.downloadProgress.value
+            )
+        }
+
         Text("Downloading program content, please wait...")
     }
 }
