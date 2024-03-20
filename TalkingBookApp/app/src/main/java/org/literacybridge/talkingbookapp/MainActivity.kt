@@ -53,7 +53,14 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 
         try {
             Amplify.addPlugin(AWSCognitoAuthPlugin())
-            Amplify.addPlugin(AWSS3StoragePlugin())
+//            Amplify.addPlugin(AWSS3StoragePlugin())
+            Amplify.addPlugin<Plugin<*>>(
+                AWSS3StoragePlugin(
+                    AWSS3StoragePluginConfiguration {
+                        awsS3PluginPrefixResolver = CustomS3PathResolver()
+                    }
+                )
+            )
             Amplify.configure(applicationContext)
             Amplify.Logging.enable()
 //            = LogLevel.DEBUG

@@ -1,0 +1,245 @@
+{
+  "auth": {
+    "talkingbookappbfee43d5": {
+      "customAuth": false,
+      "dependsOn": [],
+      "providerPlugin": "awscloudformation",
+      "service": "Cognito",
+      "serviceType": "imported"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_auth_talkingbookapp6e754c93_nativeClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp6e754c93"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp6e754c93_userPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp6e754c93"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp6e754c93_userPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp6e754c93"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp6e754c93_webClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp6e754c93"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp8737351e_allowUnauthenticatedIdentities": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp8737351e"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp8737351e_authRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp8737351e"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp8737351e_authRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp8737351e"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp8737351e_identityPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp8737351e"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp8737351e_identityPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp8737351e"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp8737351e_nativeClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp8737351e"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp8737351e_unauthRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp8737351e"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp8737351e_unauthRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp8737351e"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp8737351e_userPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp8737351e"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp8737351e_userPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp8737351e"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookapp8737351e_webClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookapp8737351e"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookappbfee43d5_allowUnauthenticatedIdentities": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookappbfee43d5"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookappbfee43d5_authRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookappbfee43d5"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookappbfee43d5_authRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookappbfee43d5"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookappbfee43d5_identityPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookappbfee43d5"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookappbfee43d5_identityPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookappbfee43d5"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookappbfee43d5_nativeClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookappbfee43d5"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookappbfee43d5_unauthRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookappbfee43d5"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookappbfee43d5_unauthRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookappbfee43d5"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookappbfee43d5_userPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookappbfee43d5"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookappbfee43d5_userPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookappbfee43d5"
+        }
+      ]
+    },
+    "AMPLIFY_auth_talkingbookappbfee43d5_webClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "talkingbookappbfee43d5"
+        }
+      ]
+    },
+    "AMPLIFY_storage_talkingbookapp28e3673f_bucketName": {
+      "usedBy": [
+        {
+          "category": "storage",
+          "resourceName": "talkingbookapp28e3673f"
+        }
+      ]
+    },
+    "AMPLIFY_storage_talkingbookapp28e3673f_region": {
+      "usedBy": [
+        {
+          "category": "storage",
+          "resourceName": "talkingbookapp28e3673f"
+        }
+      ]
+    }
+  },
+  "storage": {
+    "talkingbookapp28e3673f": {
+      "dependsOn": [],
+      "providerPlugin": "awscloudformation",
+      "service": "S3",
+      "serviceType": "imported"
+    }
+  }
+}

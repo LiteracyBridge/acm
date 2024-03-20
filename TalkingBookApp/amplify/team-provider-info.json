@@ -1,0 +1,57 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-talkingbookapp-dev-151636-authRole",
+      "UnauthRoleArn": "arn:aws:iam::856701711513:role/amplify-talkingbookapp-dev-151636-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::856701711513:role/amplify-talkingbookapp-dev-151636-authRole",
+      "Region": "us-west-2",
+      "DeploymentBucketName": "amplify-talkingbookapp-dev-151636-deployment",
+      "UnauthRoleName": "amplify-talkingbookapp-dev-151636-unauthRole",
+      "StackName": "amplify-talkingbookapp-dev-151636",
+      "StackId": "arn:aws:cloudformation:us-west-2:856701711513:stack/amplify-talkingbookapp-dev-151636/b4bbf010-e603-11ee-ace6-025a87d96cb7",
+      "AmplifyAppId": "d6xc1ox4j2blm"
+    },
+    "categories": {
+      "auth": {
+        "talkingbookapp6e754c93": {
+          "userPoolId": "us-west-2_3tGJQiLx8",
+          "userPoolName": "amplio_test",
+          "webClientId": "303rk04kmm8skoh83lss7mcn8c",
+          "nativeClientId": "303rk04kmm8skoh83lss7mcn8c"
+        },
+        "talkingbookapp8737351e": {
+          "userPoolId": "us-west-2_3evpQGyi5",
+          "userPoolName": "Amplio",
+          "webClientId": "115fkn7c7089gveb3f2n0rop4a",
+          "nativeClientId": "6blocf10ssb1vul860kkd3ohjb",
+          "identityPoolId": "us-west-2:c57e8e17-b2ab-404d-a4a2-29d3865e28f7",
+          "identityPoolName": "Amplio",
+          "allowUnauthenticatedIdentities": false,
+          "authRoleArn": "arn:aws:iam::856701711513:role/Cognito_AmplioAuth_Role",
+          "authRoleName": "Cognito_AmplioAuth_Role",
+          "unauthRoleArn": "arn:aws:iam::856701711513:role/Cognito_AmplioUnauth_Role",
+          "unauthRoleName": "Cognito_AmplioUnauth_Role"
+        },
+        "talkingbookappbfee43d5": {
+          "userPoolId": "us-west-2_3evpQGyi5",
+          "userPoolName": "Amplio",
+          "webClientId": "115fkn7c7089gveb3f2n0rop4a",
+          "nativeClientId": "6blocf10ssb1vul860kkd3ohjb",
+          "identityPoolId": "us-west-2:c57e8e17-b2ab-404d-a4a2-29d3865e28f7",
+          "identityPoolName": "Amplio",
+          "allowUnauthenticatedIdentities": false,
+          "authRoleArn": "arn:aws:iam::856701711513:role/Cognito_AmplioAuth_Role",
+          "authRoleName": "Cognito_AmplioAuth_Role",
+          "unauthRoleArn": "arn:aws:iam::856701711513:role/Cognito_AmplioUnauth_Role",
+          "unauthRoleName": "Cognito_AmplioUnauth_Role"
+        }
+      },
+      "storage": {
+        "talkingbookapp28e3673f": {
+          "bucketName": "acm-content-updates",
+          "region": "us-west-2"
+        }
+      }
+    }
+  }
+}

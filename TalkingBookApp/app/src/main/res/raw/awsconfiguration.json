@@ -7,15 +7,15 @@
     "CredentialsProvider": {
         "CognitoIdentity": {
             "Default": {
-                "PoolId": "us-west-2:48d2e3e2-9b5a-4c7e-8287-3bce344b4d07",
+                "PoolId": "us-west-2:c57e8e17-b2ab-404d-a4a2-29d3865e28f7",
                 "Region": "us-west-2"
             }
         }
     },
     "CognitoUserPool": {
         "Default": {
-            "PoolId": "us-west-2_PtxBjo1si",
-            "AppClientId": "22ocu2lc31sj6395bbhimimg88",
+            "PoolId": "us-west-2_3evpQGyi5",
+            "AppClientId": "6blocf10ssb1vul860kkd3ohjb",
             "Region": "us-west-2"
         }
     },
@@ -26,17 +26,17 @@
             "usernameAttributes": [
                 "EMAIL"
             ],
-            "signupAttributes": [
-                "EMAIL"
-            ],
+            "signupAttributes": [],
             "passwordProtectionSettings": {
                 "passwordPolicyMinLength": 8,
-                "passwordPolicyCharacters": []
+                "passwordPolicyCharacters": [
+                    "REQUIRES_LOWERCASE",
+                    "REQUIRES_UPPERCASE",
+                    "REQUIRES_NUMBERS"
+                ]
             },
             "mfaConfiguration": "OFF",
-            "mfaTypes": [
-                "SMS"
-            ],
+            "mfaTypes": [],
             "verificationMechanisms": [
                 "EMAIL"
             ]
@@ -44,13 +44,13 @@
     },
     "S3TransferUtility": {
         "Default": {
-            "Bucket": "talkingbookapp3f4a5c5847334a6a9b1aede9159a31dd113706-dev",
+            "Bucket": "acm-content-updates",
             "Region": "us-west-2"
         }
     },
     "Storage": {
         "Default": {
-            "bucket": "amplio-program-content",
+            "bucket": "acm-content-updates",
             "region": "us-west-2"
         }
     }
