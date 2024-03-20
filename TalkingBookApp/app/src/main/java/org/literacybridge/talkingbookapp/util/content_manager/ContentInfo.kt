@@ -1,8 +1,13 @@
 package org.literacybridge.talkingbookapp.util.content_manager
 
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferState
-import org.literacybridge.core.fs.OperationLog
+import com.amplifyframework.storage.TransferState
 import org.literacybridge.talkingbookapp.App
+import org.literacybridge.talkingbookapp.util.LOG_TAG
+
+//
+//import com.amazonaws.mobileconnectors.s3.transferutility.TransferState
+//import org.literacybridge.core.fs.OperationLog
+//import org.literacybridge.talkingbookapp.App
 
 /**
  * Description of a Deployment.
@@ -281,6 +286,6 @@ class ContentInfo internal constructor(// Like "UWR"
     }
 
     companion object {
-        private const val TAG = "TBL!:" + "ContentInfo"
+        private val TAG = "$LOG_TAG: ContentInfo"
     }
 }

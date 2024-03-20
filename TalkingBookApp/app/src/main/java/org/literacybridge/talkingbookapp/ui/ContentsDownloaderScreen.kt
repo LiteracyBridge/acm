@@ -21,7 +21,7 @@ fun ContentDownloaderScreen(
     userViewModel: UserViewModel = viewModel()
 ) {
     LaunchedEffect(key1 = "content-download") {
-        viewModel.startDownload(userViewModel)
+        viewModel.startDownload(userViewModel.program.value!!, userViewModel.deployment.value!!)
     }
 
     return Column(
