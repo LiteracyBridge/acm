@@ -14,7 +14,7 @@ data class ProgramContentEntity(
     @PrimaryKey(autoGenerate = true) val id: Int,
     @ColumnInfo(name = "program_id") val programId: String,
     @ColumnInfo(name = "deployment_name") val deploymentName: String,
-    @ColumnInfo(name = "latest_version") val latestVersion: String?,
+    @ColumnInfo(name = "latest_revision") val latestRevision: String?,
     @ColumnInfo(name = "local_path") val localPath: String?,
     @ColumnInfo(name = "s3_path") val s3Path: String?,
     @ColumnInfo(name = "last_sync") val lastSync: Date?,
@@ -31,6 +31,11 @@ interface ProgramContentDao {
 
     @Query("SELECT * FROM program_content WHERE program_id = :programId")
     fun findByProgramId(programId: String): List<ProgramContentEntity>
+
+    @Query(
+        "SELECT * FROM program_content WHERE deployment_name = :deploymentName ORDER BY latest_revision DESC LIMIT 1"
+    )
+    fun findLatestRevision(deploymentName: String): ProgramContentEntity?
 
     @Insert
     fun insertAll(vararg users: ProgramContentEntity)

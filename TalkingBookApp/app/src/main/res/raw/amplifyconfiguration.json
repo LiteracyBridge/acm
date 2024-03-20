@@ -49,13 +49,13 @@
                 },
                 "S3TransferUtility": {
                     "Default": {
-                        "Bucket": "acm-content-updates",
+                        "Bucket": "amplio-program-content",
                         "Region": "us-west-2"
                     }
                 },
                 "Storage": {
                     "Default": {
-                        "bucket": "acm-content-updates",
+                        "bucket": "amplio-program-content",
                         "region": "us-west-2"
                     }
                 }
@@ -65,7 +65,7 @@
     "storage": {
         "plugins": {
             "awsS3StoragePlugin": {
-                "bucket": "acm-content-updates",
+                "bucket": "amplio-program-content",
                 "region": "us-west-2",
                 "defaultAccessLevel": "guest"
             }

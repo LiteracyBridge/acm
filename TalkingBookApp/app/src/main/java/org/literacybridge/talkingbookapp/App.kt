@@ -2,11 +2,8 @@ package org.literacybridge.talkingbookapp
 
 import android.app.Application
 import android.content.Context
-import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import androidx.room.Room
-//import com.amazonaws.mobileconnectors.s3.transferutility.TransferService
 import dagger.hilt.android.HiltAndroidApp
 import org.literacybridge.talkingbookapp.database.AppDatabase
 import org.literacybridge.talkingbookapp.util.Config
@@ -17,23 +14,17 @@ class App : Application() {
     var config: Config? = null
         private set
 
-    lateinit var db: AppDatabase
-        private set
+    val db by lazy { AppDatabase.getDatabase() }
 
     override fun onCreate() {
         super.onCreate()
         application = this
 
-        db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "tbloader_db"
-        ).build()
-
         config = Config(this)
     }
 
     companion object {
-        var  application: Application? = null
+        var application: Application? = null
             private set
 
         val context: Context
