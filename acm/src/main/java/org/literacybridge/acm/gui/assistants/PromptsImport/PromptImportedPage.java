@@ -350,9 +350,11 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
 
         @Override
         public void process(AudioItem item) {
-            if (item != null) {
-                item.addCategory(category);
-            }
+            assert item != null;
+            item.addCategory(category);
+
+            String audioId = item.getAudioId();
+            assert audioId != null;
 
             String existingLanguage = item.getLanguageCode();
             if (!context.languagecode.equals(existingLanguage)) {
@@ -375,8 +377,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
             item.getMetadata()
                     .put(MetadataSpecification.DC_TITLE, promptMatchable.getLeft().getPromptFilename());
             item.getMetadata()
-                    .put(MetadataSpecification.DC_IDENTIFIER, promptMatchable.getLeft().getPromptId());
-
+                    .put(MetadataSpecification.DC_IDENTIFIER, audioId);
         }
     }
 }

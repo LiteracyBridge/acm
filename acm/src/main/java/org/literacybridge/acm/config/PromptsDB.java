@@ -12,7 +12,7 @@ import java.util.Objects;
 import static org.literacybridge.acm.Constants.*;
 
 public class PromptsDB {
-    private MetadataStore store;
+    private final MetadataStore store;
 
     PromptsDB() {
         store = ACMConfiguration.getInstance()
@@ -28,8 +28,6 @@ public class PromptsDB {
         Category agricultureCategory = store.getTaxonomy().getCategory(CATGEORY_GENERAL_AGRICULTURE);
 
         AudioImporter importer = AudioImporter.getInstance();
-        ACMConfiguration acm = ACMConfiguration.getInstance();
-        DBConfiguration config = ACMConfiguration.getInstance().getCurrentDB();
 
         // Get directory containing all language system prompts
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
@@ -75,16 +73,16 @@ public class PromptsDB {
                         }
                     } else if (dirFile.getName().toLowerCase().endsWith(".a18") || dirFile.getName().toLowerCase().endsWith(".mp3") ||
                             dirFile.getName().toLowerCase().endsWith(".wav") || dirFile.getName().toLowerCase().endsWith(".ogg")) {
-                        String fileId = FilenameUtils.removeExtension(dirFile.getName());
+                        String messageId = FilenameUtils.removeExtension(dirFile.getName());
                         try {
                             // prompts 0 & 7 are not handled atm
-                            PromptsInfo.PromptInfo tempPromptInfo = promptsInfo.getPrompt(fileId);
+                            PromptsInfo.PromptInfo tempPromptInfo = promptsInfo.getPrompt(messageId);
                             if (tempPromptInfo != null) {
                                 String desc = tempPromptInfo.getFilename();
-                                SystemPrompts tempSystemPrompts = new SystemPrompts(fileId, desc, languageCode);
+                                SystemPrompts tempSystemPrompts = new SystemPrompts(messageId, desc, languageCode);
                                 // Save file with a18 extension
                                 boolean exists = tempSystemPrompts.findPrompts();
-                                SystemPromptsImportHandler handler = new SystemPromptsImportHandler(systemCategory, languageCode, fileId, desc);
+                                SystemPromptsImportHandler handler = new SystemPromptsImportHandler(systemCategory, languageCode, messageId, desc);
                                 if (exists) {
                                     AudioItem audioItem;
                                     if (tempSystemPrompts.longPromptItem != null) {
@@ -95,7 +93,9 @@ public class PromptsDB {
                                     // change audio item metadata
                                     //audioItem.getMetadata().put(MetadataSpecification.DC_LANGUAGE, languageCode);
                                     audioItem.getMetadata().put(MetadataSpecification.DC_TITLE, desc);
-                                    audioItem.getMetadata().put(MetadataSpecification.DC_IDENTIFIER, fileId);
+                                    //String audioId = audioItem.getAudioId();
+                                    //assert audioId != null;
+                                    //audioItem.getMetadata().put(MetadataSpecification.DC_IDENTIFIER, audioId);
                                 } else {
                                     // store the audio item in store
                                     AudioItem audioItem = importer.importAudioItemFromFile(dirFile, handler);
@@ -116,23 +116,27 @@ public class PromptsDB {
     private static class SystemPromptsImportHandler implements AudioImporter.AudioItemProcessor {
         private final Category category;
         private final String language;
-        private final String fileId;
+        private final String messageId;
         private final String description;
 
-        SystemPromptsImportHandler(Category category, String language, String fileId, String description) {
+        SystemPromptsImportHandler(Category category, String language, String messageId, String description) {
             this.category = category;
             this.language = language;
-            this.fileId = fileId;
+            this.messageId = messageId;
             this.description = description;
         }
 
         @Override
         public void process(AudioItem item) {
             assert item != null;
+
+            String audioId = item.getAudioId();
+            assert audioId != null;
+
             item.addCategory(category);
             item.getMetadata().put(MetadataSpecification.DC_LANGUAGE, language);
             item.getMetadata().put(MetadataSpecification.DC_TITLE, description);
-            item.getMetadata().put(MetadataSpecification.DC_IDENTIFIER, fileId);
+            item.getMetadata().put(MetadataSpecification.DC_IDENTIFIER, audioId);
         }
     }
 
@@ -152,9 +156,13 @@ public class PromptsDB {
         @Override
         public void process(AudioItem item) {
             assert item != null;
+
+            String audioId = item.getAudioId();
+            assert audioId != null;
+
             item.addCategory(category);
             item.getMetadata().put(MetadataSpecification.DC_LANGUAGE, language);
-            item.getMetadata().put(MetadataSpecification.DC_IDENTIFIER, playlistId);
+            item.getMetadata().put(MetadataSpecification.DC_IDENTIFIER, audioId);
         }
     }
 }

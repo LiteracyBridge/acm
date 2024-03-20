@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.literacybridge.acm.Constants.*;
 
@@ -68,14 +69,6 @@ public class SystemPrompts {
         this.longPromptItem = longPromptItem;
     }
 
-    public void renamePrompt(String newtitle) {
-        this.description = newtitle;
-    }
-
-    public void setShortPromptFile(String filename) {
-
-    }
-
     public boolean findPrompts() {
         return findPromptsInAcmContent();
     }
@@ -105,7 +98,7 @@ public class SystemPrompts {
         Map<String, AudioItem> items = searchResult.getAudioItems()
                 .stream()
                 .map(store::getAudioItem)
-                .collect(Collectors.toMap(audioItem -> audioItem.getAudioId().trim(), c -> c)); // getTitle
+                .collect(Collectors.toMap(audioItem -> audioItem.getAudioId().trim(), c -> c)); //  getTitle
 
         // Items list returns null. Can't find our system prompt in store
         if (items.isEmpty()) {
@@ -116,7 +109,7 @@ public class SystemPrompts {
             items = searchResult.getAudioItems()
                     .stream()
                     .map(store::getAudioItem)
-                    .collect(Collectors.toMap(audioItem -> audioItem.getAudioId().trim(), c -> c));
+                    .collect(Collectors.toMap(audioItem -> audioItem.getTitle().trim(), c -> c));
             // if we still get an empty item list then there is indeed no instance of the file
             // in the content store
             if (items.isEmpty()) {
@@ -135,7 +128,6 @@ public class SystemPrompts {
                 } else {
                     shortPromptItem = e.getValue();
                     if (categoryId == null) {
-                        //categoryId=shortPromptItem.getId();
                         categoryId = SYSTEM_MESSAGE_CATEGORY;
                     }
                 }
@@ -144,6 +136,20 @@ public class SystemPrompts {
 
         if (longPromptItem == null || shortPromptItem == null) {
             searchIgnoringUnderscores(categoryList, localeList);
+        }
+
+        if (longPromptItem == null && shortPromptItem == null) {
+            // search by audio items
+            Set<String> audioItems = searchResult.getAudioItems();
+            for (String audio_items : audioItems) {
+                AudioItem audioItem = store.getAudioItem(audio_items);
+
+                Metadata metadata = audioItem.getMetadata();
+                MetadataValue<String> dc_title = metadata.getMetadataValue(MetadataSpecification.DC_TITLE);
+                if (dc_title.getValue().equals(description)) {
+                    shortPromptItem = audioItem;
+                }
+            }
         }
 
         return longPromptItem != null || shortPromptItem != null;
@@ -176,7 +182,7 @@ public class SystemPrompts {
                     if (shortPromptItem == null) {
                         shortPromptItem = e.getValue();
                         if (categoryId == null) {
-                            categoryId=shortPromptItem.getId();
+                            categoryId = SYSTEM_MESSAGE_CATEGORY;
                         }
                     }
                 }
