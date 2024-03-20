@@ -1,16 +1,21 @@
 package org.literacybridge.talkingbookapp.view_models
 
-import android.app.Application
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.amplifyframework.annotations.InternalAmplifyApi
+import androidx.lifecycle.viewModelScope
+import aws.sdk.kotlin.services.s3.model.ListObjectsV2Request
 import com.amplifyframework.auth.CognitoCredentialsProvider
-import com.amplifyframework.core.Amplify
-import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
+import org.literacybridge.talkingbookapp.util.CONTENT_BUCKET_NAME
 import org.literacybridge.talkingbookapp.util.LOG_TAG
+import org.literacybridge.talkingbookapp.util.content_manager.S3Helper
+import java.io.File
 import javax.inject.Inject
 
 
@@ -47,29 +52,32 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
 
     }
 
-    @OptIn(InternalAmplifyApi::class)
     suspend fun startDownload(program: Program, deployment: Deployment) {
         Log.d(LOG_TAG, "Started download")
-//        val dir = File(context.getExternalFilesDir("localrepository"), model.program.value!!.program_id)
 
-        val contentInfo = ContentInfo(model.program.value!!.program_id)
+        val dir = File(App.context.getExternalFilesDir("localrepository"), program.program_id)
+
+//        val contentInfo = ContentInfo(model.program.value!!.program_id)
 //
 //        var manager = ContentManager(App())
 //        manager.startDownload(context, contentInfo, mTransferListener)
 
-        val plugin = Amplify.Storage.getPlugin("awsS3StoragePlugin") as AWSS3StoragePlugin
-//        val credentialsProvider = CognitoCredentialsProvider(
-//            Amplify.Auth
-//        )
-//        val client = plugin.escapeHatch.
-//            .listObjectsV2 {
-//            this.
-////        val request = ListObjectsV2Request {
-////            this.continuationTokent
-//            this.bucket = CONTENT_BUCKET_NAME
-//            this.prefix =
-//                "${model.program.value!!.program_id}/TB-Loaders/published/${model.deployment.value!!.deploymentname}"
-//        }
+        val request = ListObjectsV2Request {
+            this.bucket = CONTENT_BUCKET_NAME
+            this.prefix =
+                "${program.program_id}/TB-Loaders/published/${deployment.deploymentname}"
+        }
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val data = S3Helper.listObjects(request)
+                if (data.isNullOrEmpty()) {
+                    Log.d(LOG_TAG, "Program content empty")
+                } else {
+                    Log.d(LOG_TAG, "Program content ${data.size}")
+                }
+            }
+        }
 
 //        val credentialsProvider = createCognitoCredentialsProvider(tokens, refreshToken)
 
