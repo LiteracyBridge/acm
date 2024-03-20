@@ -2,14 +2,17 @@ package org.literacybridge.talkingbookapp.util.content_manager
 
 import android.util.Log
 import aws.sdk.kotlin.services.s3.S3Client
+import aws.sdk.kotlin.services.s3.model.GetObjectRequest
 import aws.sdk.kotlin.services.s3.model.ListObjectsV2Request
 import aws.sdk.kotlin.services.s3.model.Object
+import aws.smithy.kotlin.runtime.content.writeToFile
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.StorageException
 import com.amplifyframework.storage.options.StoragePagedListOptions
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.util.LOG_TAG
+import java.io.File
 
 //import aws.sdk.kotlin.services.s3.S3Client
 //import aws.sdk.kotlin.services.s3.model.ListObjectsV2Request
@@ -147,6 +150,26 @@ object S3Helper {
 //                }
 //            }
 //        }.execute()
+    }
+
+    suspend fun downloadObject(request: GetObjectRequest, destination: File): File? {
+        val options = StoragePagedListOptions.builder()
+            .setPageSize(1000)
+            .build()
+
+        try {
+            s3Client.use { s3 ->
+                val response = s3.getObject(request) { resp ->
+//                    val myFile = File(path)
+                    resp.body?.writeToFile(destination)
+                    return@getObject destination
+                }
+                return response
+            }
+        } catch (error: StorageException) {
+            Log.e("MyAmplifyApp", "List failure", error)
+            return null
+        }
     }
 //
 //    interface ListObjectsListener {
