@@ -45,11 +45,10 @@ class UserViewModel @Inject constructor() : ViewModel() {
                 deployment
             )
         }
-
         this.program.value = program
         this.deployment.value = deployment
 
-        navController.navigate(Screen.HOME.name)
+        navController.navigate(Screen.CONTENT_DOWNLOADER.name)
     }
 
     fun setToken(token: String, cognitoSubId: String, navController: NavController) {

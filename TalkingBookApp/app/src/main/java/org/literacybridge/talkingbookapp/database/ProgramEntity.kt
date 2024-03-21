@@ -16,9 +16,9 @@ data class ProgramContentEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     @ColumnInfo(name = "program_id") val programId: String,
     @ColumnInfo(name = "deployment_name") val deploymentName: String,
-    @ColumnInfo(name = "latest_revision") val latestRevision: String?,
-    @ColumnInfo(name = "local_path") val localPath: String?,
-    @ColumnInfo(name = "s3_path") val s3Path: String?,
+    @ColumnInfo(name = "latest_revision") val latestRevision: String,
+    @ColumnInfo(name = "local_path") val localPath: String,
+    @ColumnInfo(name = "s3_path") val s3Path: String,
     @ColumnInfo(name = "last_sync") val lastSync: LocalDateTime?,
     @ColumnInfo(name = "status") val status: ProgramContentDao.ProgramEntityStatus?, // TODO: use enum -> SYNCED, NOT_SYNCED, OUTDATED
 )

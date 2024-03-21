@@ -1,6 +1,5 @@
 package org.literacybridge.talkingbookapp.view_models
 
-import Screen
 import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +11,9 @@ import com.amplifyframework.storage.options.StorageDownloadFileOptions
 import com.amplifyframework.storage.options.StoragePagedListOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.literacybridge.core.fs.ZipUnzip
@@ -29,8 +31,21 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
+    enum class SyncState {
+        COMPARING,
+        DOWNLOADING,
+        NO_CONTENT,
+        ERROR,
+        SUCCESS,
+        UNZIPPING
+    }
+
     val downloadProgress = mutableFloatStateOf(0.0F)
-    val syncState = mutableStateOf("comparing")
+
+    //    val syncState = mutableStateOf(SyncState.COMPARING)
+    private val _syncState = MutableStateFlow(SyncState.COMPARING)
+    val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
+
     val displayText = mutableStateOf("Searching for new deployments, please wait...")
 
     lateinit var program: Program
@@ -72,6 +87,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                 if (result.items.isEmpty()) {
                     Log.d(LOG_TAG, "Program content empty")
                     // TODO: show error
+                    _syncState.value = SyncState.NO_CONTENT
                     return@list
                 }
 
@@ -80,16 +96,20 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
 
                 val lastDownload =
                     App().db.programContentDao().findLatestRevision(deployment.deploymentname)
-                if (lastDownload != null && lastDownload.latestRevision == latestDeploymentRevision) {
+                if (lastDownload != null && lastDownload.latestRevision == latestDeploymentRevision && File(
+                        lastDownload.localPath
+                    ).exists()
+                ) {
                     // Content is up to date, no need to download
-                    navController.navigate(Screen.HOME.name);
+                    _syncState.value = SyncState.SUCCESS
+                    return@list
                 }
 
-                // No local record is available, download
-                val downloadPath =
-                    "$basePath/$latestDeploymentRevision/content-$latestDeploymentRevision.zip"
-
                 viewModelScope.launch {
+                    // No local record is available, download
+                    val downloadPath =
+                        "$basePath/$latestDeploymentRevision/content-$latestDeploymentRevision.zip"
+
                     downloadContent(
                         s3key = downloadPath,
                         navController = navController
@@ -103,17 +123,11 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
 //        }
     }
 
-//    private fun getLastRevisionPath(files: List<Object>): String {
-//        val latest = files.sortedByDescending { it.key }.first()
-//        val basePath = latest.key!!.split("/programspec").first()
-//
-//        return "$basePath/content-${basePath.split("/").last()}.zip"
-//    }
-
     private suspend fun downloadContent(s3key: String, navController: NavController) {
-        syncState.value = "downloading"
+        _syncState.value = SyncState.DOWNLOADING
         displayText.value =
             "New deployment found: ${this.latestDeploymentRevision}, downloading content package..."
+
         val dest =
             File("${PathsProvider.getProjectDirectory(program.program_id).path}/${deployment.deploymentname}")
         if (!dest.exists()) {
@@ -131,18 +145,18 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
             { done ->
                 Log.i("MyAmplifyApp", "Successfully downloaded: ${done.file.name}")
                 displayText.value = "Downloaded successfully! unzipping content"
-                syncState.value = "unzipping"
-
-                val contentDir = unzipFile(downloadedZip = done.file, destinationDir = dest)
+                _syncState.value = SyncState.UNZIPPING
 
                 // Update database
                 viewModelScope.launch {
                     withContext(Dispatchers.IO) {
+                        val contentDir = unzipFile(downloadedZip = done.file, destinationDir = dest)
+
                         return@withContext App().db.programContentDao().insert(
                             ProgramContentEntity(
                                 programId = program.program_id,
                                 deploymentName = deployment.deploymentname,
-                                latestRevision = latestDeploymentRevision,
+                                latestRevision = latestDeploymentRevision!!,
                                 localPath = contentDir.path,
                                 status = ProgramContentDao.ProgramEntityStatus.SYNCNED,
                                 lastSync = LocalDateTime.now(),
@@ -151,16 +165,14 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                         )
                     }
                 }.invokeOnCompletion {
-                    navController.navigate(Screen.HOME.name);
+                    _syncState.value = SyncState.SUCCESS
+//                    navController.navigate(Screen.HOME.name);
                 }
             },
-            { Log.e("MyAmplifyApp", "Download Failure", it) }
+            { _syncState.value = SyncState.ERROR }
         )
     }
 
-//    private fun updateProgramsContentRecord(contentDir: File, s3key: String) {
-//
-//    }
 
     private fun unzipFile(downloadedZip: File, destinationDir: File): File {
         val temp = File("${destinationDir.absolutePath}/tmp")
@@ -171,8 +183,6 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         ZipUnzip.unzip(
             downloadedZip, temp
         ) { _, _ -> true }
-
-        // TODO: write to log files
 
         // Done unzipping, move unzipped files from {programId}/{deploymentname}/tmp/content/{deploymentname}
         // to {programId}/{deploymentname}/content

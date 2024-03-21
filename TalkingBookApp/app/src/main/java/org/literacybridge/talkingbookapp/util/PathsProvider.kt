@@ -7,8 +7,7 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import kotlin.io.path.deleteExisting
-import kotlin.io.path.deleteIfExists
+import kotlin.io.path.exists
 
 
 /**
@@ -117,16 +116,28 @@ object PathsProvider {
         get() = App.context.getExternalFilesDir("srn")
 
     fun moveDirectory(src: Path, dest: Path): Boolean {
-        if (src.toFile().isDirectory) {
-            for (file in src.toFile().listFiles()!!) {
-                moveDirectory(file.toPath(), dest.resolve(src.relativize(file.toPath())))
-            }
-        }
+//        if(dest.isDirectory() && !dest.exists()){
+//            dest.toFile().mkdirs()
+//        }
+//
+//        if (src.toFile().isDirectory) {
+//            for (file in src.toFile().listFiles()!!) {
+//                moveDirectory(file.toPath(), dest.resolve(src.relativize(file.toPath())))
+//            }
+//        }
+
+        var dest2 = dest
+//        if (dest.exists()) {
+//            dest2 = File(dest.toFile().absolutePath).toPath()
+//            dest.toFile().deleteRecursively()
+//        }
+
+
         return try {
-            Files.move(src, dest, StandardCopyOption.REPLACE_EXISTING)
-            src.deleteIfExists()
+            Files.move(src, dest2, StandardCopyOption.REPLACE_EXISTING)
             true
         } catch (e: IOException) {
+            Log.d("$LOG_TAG funMoveDirectory:", e.stackTraceToString())
             false
         }
     }
