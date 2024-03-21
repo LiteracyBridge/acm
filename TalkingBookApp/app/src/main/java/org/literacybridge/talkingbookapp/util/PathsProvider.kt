@@ -1,7 +1,14 @@
 package org.literacybridge.talkingbookapp.util
 
+import android.util.Log
 import org.literacybridge.talkingbookapp.App
 import java.io.File
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import kotlin.io.path.deleteExisting
+import kotlin.io.path.deleteIfExists
 
 
 /**
@@ -25,7 +32,7 @@ object PathsProvider {
          *
          * @return the directory's File.
          */
-        get() = App.context.getExternalFilesDir("localrepository")
+        get() = App.context.getExternalFilesDir("")
 
     /**
      * Gets the {externalFilesDirectory}/{project} directory for a specific project.
@@ -34,7 +41,7 @@ object PathsProvider {
      * @return the project's directory's File.
      */
     fun getProjectDirectory(project: String): File {
-        val dir = File(App.context.getExternalFilesDir("localrepository"), project)
+        val dir = File(App.context.getExternalFilesDir(project), "")
 
         if (!dir.exists()) {
             dir.mkdirs()
@@ -108,4 +115,19 @@ object PathsProvider {
          * @return the staging directory's File.
          */
         get() = App.context.getExternalFilesDir("srn")
+
+    fun moveDirectory(src: Path, dest: Path): Boolean {
+        if (src.toFile().isDirectory) {
+            for (file in src.toFile().listFiles()!!) {
+                moveDirectory(file.toPath(), dest.resolve(src.relativize(file.toPath())))
+            }
+        }
+        return try {
+            Files.move(src, dest, StandardCopyOption.REPLACE_EXISTING)
+            src.deleteIfExists()
+            true
+        } catch (e: IOException) {
+            false
+        }
+    }
 }

@@ -2,14 +2,18 @@ package org.literacybridge.talkingbookapp.view_models
 
 import Screen
 import android.util.Log
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import aws.sdk.kotlin.services.s3.model.Object
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.options.StorageDownloadFileOptions
 import com.amplifyframework.storage.options.StoragePagedListOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import org.literacybridge.core.fs.ZipUnzip
 import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
@@ -21,12 +25,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
-    val downloadProgress = mutableStateOf(0.0F)
+    val downloadProgress = mutableFloatStateOf(0.0F)
     val syncState = mutableStateOf("comparing")
+    val displayText = mutableStateOf("Searching for new deployments, please wait...")
 
-    fun syncProgramContent(
-        program: Program,
-        deployment: Deployment,
+    lateinit var program: Program
+    lateinit var deployment: Deployment
+    var latestDeploymentRevision: String? = null
+
+    suspend fun syncProgramContent(
         navController: NavController
     ) {
         Log.d(LOG_TAG, "Started download")
@@ -67,19 +74,24 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                 }
 
                 val latest = result.items.sortedByDescending { it.key }.first()
-                val revisionName = getLatestRevisionName(latest.key)
+                latestDeploymentRevision = getLatestRevisionName(latest.key)
 
                 val lastDownload =
                     App().db.programContentDao().findLatestRevision(deployment.deploymentname)
-                if (lastDownload != null && lastDownload.latestRevision == revisionName) {
+                if (lastDownload != null && lastDownload.latestRevision == latestDeploymentRevision) {
                     // Content is up to date, no need to download
                     navController.navigate(Screen.HOME.name);
                 }
 
                 // No local record is available, download
-                val downloadPath = "$basePath/$revisionName/content-$revisionName.zip"
+                val downloadPath =
+                    "$basePath/$latestDeploymentRevision/content-$latestDeploymentRevision.zip"
 
-                Log.d(LOG_TAG, "Program content $downloadPath")
+                viewModelScope.launch {
+                    downloadContent(
+                        s3key = downloadPath
+                    )
+                }
             },
             { Log.e("MyAmplifyApp", "List failure", it) }
         )
@@ -95,32 +107,77 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         return "$basePath/content-${basePath.split("/").last()}.zip"
     }
 
-    private fun downloadContent(s3key: String, deploymentName: String, projectId: String) {
+    private suspend fun downloadContent(s3key: String) {
         syncState.value = "downloading"
-
-        val dest = File("${PathsProvider.getProjectDirectory(projectId).path}/$deploymentName")
+        displayText.value =
+            "New deployment found: ${this.latestDeploymentRevision}, downloading content package..."
+        val dest =
+            File("${PathsProvider.getProjectDirectory(program.program_id).path}/${deployment.deploymentname}")
         if (!dest.exists()) {
             dest.mkdirs()
         }
 
-        val file = File("${dest.path}/content.zip")
+        val downloadedFile = File("${dest.path}/content.zip")
         val options = StorageDownloadFileOptions.defaultInstance()
-        Amplify.Storage.downloadFile(s3key, file, options,
-            { progress ->
-                downloadProgress.value = progress.fractionCompleted.toFloat()
-            },
-            { done ->
-                Log.i("MyAmplifyApp", "Successfully downloaded: ${done.file.name}")
-            },
-            { Log.e("MyAmplifyApp", "Download Failure", it) }
-        )
+
+        unzipFile(downloadedZip = downloadedFile, dest = dest)
+
+        // TODO: implement auto download resume
+//        Amplify.Storage.downloadFile(s3key, downloadedFile, options,
+//            { progress ->
+//                downloadProgress.floatValue = progress.fractionCompleted.toFloat()
+//            },
+//            { done ->
+//                Log.i("MyAmplifyApp", "Successfully downloaded: ${done.file.name}")
+////                Unzip.unzip(done.file, dest.path)
+//                displayText.value = "Downloaded successfully! unzipping content"
+//                syncState.value = "unzipping"
+////                downloadProgress.floatValue = 0.0F
+//
+////                viewModelScope.launch {
+//                unzipFile(downloadedZip = done.file, dest = dest)
+////                }
+//                // TODO: update database
+//            },
+//            { Log.e("MyAmplifyApp", "Download Failure", it) }
+//        )
+    }
+
+    private fun unzipFile(downloadedZip: File, dest: File) {
+        val temp = File("${dest.absolutePath}/tmp")
+        if (!temp.exists()) {
+            temp.mkdirs()
+        }
+
+        ZipUnzip.unzip(
+            downloadedZip, temp
+        ) { _, _ -> true }
+
+        // TODO: write to log files
+
+        // Done unzipping, move unzipped files from {programId}/{deploymentname}/tmp/content/{deploymentname}
+        // to {programId}/{deploymentname}/content
+//        val success: Boolean = oldFolder.renameTo(newFolder)
+        val test = File("${dest.absolutePath}/content")
+        if(!test.exists()){
+            test.mkdirs()
+        }
+        PathsProvider.moveDirectory(File("${temp.absolutePath}/content/${deployment.deploymentname}").toPath(), test.toPath())
+
+        // Cleanup resources
+        temp.deleteRecursively()
+        downloadedZip.delete()
+
+        Log.d(LOG_TAG, "done zipping")
+
+//        }
     }
 
     /**
      * TODO: add docs
      */
     private fun getLatestRevisionName(key: String): String? {
-        val result = "published\\/(.*)\\/programspec".toRegex().find(key)
+        val result = "published/(.*)/programspec".toRegex().find(key)
 
         if (result?.groupValues?.size == 2) {
             return result.groupValues.last()
@@ -133,6 +190,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
     private fun getBasePath(programId: String): String {
         return "$programId/TB-Loaders/published";
     }
+
 
     /**
      * Listener for the progress of downloads.

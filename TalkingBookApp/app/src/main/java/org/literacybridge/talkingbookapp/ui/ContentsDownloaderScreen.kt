@@ -2,6 +2,7 @@ package org.literacybridge.talkingbookapp.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -21,9 +22,12 @@ fun ContentDownloaderScreen(
     userViewModel: UserViewModel = viewModel()
 ) {
     LaunchedEffect(key1 = "content-download") {
+        viewModel.program = userViewModel.program.value!!
+        viewModel.deployment = userViewModel.deployment.value!!
+
         viewModel.syncProgramContent(
-            userViewModel.program.value!!,
-            userViewModel.deployment.value!!,
+//            userViewModel.program.value!!,
+//            userViewModel.deployment.value!!,
             navController
         )
     }
@@ -32,15 +36,18 @@ fun ContentDownloaderScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (viewModel.syncState.value == "comparing") {
-            CircularProgressIndicator(modifier = Modifier.width(100.dp))
-        } else {
+        if (viewModel.syncState.value == "downloading") {
             CircularProgressIndicator(
-                modifier = Modifier.width(100.dp),
-                progress = viewModel.downloadProgress.value
+                modifier = Modifier.width(70.dp),
+                progress = viewModel.downloadProgress.floatValue
             )
+        } else {
+            CircularProgressIndicator(modifier = Modifier.width(70.dp))
         }
 
-        Text("Downloading program content, please wait...")
+        Text(
+            modifier = Modifier.padding(top = 50.dp),
+            text = viewModel.displayText.value
+        )
     }
 }
