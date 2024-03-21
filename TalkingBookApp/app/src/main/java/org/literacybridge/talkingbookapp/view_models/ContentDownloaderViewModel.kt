@@ -7,19 +7,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import aws.sdk.kotlin.services.s3.model.Object
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.options.StorageDownloadFileOptions
 import com.amplifyframework.storage.options.StoragePagedListOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.literacybridge.core.fs.ZipUnzip
 import org.literacybridge.talkingbookapp.App
+import org.literacybridge.talkingbookapp.database.ProgramContentDao
+import org.literacybridge.talkingbookapp.database.ProgramContentEntity
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
 import org.literacybridge.talkingbookapp.util.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
 import java.io.File
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 
@@ -65,8 +69,6 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         Amplify.Storage.list("$basePath/${deployment.deploymentname}",
             options,
             { result ->
-                Log.d(LOG_TAG, "Program content ${result.items.size}")
-
                 if (result.items.isEmpty()) {
                     Log.d(LOG_TAG, "Program content empty")
                     // TODO: show error
@@ -89,7 +91,8 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
 
                 viewModelScope.launch {
                     downloadContent(
-                        s3key = downloadPath
+                        s3key = downloadPath,
+                        navController = navController
                     )
                 }
             },
@@ -100,14 +103,14 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
 //        }
     }
 
-    private fun getLastRevisionPath(files: List<Object>): String {
-        val latest = files.sortedByDescending { it.key }.first()
-        val basePath = latest.key!!.split("/programspec").first()
+//    private fun getLastRevisionPath(files: List<Object>): String {
+//        val latest = files.sortedByDescending { it.key }.first()
+//        val basePath = latest.key!!.split("/programspec").first()
+//
+//        return "$basePath/content-${basePath.split("/").last()}.zip"
+//    }
 
-        return "$basePath/content-${basePath.split("/").last()}.zip"
-    }
-
-    private suspend fun downloadContent(s3key: String) {
+    private suspend fun downloadContent(s3key: String, navController: NavController) {
         syncState.value = "downloading"
         displayText.value =
             "New deployment found: ${this.latestDeploymentRevision}, downloading content package..."
@@ -120,31 +123,47 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         val downloadedFile = File("${dest.path}/content.zip")
         val options = StorageDownloadFileOptions.defaultInstance()
 
-        unzipFile(downloadedZip = downloadedFile, dest = dest)
-
         // TODO: implement auto download resume
-//        Amplify.Storage.downloadFile(s3key, downloadedFile, options,
-//            { progress ->
-//                downloadProgress.floatValue = progress.fractionCompleted.toFloat()
-//            },
-//            { done ->
-//                Log.i("MyAmplifyApp", "Successfully downloaded: ${done.file.name}")
-////                Unzip.unzip(done.file, dest.path)
-//                displayText.value = "Downloaded successfully! unzipping content"
-//                syncState.value = "unzipping"
-////                downloadProgress.floatValue = 0.0F
-//
-////                viewModelScope.launch {
-//                unzipFile(downloadedZip = done.file, dest = dest)
-////                }
-//                // TODO: update database
-//            },
-//            { Log.e("MyAmplifyApp", "Download Failure", it) }
-//        )
+        Amplify.Storage.downloadFile(s3key, downloadedFile, options,
+            { progress ->
+                downloadProgress.floatValue = progress.fractionCompleted.toFloat()
+            },
+            { done ->
+                Log.i("MyAmplifyApp", "Successfully downloaded: ${done.file.name}")
+                displayText.value = "Downloaded successfully! unzipping content"
+                syncState.value = "unzipping"
+
+                val contentDir = unzipFile(downloadedZip = done.file, destinationDir = dest)
+
+                // Update database
+                viewModelScope.launch {
+                    withContext(Dispatchers.IO) {
+                        return@withContext App().db.programContentDao().insert(
+                            ProgramContentEntity(
+                                programId = program.program_id,
+                                deploymentName = deployment.deploymentname,
+                                latestRevision = latestDeploymentRevision,
+                                localPath = contentDir.path,
+                                status = ProgramContentDao.ProgramEntityStatus.SYNCNED,
+                                lastSync = LocalDateTime.now(),
+                                s3Path = s3key
+                            )
+                        )
+                    }
+                }.invokeOnCompletion {
+                    navController.navigate(Screen.HOME.name);
+                }
+            },
+            { Log.e("MyAmplifyApp", "Download Failure", it) }
+        )
     }
 
-    private fun unzipFile(downloadedZip: File, dest: File) {
-        val temp = File("${dest.absolutePath}/tmp")
+//    private fun updateProgramsContentRecord(contentDir: File, s3key: String) {
+//
+//    }
+
+    private fun unzipFile(downloadedZip: File, destinationDir: File): File {
+        val temp = File("${destinationDir.absolutePath}/tmp")
         if (!temp.exists()) {
             temp.mkdirs()
         }
@@ -157,20 +176,26 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
 
         // Done unzipping, move unzipped files from {programId}/{deploymentname}/tmp/content/{deploymentname}
         // to {programId}/{deploymentname}/content
-//        val success: Boolean = oldFolder.renameTo(newFolder)
-        val test = File("${dest.absolutePath}/content")
-        if(!test.exists()){
-            test.mkdirs()
+        val contentDir = File("${destinationDir.absolutePath}/content")
+        if (!contentDir.exists()) {
+            contentDir.mkdirs()
         }
-        PathsProvider.moveDirectory(File("${temp.absolutePath}/content/${deployment.deploymentname}").toPath(), test.toPath())
 
-        // Cleanup resources
-        temp.deleteRecursively()
-        downloadedZip.delete()
+        val sourceDir = File("${temp.absolutePath}/content/${deployment.deploymentname}")
+        val result = PathsProvider.moveDirectory(
+            sourceDir.toPath(),
+            contentDir.toPath()
+        )
+        if (result) {
+            // Cleanup resources
+            temp.deleteRecursively()
+            downloadedZip.delete()
+            return contentDir
+        }
 
-        Log.d(LOG_TAG, "done zipping")
-
-//        }
+        // An error occurred during folder restructuring, we use the tmp source directory as the default
+        // content dir
+        return sourceDir
     }
 
     /**

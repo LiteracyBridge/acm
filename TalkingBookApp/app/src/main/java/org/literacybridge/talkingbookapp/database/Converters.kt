@@ -1,16 +1,23 @@
 package org.literacybridge.talkingbookapp.database
 
 import androidx.room.TypeConverter
-import java.util.Date
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+
 
 class Converters {
     @TypeConverter
-    fun fromTimestamp(value: Long?): Date? {
-        return value?.let { Date(it) }
+    fun fromTimestamp(value: Long?): LocalDateTime? {
+        return LocalDateTime.ofInstant(
+            value?.let { Instant.ofEpochMilli(it) },
+            ZoneId.systemDefault()
+        )
     }
 
     @TypeConverter
-    fun dateToTimestamp(date: Date?): Long? {
-        return date?.time
+    fun dateToTimestamp(date: LocalDateTime?): Long? {
+        return date?.toInstant(ZoneOffset.UTC)?.toEpochMilli()
     }
 }
