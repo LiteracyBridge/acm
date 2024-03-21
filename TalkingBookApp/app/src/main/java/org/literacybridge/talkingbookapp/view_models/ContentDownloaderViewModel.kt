@@ -118,9 +118,6 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
             },
             { Log.e("MyAmplifyApp", "List failure", it) }
         )
-
-//            }
-//        }
     }
 
     private suspend fun downloadContent(s3key: String, navController: NavController) {
@@ -152,7 +149,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                     withContext(Dispatchers.IO) {
                         val contentDir = unzipFile(downloadedZip = done.file, destinationDir = dest)
 
-                        return@withContext App().db.programContentDao().insert(
+                        App().db.programContentDao().insert(
                             ProgramContentEntity(
                                 programId = program.program_id,
                                 deploymentName = deployment.deploymentname,
@@ -163,10 +160,11 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                                 s3Path = s3key
                             )
                         )
+
+                        // TODO: parse program spec, insert into program_spec table
                     }
                 }.invokeOnCompletion {
                     _syncState.value = SyncState.SUCCESS
-//                    navController.navigate(Screen.HOME.name);
                 }
             },
             { _syncState.value = SyncState.ERROR }
