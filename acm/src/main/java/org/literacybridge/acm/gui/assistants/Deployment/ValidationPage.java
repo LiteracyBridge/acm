@@ -10,6 +10,7 @@ import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.tbbuilder.CreateForV2;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
@@ -332,21 +333,29 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      */
     private void validateSystemPrompts(Collection<String> languages) {
         List<String> required_messages = TBBuilder.getRequiredSystemMessages(context.includeTbTutorial);
+        PromptsInfo sysPromptsInfo = new PromptsInfo();
 
-        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
-        String languagesPath = "TB_Options" + File.separator + "languages";
-        File languagesDir = new File(tbLoadersDir, languagesPath);
         // { id : description }
         PromptsInfo promptsInfo = null;
 
         for (String language : languages) {
-            File languageDir = IOUtils.FileIgnoreCase(languagesDir, language);
             List<Integer> missing = new ArrayList<>();
 
+            Map<String, SystemPrompts> systemPromptsMap = new HashMap<>();
+            context.systemprompts.put(language, systemPromptsMap);
+
             for (String prompt : required_messages) {
-                File p1 = new File(languageDir, prompt + ".a18");
-                if (!p1.exists()) {
-                    // We know they're short integers.
+                PromptsInfo.PromptInfo tempPromptInfo = sysPromptsInfo.getPrompt(prompt);
+                // If prompt doesn't exist in repo, report as missing
+                if (tempPromptInfo != null) {
+                    String desc = tempPromptInfo.getFilename();
+                    SystemPrompts tempSystemPrompt = new SystemPrompts(prompt, desc, language);
+                    if (!tempSystemPrompt.findPrompts()) {
+                        missing.add(Integer.parseInt(prompt));
+                    } else {
+                        systemPromptsMap.put(prompt, tempSystemPrompt);
+                    }
+                } else {
                     missing.add(Integer.parseInt(prompt));
                 }
             }
@@ -404,7 +413,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             Map<String, PlaylistPrompts> promptsMap = new HashMap<>();
             context.prompts.put(language, promptsMap);
 
-            // Get all of the playlists with content in this language, and get those playlist titles.
+            // Get all the playlists with content in this language, and get those playlist titles.
             List<String> playlistTitles = languageNode.getPlaylistNodes()
                 .stream()
                 .map(AcmContent.PlaylistNode::getTitle)
