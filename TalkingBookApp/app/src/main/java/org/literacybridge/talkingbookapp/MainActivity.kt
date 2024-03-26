@@ -89,42 +89,6 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             }
         }
 
-//        Amplify.Auth.getCurrentUser({
-//            Log.i(TAG, "session = $it")
-//        }, {
-//            Log.e(TAG, "auth error = $it")
-//        })
-//            .initialize(applicationContext, object : Callback<UserStateDetails?>() {
-//                fun onResult(userStateDetails: UserStateDetails) {
-//                    Log.i(TAG, userStateDetails.getUserState().toString())
-//                    when (userStateDetails.getUserState()) {
-//                        SIGNED_IN -> {
-//                            val i = Intent(this@AuthenticationActivity, MainActivity::class.java)
-//                            startActivity(i)
-//                        }
-//
-//                        SIGNED_OUT -> showSignIn()
-//                        else -> {
-//                            AWSMobileClient.getInstance().signOut()
-//                            showSignIn()
-//                        }
-//                    }
-//                }
-//
-//                fun onError(e: Exception) {
-//                    Log.e(TAG, e.toString())
-//                }
-//            })
-
-//        Amplify.Auth.fetchAuthSession(
-//            { it ->
-//                Log.i(TAG, it.isSignedIn.toString())
-//            },
-////            { Log.i("AmplifyQuickstart", "Auth session = $it") },
-//            { error -> Log.e("AmplifyQuickstart", "Failed to fetch auth session", error) }
-//        )
-
-
 //        todo: add usb manager code here
         // Get the USB manager service
         // Get the USB manager service
@@ -192,7 +156,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         registerReceiver(usb.getmUsbReceiver(), IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED))
         registerReceiver(usb.getmUsbReceiver(), IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
 
-        usb.requestPermission(this, Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
+        usb.requestPermission(this)
     }
 
     override fun onStop() {
