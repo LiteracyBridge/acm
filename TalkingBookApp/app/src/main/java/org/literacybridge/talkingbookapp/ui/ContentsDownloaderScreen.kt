@@ -3,6 +3,7 @@ package org.literacybridge.talkingbookapp.ui
 import Screen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
@@ -16,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import org.literacybridge.talkingbookapp.ui.components.AppScaffold
+import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.view_models.ContentDownloaderViewModel
 import org.literacybridge.talkingbookapp.view_models.ContentDownloaderViewModel.SyncState
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
@@ -39,23 +42,34 @@ fun ContentDownloaderScreen(
         }
     }
 
-    // TODO: show erorr for no_content
-    return Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (syncState == SyncState.DOWNLOADING) {
-            CircularProgressIndicator(
-                modifier = Modifier.width(70.dp),
-                progress = viewModel.downloadProgress.floatValue
-            )
-        } else {
-            CircularProgressIndicator(modifier = Modifier.width(70.dp))
-        }
+    // TODO: show error for no_content
+    AppScaffold(
+        title = "Downloading Program Content",
+        navController = navController
+    ) { innerPadding ->
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = SCREEN_MARGIN)
+                .fillMaxSize(),
+        ) {
+            if (syncState == SyncState.DOWNLOADING) {
+                CircularProgressIndicator(
+                    modifier = Modifier.width(70.dp),
+                    progress = viewModel.downloadProgress.floatValue
+                )
+            } else {
+                CircularProgressIndicator(modifier = Modifier.width(70.dp))
+            }
 
-        Text(
-            modifier = Modifier.padding(top = 50.dp),
-            text = viewModel.displayText.value
-        )
+            Text(
+                modifier = Modifier
+                    .padding(top = 50.dp, end = 2.dp, start = 2.dp)
+                    .align(Alignment.CenterHorizontally),
+                text = viewModel.displayText.value
+            )
+        }
     }
 }

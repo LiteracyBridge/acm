@@ -2,6 +2,8 @@ package org.literacybridge.talkingbookapp.util
 
 import android.util.Log
 import org.literacybridge.talkingbookapp.App
+import org.literacybridge.talkingbookapp.database.ProgramContentEntity
+import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -64,9 +66,8 @@ object PathsProvider {
      * @param project The desired project.
      * @return The Deployment directory for the project.
      */
-    fun getLocalDeploymentDirectory(project: String): File? {
-        val projectDir = getProjectDirectory(project)
-        val contentDir = File(projectDir, "content")
+    fun getLocalDeploymentDirectory(project: ProgramContentEntity): File? {
+        val contentDir = File(project.localPath, "content")
         var deployments: Array<File?>? = null
         if (contentDir.exists() && contentDir.isDirectory) {
             deployments = contentDir.listFiles()
@@ -77,9 +78,8 @@ object PathsProvider {
         return null
     }
 
-    fun getProgramSpecDir(project: String): File {
-        val deploymentDir = getLocalDeploymentDirectory(project)
-        return File(deploymentDir, "programspec")
+    fun getProgramSpecDir(project: ProgramContentEntity): File {
+        return File(project.localPath, "content/programspec")
     }
 
     val localTempDirectory: File?
@@ -90,6 +90,7 @@ object PathsProvider {
          * @return the temporary directory's File.
          */
         get() = App.context.externalCacheDir
+
     val uploadDirectory: File?
         /**
          * Gets a File object that represents a directory into which files intended to be uploaded

@@ -22,7 +22,7 @@ import org.literacybridge.talkingbookapp.database.ProgramContentDao
 import org.literacybridge.talkingbookapp.database.ProgramContentEntity
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
-import org.literacybridge.talkingbookapp.util.LOG_TAG
+import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
 import java.io.File
 import java.time.LocalDateTime
@@ -101,6 +101,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                     ).exists()
                 ) {
                     // Content is up to date, no need to download
+                    App.getInstance().setProgramSpec(lastDownload)
                     _syncState.value = SyncState.SUCCESS
                     return@list
                 }
@@ -116,14 +117,17 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                     )
                 }
             },
-            { Log.e("MyAmplifyApp", "List failure", it) }
+            {
+                Log.e(LOG_TAG, "List failure", it)
+                _syncState.value = SyncState.ERROR
+            }
         )
     }
 
     private suspend fun downloadContent(s3key: String, navController: NavController) {
         _syncState.value = SyncState.DOWNLOADING
         displayText.value =
-            "New deployment found: ${this.latestDeploymentRevision}, downloading content package..."
+            "${this.latestDeploymentRevision} found, downloading content package..."
 
         val dest =
             File("${PathsProvider.getProjectDirectory(program.program_id).path}/${deployment.deploymentname}")
@@ -140,28 +144,25 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                 downloadProgress.floatValue = progress.fractionCompleted.toFloat()
             },
             { done ->
-                Log.i("MyAmplifyApp", "Successfully downloaded: ${done.file.name}")
                 displayText.value = "Downloaded successfully! unzipping content"
                 _syncState.value = SyncState.UNZIPPING
 
                 // Update database
                 viewModelScope.launch {
                     withContext(Dispatchers.IO) {
-                        val contentDir = unzipFile(downloadedZip = done.file, destinationDir = dest)
-
-                        App().db.programContentDao().insert(
-                            ProgramContentEntity(
-                                programId = program.program_id,
-                                deploymentName = deployment.deploymentname,
-                                latestRevision = latestDeploymentRevision!!,
-                                localPath = contentDir.path,
-                                status = ProgramContentDao.ProgramEntityStatus.SYNCNED,
-                                lastSync = LocalDateTime.now(),
-                                s3Path = s3key
-                            )
+                        unzipFile(downloadedZip = done.file, destinationDir = dest)
+                        val entity = ProgramContentEntity(
+                            programId = program.program_id,
+                            deploymentName = deployment.deploymentname,
+                            latestRevision = latestDeploymentRevision!!,
+                            localPath = dest.path,
+                            status = ProgramContentDao.ProgramEntityStatus.SYNCNED,
+                            lastSync = LocalDateTime.now(),
+                            s3Path = s3key
                         )
 
-                        // TODO: parse program spec, insert into program_spec table
+                        App().db.programContentDao().insert(entity)
+                        App.getInstance().setProgramSpec(entity)
                     }
                 }.invokeOnCompletion {
                     _syncState.value = SyncState.SUCCESS
@@ -224,75 +225,4 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         return "$programId/TB-Loaders/published";
     }
 
-
-    /**
-     * Listener for the progress of downloads.
-     */
-//    private val mTransferListener: ContentDownloader.DownloadListener =
-//        object : ContentDownloader.DownloadListener {
-//            var prevProgress: Long = 0
-//            private fun update(notify: Boolean) {
-//                Log.d(LOG_TAG, "On download update $notify")
-////                mManageContentActivity.runOnUiThread(Runnable {
-////                    updateView()
-////                    if (notify) {
-////                        mManageContentActivity.mAdapter.notifyDataSetChanged()
-////                    }
-////                    // This can only happen in the download listener. We only allow one download at a time,
-////                    // so, if this code runs, it is/was the active download. If not longer an active
-////                    // download, don't need the cancel button any more.
-////                    if (!mContentInfo.isDownloading()) {
-////                        mManageContentActivity.disableCancel()
-////                    }
-////                })
-//            }
-//
-//            override fun onUnzipProgress(id: Int, current: Long, total: Long) {
-//                Log.d(LOG_TAG, "onUnzipProgress called")
-//                var total = total
-////                if (BuildConfig.DEBUG) {
-////                    total = Math.max(total, 1)
-////                    val progress = 100 * current / total
-////                    if (Math.abs(progress - prevProgress) > 10) {
-////                        Log.d(
-////                            TAG, String.format(
-////                                "Unzipping content, progress: %d/%d (%d%%)", current, total,
-////                                progress
-////                            )
-////                        )
-////                        prevProgress = progress
-////                    }
-////                }
-//                update(false)
-//            }
-//
-//            override fun onStateChanged(id: Int, state: TransferState) {
-//                Log.d(
-//                    LOG_TAG,
-//                    java.lang.String.format("Downloading content, state: %s", state.toString())
-//                )
-//                update(true)
-//            }
-//
-//            override fun onProgressChanged(id: Int, bytesCurrent: Long, bytesTotal: Long) {
-//                var bytesTotal = bytesTotal
-////                if (BuildConfig.DEBUG) {
-////                    bytesTotal = Math.max(bytesTotal, 1)
-////                    val progress = 100 * bytesCurrent / bytesTotal
-////                    if (progress != prevProgress) Log.d(
-////                        TAG, String.format(
-////                            "Downloading content, progress: %d/%d (%d%%)", bytesCurrent,
-////                            bytesTotal, progress
-////                        )
-////                    )
-////                    prevProgress = progress
-////                }
-//                update(false)
-//            }
-//
-//            override fun onError(id: Int, ex: Exception?) {
-//                Log.d(LOG_TAG, "Downloading content, error: ", ex)
-//                update(true)
-//            }
-//        }
 }

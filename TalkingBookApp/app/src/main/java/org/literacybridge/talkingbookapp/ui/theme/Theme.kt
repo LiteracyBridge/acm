@@ -42,7 +42,7 @@ private val LightColorScheme = lightColorScheme(
 fun TalkingBookAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // TODO: work on this
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -54,6 +54,7 @@ fun TalkingBookAppTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

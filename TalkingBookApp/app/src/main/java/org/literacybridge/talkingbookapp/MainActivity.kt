@@ -25,10 +25,10 @@ import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import com.amplifyframework.storage.s3.configuration.AWSS3StoragePluginConfiguration
 import dagger.hilt.android.AndroidEntryPoint
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
-import org.literacybridge.talkingbookapp.util.LOG_TAG
+import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.content_manager.CustomS3PathResolver
-import org.literacybridge.talkingbookapp.util.dfu.Dfu
-import org.literacybridge.talkingbookapp.util.dfu.Usb
+import org.literacybridge.talkingbookapp.util.device_manager.Dfu
+import org.literacybridge.talkingbookapp.util.device_manager.Usb
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 
 
@@ -89,42 +89,6 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             }
         }
 
-//        Amplify.Auth.getCurrentUser({
-//            Log.i(TAG, "session = $it")
-//        }, {
-//            Log.e(TAG, "auth error = $it")
-//        })
-//            .initialize(applicationContext, object : Callback<UserStateDetails?>() {
-//                fun onResult(userStateDetails: UserStateDetails) {
-//                    Log.i(TAG, userStateDetails.getUserState().toString())
-//                    when (userStateDetails.getUserState()) {
-//                        SIGNED_IN -> {
-//                            val i = Intent(this@AuthenticationActivity, MainActivity::class.java)
-//                            startActivity(i)
-//                        }
-//
-//                        SIGNED_OUT -> showSignIn()
-//                        else -> {
-//                            AWSMobileClient.getInstance().signOut()
-//                            showSignIn()
-//                        }
-//                    }
-//                }
-//
-//                fun onError(e: Exception) {
-//                    Log.e(TAG, e.toString())
-//                }
-//            })
-
-//        Amplify.Auth.fetchAuthSession(
-//            { it ->
-//                Log.i(TAG, it.isSignedIn.toString())
-//            },
-////            { Log.i("AmplifyQuickstart", "Auth session = $it") },
-//            { error -> Log.e("AmplifyQuickstart", "Failed to fetch auth session", error) }
-//        )
-
-
 //        todo: add usb manager code here
         // Get the USB manager service
         // Get the USB manager service
@@ -183,7 +147,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         super.onStart()
 
         /* Setup USB */
-        usb = Usb(this)
+        usb = Usb.getInstance()
         usb.setUsbManager(getSystemService(USB_SERVICE) as UsbManager)
         usb.setOnUsbChangeListener(this)
 
@@ -192,7 +156,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         registerReceiver(usb.getmUsbReceiver(), IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED))
         registerReceiver(usb.getmUsbReceiver(), IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
 
-        usb.requestPermission(this, Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
+        usb.requestPermission(this)
     }
 
     override fun onStop() {
@@ -224,8 +188,10 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 
     override fun onUsbConnected() {
         talkingBookViewModel.setDevice(usb.usbDevice)
+        talkingBookViewModel.talkingBookDevice.value = usb.talkingBookDevice
 
         val deviceInfo = usb.getDeviceInfo(usb.usbDevice)
+
         Log.d(TAG, "$deviceInfo")
 //        status.setText(deviceInfo)
         dfu.setUsb(usb)

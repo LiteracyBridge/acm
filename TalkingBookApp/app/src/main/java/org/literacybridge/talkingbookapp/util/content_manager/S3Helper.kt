@@ -11,7 +11,7 @@ import com.amplifyframework.storage.StorageException
 import com.amplifyframework.storage.options.StoragePagedListOptions
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import org.literacybridge.talkingbookapp.App
-import org.literacybridge.talkingbookapp.util.LOG_TAG
+import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import java.io.File
 
 //import aws.sdk.kotlin.services.s3.S3Client

@@ -33,9 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import org.literacybridge.talkingbookapp.util.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
+import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,7 +85,7 @@ fun ProgramSelectionScreen(
                             selectedProgram.value = it
                             showDialog.value = true
                         },
-                            content = { Text(it.project.name) })
+                            content = { Text(it.project!!.name) })
                     },
                     leadingContent = {
                         Icon(
@@ -107,7 +107,7 @@ fun ProgramSelectionScreen(
                 showDialog.value = false
                 viewModel.setActiveProgram(selectedProgram.value!!, deployment, navController)
             },
-            deployments = selectedProgram.value!!.project.deployments
+            deployments = selectedProgram.value!!.project!!.deployments
         )
     }
 }
