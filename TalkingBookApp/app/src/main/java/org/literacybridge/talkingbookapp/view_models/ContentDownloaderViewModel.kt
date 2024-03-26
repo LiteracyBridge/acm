@@ -9,7 +9,6 @@ import androidx.navigation.NavController
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.options.StorageDownloadFileOptions
 import com.amplifyframework.storage.options.StoragePagedListOptions
-import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,14 +20,8 @@ import org.literacybridge.core.fs.ZipUnzip
 import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.database.ProgramContentDao
 import org.literacybridge.talkingbookapp.database.ProgramContentEntity
-import org.literacybridge.talkingbookapp.database.ProgramSpecEntity
 import org.literacybridge.talkingbookapp.models.Deployment
-import org.literacybridge.talkingbookapp.models.DirectBeneficiariesAdditionalMap
-import org.literacybridge.talkingbookapp.models.DirectBeneficiariesMap
-import org.literacybridge.talkingbookapp.models.Message
 import org.literacybridge.talkingbookapp.models.Program
-import org.literacybridge.talkingbookapp.models.Recipient
-import org.literacybridge.talkingbookapp.util.CsvParser
 import org.literacybridge.talkingbookapp.util.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
 import java.io.File
@@ -124,14 +117,17 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                     )
                 }
             },
-            { Log.e("MyAmplifyApp", "List failure", it) }
+            {
+                Log.e(LOG_TAG, "List failure", it)
+                _syncState.value = SyncState.ERROR
+            }
         )
     }
 
     private suspend fun downloadContent(s3key: String, navController: NavController) {
         _syncState.value = SyncState.DOWNLOADING
         displayText.value =
-            "New deployment found: ${this.latestDeploymentRevision}, downloading content package..."
+            "${this.latestDeploymentRevision} found, downloading content package..."
 
         val dest =
             File("${PathsProvider.getProjectDirectory(program.program_id).path}/${deployment.deploymentname}")
@@ -148,7 +144,6 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                 downloadProgress.floatValue = progress.fractionCompleted.toFloat()
             },
             { done ->
-                Log.i("MyAmplifyApp", "Successfully downloaded: ${done.file.name}")
                 displayText.value = "Downloaded successfully! unzipping content"
                 _syncState.value = SyncState.UNZIPPING
 
@@ -168,10 +163,6 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
 
                         App().db.programContentDao().insert(entity)
                         App.getInstance().setProgramSpec(entity)
-
-//                        // TODO: parse program spec, insert into program_spec table
-//                        parseAndSaveProgramSpec(contentDir)
-
                     }
                 }.invokeOnCompletion {
                     _syncState.value = SyncState.SUCCESS
@@ -214,158 +205,6 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         // An error occurred during folder restructuring, we use the tmp source directory as the default
         // content dir
         return sourceDir
-    }
-
-    private suspend fun parseAndSaveProgramSpec(contentDir: File) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                // Parse recipients
-                var csvFile = File("${contentDir.path}/programspec/pub_recipients.csv")
-                val recipients: MutableList<Recipient> = mutableListOf()
-                var lineCount = 0;
-
-                csvFile.forEachLine { line ->
-                    if (lineCount == 0) {
-                        lineCount++
-                        return@forEachLine
-                    }
-
-                    val tokens = line.trim().split(",").map { it.trim() }
-                    if (tokens[0].lowercase() != "country") {
-                        recipients.add(
-                            Recipient(
-                                country = tokens[0],
-                                language = tokens[1],
-                                region = tokens[2],
-                                district = tokens[3],
-                                communityname = tokens[4],
-                                groupname = tokens[5],
-                                agent = tokens[6],
-                                variant = tokens[7],
-                                listening_model = tokens[8],
-                                group_size = tokens[9].toInt(),
-                                numhouseholds = tokens[10].toInt(),
-                                numtbs = tokens[11].toInt(),
-                                supportentity = tokens[12],
-                                agent_gender = tokens[13],
-                                deployments = Gson().fromJson<List<Int>>(
-                                    tokens[17],
-                                    List::class.java
-                                ),
-                                recipientid = tokens[18],
-                                affiliate = tokens[19],
-                                partner = tokens[20],
-                                component = tokens[21]
-                            )
-                        )
-                    }
-                }
-
-                // Parse general
-                csvFile = File("${contentDir.path}/programspec/pub_general.csv")
-                val general: MutableList<Program> = mutableListOf()
-                lineCount = 0;
-
-                csvFile.forEachLine { line ->
-                    if (lineCount == 0) {
-                        lineCount++
-                        return@forEachLine
-                    }
-
-                    Log.d(LOG_TAG, "Parsed line ${CsvParser().parse(line)}")
-                    val tokens = line.trim().split(",").map { it.trim() }
-                    general += Program(
-                        program_id = tokens[0],
-                        country = tokens[1],
-                        region = Gson().fromJson<List<String>>(tokens[2], List::class.java),
-                        languages = Gson().fromJson<List<String>>(tokens[3], List::class.java),
-                        deployments_count = tokens[4].toInt(),
-                        deployments_length = tokens[5],
-                        deployments_first = tokens[6],
-                        listening_models = Gson().fromJson<List<String>>(
-                            tokens[6],
-                            List::class.java
-                        ),
-                        feedback_frequency = tokens[7],
-                        sustainable_development_goals = Gson().fromJson<List<String>>(
-                            tokens[8],
-                            List::class.java
-                        ),
-                        direct_beneficiaries_map = Gson().fromJson(
-                            tokens[9],
-                            DirectBeneficiariesMap::class.java
-                        ),
-                        direct_beneficiaries_additional_map = Gson().fromJson(
-                            tokens[10],
-                            DirectBeneficiariesAdditionalMap::class.java
-                        ),
-                        affiliate = tokens[11],
-                        partner = tokens[12],
-                    )
-                }
-
-                // Parse deployments
-                csvFile = File("${contentDir.path}/programspec/pub_deployments.csv")
-                val deployments: MutableList<Deployment> = mutableListOf()
-                lineCount = 0;
-
-                csvFile.forEachLine { line ->
-                    if (lineCount == 0) {
-                        lineCount++
-                        return@forEachLine
-                    }
-
-                    val tokens = line.trim().split(",").map { it.trim() }
-                    deployments += Deployment(
-                        deploymentnumber = tokens[0].toInt(),
-                        start_date = tokens[1],
-                        end_date = tokens[2],
-                        deploymentname = tokens[3],
-                        deployment = tokens[4],
-                    )
-                }
-
-                // Parse contents
-                csvFile = File("${contentDir.path}/programspec/pub_content.csv")
-                val contents: MutableList<Message> = mutableListOf()
-                lineCount = 0;
-
-                csvFile.forEachLine { line ->
-                    if (lineCount == 0) {
-                        lineCount++
-                        return@forEachLine
-                    }
-
-                    val tokens = line.trim().split(",").map { it.trim() }
-                    contents += Message(
-                        deployment_num = tokens[0].toInt(),
-                        playlist_title = tokens[1],
-                        message_title = tokens[2],
-                        key_points = tokens[3],
-                        languagecode = tokens[4],
-                        variant = tokens[5],
-                        format = tokens[6],
-                        audience = tokens[7],
-                        default_category = tokens[8],
-                        sdg_goals = tokens[9],
-                        sdg_targets = tokens[10]
-                    )
-                }
-
-
-                App().db.specDao().insert(
-                    ProgramSpecEntity(
-                        programId = program.program_id,
-                        deploymentName = deployment.deploymentname,
-                        recipients = recipients,
-                        general = general.first(),
-                        deployments = deployments,
-                        contents = contents,
-                        updatedAt = LocalDateTime.now()
-                    )
-                )
-            }
-        }
     }
 
     /**
