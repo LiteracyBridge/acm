@@ -5,8 +5,12 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import dagger.hilt.android.HiltAndroidApp
+import org.literacybridge.core.spec.ProgramSpec
 import org.literacybridge.talkingbookapp.database.AppDatabase
+import org.literacybridge.talkingbookapp.database.ProgramContentEntity
 import org.literacybridge.talkingbookapp.util.Config
+import org.literacybridge.talkingbookapp.util.PathsProvider
+import java.io.File
 
 
 @HiltAndroidApp
@@ -15,6 +19,9 @@ class App : Application() {
         private set
 
     val db by lazy { AppDatabase.getDatabase() }
+
+    var programSpec: ProgramSpec? = null
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -29,6 +36,22 @@ class App : Application() {
 
         val context: Context
             get() = application!!.applicationContext
+
+        @Volatile
+        private var instance: App? = null // Volatile modifier is necessary
+
+        fun getInstance() =
+            instance ?: synchronized(this) { // synchronized to avoid concurrency problem
+                instance ?: App().also { instance = it }
+            }
+    }
+
+    fun setProgramSpec(project: ProgramContentEntity): ProgramSpec? {
+        if (programSpec == null) {
+            val progspecDir: File = PathsProvider.getProgramSpecDir(project)
+            programSpec = ProgramSpec(progspecDir)
+        }
+        return programSpec
     }
 
     fun isNetworkAvailable(): Boolean {
@@ -51,3 +74,4 @@ class App : Application() {
         }
     }
 }
+

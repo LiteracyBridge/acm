@@ -9,6 +9,7 @@ import androidx.navigation.NavController
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.options.StorageDownloadFileOptions
 import com.amplifyframework.storage.options.StoragePagedListOptions
+import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,8 +21,14 @@ import org.literacybridge.core.fs.ZipUnzip
 import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.database.ProgramContentDao
 import org.literacybridge.talkingbookapp.database.ProgramContentEntity
+import org.literacybridge.talkingbookapp.database.ProgramSpecEntity
 import org.literacybridge.talkingbookapp.models.Deployment
+import org.literacybridge.talkingbookapp.models.DirectBeneficiariesAdditionalMap
+import org.literacybridge.talkingbookapp.models.DirectBeneficiariesMap
+import org.literacybridge.talkingbookapp.models.Message
 import org.literacybridge.talkingbookapp.models.Program
+import org.literacybridge.talkingbookapp.models.Recipient
+import org.literacybridge.talkingbookapp.util.CsvParser
 import org.literacybridge.talkingbookapp.util.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
 import java.io.File
@@ -101,6 +108,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                     ).exists()
                 ) {
                     // Content is up to date, no need to download
+                    App.getInstance().setProgramSpec(lastDownload)
                     _syncState.value = SyncState.SUCCESS
                     return@list
                 }
@@ -148,20 +156,22 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                 viewModelScope.launch {
                     withContext(Dispatchers.IO) {
                         val contentDir = unzipFile(downloadedZip = done.file, destinationDir = dest)
-
-                        App().db.programContentDao().insert(
-                            ProgramContentEntity(
-                                programId = program.program_id,
-                                deploymentName = deployment.deploymentname,
-                                latestRevision = latestDeploymentRevision!!,
-                                localPath = contentDir.path,
-                                status = ProgramContentDao.ProgramEntityStatus.SYNCNED,
-                                lastSync = LocalDateTime.now(),
-                                s3Path = s3key
-                            )
+                        val entity = ProgramContentEntity(
+                            programId = program.program_id,
+                            deploymentName = deployment.deploymentname,
+                            latestRevision = latestDeploymentRevision!!,
+                            localPath = contentDir.path,
+                            status = ProgramContentDao.ProgramEntityStatus.SYNCNED,
+                            lastSync = LocalDateTime.now(),
+                            s3Path = s3key
                         )
 
-                        // TODO: parse program spec, insert into program_spec table
+                        App().db.programContentDao().insert(entity)
+                        App.getInstance().setProgramSpec(entity)
+
+//                        // TODO: parse program spec, insert into program_spec table
+//                        parseAndSaveProgramSpec(contentDir)
+
                     }
                 }.invokeOnCompletion {
                     _syncState.value = SyncState.SUCCESS
@@ -206,6 +216,158 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         return sourceDir
     }
 
+    private suspend fun parseAndSaveProgramSpec(contentDir: File) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                // Parse recipients
+                var csvFile = File("${contentDir.path}/programspec/pub_recipients.csv")
+                val recipients: MutableList<Recipient> = mutableListOf()
+                var lineCount = 0;
+
+                csvFile.forEachLine { line ->
+                    if (lineCount == 0) {
+                        lineCount++
+                        return@forEachLine
+                    }
+
+                    val tokens = line.trim().split(",").map { it.trim() }
+                    if (tokens[0].lowercase() != "country") {
+                        recipients.add(
+                            Recipient(
+                                country = tokens[0],
+                                language = tokens[1],
+                                region = tokens[2],
+                                district = tokens[3],
+                                communityname = tokens[4],
+                                groupname = tokens[5],
+                                agent = tokens[6],
+                                variant = tokens[7],
+                                listening_model = tokens[8],
+                                group_size = tokens[9].toInt(),
+                                numhouseholds = tokens[10].toInt(),
+                                numtbs = tokens[11].toInt(),
+                                supportentity = tokens[12],
+                                agent_gender = tokens[13],
+                                deployments = Gson().fromJson<List<Int>>(
+                                    tokens[17],
+                                    List::class.java
+                                ),
+                                recipientid = tokens[18],
+                                affiliate = tokens[19],
+                                partner = tokens[20],
+                                component = tokens[21]
+                            )
+                        )
+                    }
+                }
+
+                // Parse general
+                csvFile = File("${contentDir.path}/programspec/pub_general.csv")
+                val general: MutableList<Program> = mutableListOf()
+                lineCount = 0;
+
+                csvFile.forEachLine { line ->
+                    if (lineCount == 0) {
+                        lineCount++
+                        return@forEachLine
+                    }
+
+                    Log.d(LOG_TAG, "Parsed line ${CsvParser().parse(line)}")
+                    val tokens = line.trim().split(",").map { it.trim() }
+                    general += Program(
+                        program_id = tokens[0],
+                        country = tokens[1],
+                        region = Gson().fromJson<List<String>>(tokens[2], List::class.java),
+                        languages = Gson().fromJson<List<String>>(tokens[3], List::class.java),
+                        deployments_count = tokens[4].toInt(),
+                        deployments_length = tokens[5],
+                        deployments_first = tokens[6],
+                        listening_models = Gson().fromJson<List<String>>(
+                            tokens[6],
+                            List::class.java
+                        ),
+                        feedback_frequency = tokens[7],
+                        sustainable_development_goals = Gson().fromJson<List<String>>(
+                            tokens[8],
+                            List::class.java
+                        ),
+                        direct_beneficiaries_map = Gson().fromJson(
+                            tokens[9],
+                            DirectBeneficiariesMap::class.java
+                        ),
+                        direct_beneficiaries_additional_map = Gson().fromJson(
+                            tokens[10],
+                            DirectBeneficiariesAdditionalMap::class.java
+                        ),
+                        affiliate = tokens[11],
+                        partner = tokens[12],
+                    )
+                }
+
+                // Parse deployments
+                csvFile = File("${contentDir.path}/programspec/pub_deployments.csv")
+                val deployments: MutableList<Deployment> = mutableListOf()
+                lineCount = 0;
+
+                csvFile.forEachLine { line ->
+                    if (lineCount == 0) {
+                        lineCount++
+                        return@forEachLine
+                    }
+
+                    val tokens = line.trim().split(",").map { it.trim() }
+                    deployments += Deployment(
+                        deploymentnumber = tokens[0].toInt(),
+                        start_date = tokens[1],
+                        end_date = tokens[2],
+                        deploymentname = tokens[3],
+                        deployment = tokens[4],
+                    )
+                }
+
+                // Parse contents
+                csvFile = File("${contentDir.path}/programspec/pub_content.csv")
+                val contents: MutableList<Message> = mutableListOf()
+                lineCount = 0;
+
+                csvFile.forEachLine { line ->
+                    if (lineCount == 0) {
+                        lineCount++
+                        return@forEachLine
+                    }
+
+                    val tokens = line.trim().split(",").map { it.trim() }
+                    contents += Message(
+                        deployment_num = tokens[0].toInt(),
+                        playlist_title = tokens[1],
+                        message_title = tokens[2],
+                        key_points = tokens[3],
+                        languagecode = tokens[4],
+                        variant = tokens[5],
+                        format = tokens[6],
+                        audience = tokens[7],
+                        default_category = tokens[8],
+                        sdg_goals = tokens[9],
+                        sdg_targets = tokens[10]
+                    )
+                }
+
+
+                App().db.specDao().insert(
+                    ProgramSpecEntity(
+                        programId = program.program_id,
+                        deploymentName = deployment.deploymentname,
+                        recipients = recipients,
+                        general = general.first(),
+                        deployments = deployments,
+                        contents = contents,
+                        updatedAt = LocalDateTime.now()
+                    )
+                )
+            }
+        }
+    }
+
     /**
      * TODO: add docs
      */
@@ -224,75 +386,4 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         return "$programId/TB-Loaders/published";
     }
 
-
-    /**
-     * Listener for the progress of downloads.
-     */
-//    private val mTransferListener: ContentDownloader.DownloadListener =
-//        object : ContentDownloader.DownloadListener {
-//            var prevProgress: Long = 0
-//            private fun update(notify: Boolean) {
-//                Log.d(LOG_TAG, "On download update $notify")
-////                mManageContentActivity.runOnUiThread(Runnable {
-////                    updateView()
-////                    if (notify) {
-////                        mManageContentActivity.mAdapter.notifyDataSetChanged()
-////                    }
-////                    // This can only happen in the download listener. We only allow one download at a time,
-////                    // so, if this code runs, it is/was the active download. If not longer an active
-////                    // download, don't need the cancel button any more.
-////                    if (!mContentInfo.isDownloading()) {
-////                        mManageContentActivity.disableCancel()
-////                    }
-////                })
-//            }
-//
-//            override fun onUnzipProgress(id: Int, current: Long, total: Long) {
-//                Log.d(LOG_TAG, "onUnzipProgress called")
-//                var total = total
-////                if (BuildConfig.DEBUG) {
-////                    total = Math.max(total, 1)
-////                    val progress = 100 * current / total
-////                    if (Math.abs(progress - prevProgress) > 10) {
-////                        Log.d(
-////                            TAG, String.format(
-////                                "Unzipping content, progress: %d/%d (%d%%)", current, total,
-////                                progress
-////                            )
-////                        )
-////                        prevProgress = progress
-////                    }
-////                }
-//                update(false)
-//            }
-//
-//            override fun onStateChanged(id: Int, state: TransferState) {
-//                Log.d(
-//                    LOG_TAG,
-//                    java.lang.String.format("Downloading content, state: %s", state.toString())
-//                )
-//                update(true)
-//            }
-//
-//            override fun onProgressChanged(id: Int, bytesCurrent: Long, bytesTotal: Long) {
-//                var bytesTotal = bytesTotal
-////                if (BuildConfig.DEBUG) {
-////                    bytesTotal = Math.max(bytesTotal, 1)
-////                    val progress = 100 * bytesCurrent / bytesTotal
-////                    if (progress != prevProgress) Log.d(
-////                        TAG, String.format(
-////                            "Downloading content, progress: %d/%d (%d%%)", bytesCurrent,
-////                            bytesTotal, progress
-////                        )
-////                    )
-////                    prevProgress = progress
-////                }
-//                update(false)
-//            }
-//
-//            override fun onError(id: Int, ex: Exception?) {
-//                Log.d(LOG_TAG, "Downloading content, error: ", ex)
-//                update(true)
-//            }
-//        }
 }

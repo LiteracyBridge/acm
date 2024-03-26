@@ -85,7 +85,7 @@ fun ProgramSelectionScreen(
                             selectedProgram.value = it
                             showDialog.value = true
                         },
-                            content = { Text(it.project.name) })
+                            content = { Text(it.project!!.name) })
                     },
                     leadingContent = {
                         Icon(
@@ -107,7 +107,7 @@ fun ProgramSelectionScreen(
                 showDialog.value = false
                 viewModel.setActiveProgram(selectedProgram.value!!, deployment, navController)
             },
-            deployments = selectedProgram.value!!.project.deployments
+            deployments = selectedProgram.value!!.project!!.deployments
         )
     }
 }
