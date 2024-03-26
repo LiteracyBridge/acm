@@ -27,8 +27,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
 import org.literacybridge.talkingbookapp.util.LOG_TAG
 import org.literacybridge.talkingbookapp.util.content_manager.CustomS3PathResolver
-import org.literacybridge.talkingbookapp.util.dfu.Dfu
-import org.literacybridge.talkingbookapp.util.dfu.Usb
+import org.literacybridge.talkingbookapp.util.device_manager.Dfu
+import org.literacybridge.talkingbookapp.util.device_manager.Usb
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 
 
