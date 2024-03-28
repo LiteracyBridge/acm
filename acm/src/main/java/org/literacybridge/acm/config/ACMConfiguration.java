@@ -298,6 +298,11 @@ public class ACMConfiguration {
         boolean initialized = dbConfig.init(accessControlResolver);
         currentDB = dbConfig;
 
+        // It seems ACM DB is accessible only after we've initilaized config file
+        // We can now go ahead and do the system prompts migration
+        PromptsDB promptsDB = new PromptsDB();
+        promptsDB.migrateSystemPrompts();
+
         return initialized;
     }
 

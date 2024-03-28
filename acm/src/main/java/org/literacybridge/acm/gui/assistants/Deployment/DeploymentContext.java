@@ -50,6 +50,8 @@ class DeploymentContext implements AssistantContext {
     // { language : { playlisttitle : prompts } }
     Map<String, Map<String, PlaylistPrompts>> prompts = new HashMap<>();
 
+    Map<String, Map<String, SystemPrompts>> systemprompts = new HashMap<>();
+
     // List of issues found in the Deployment.
     Issues issues = new Issues();
 

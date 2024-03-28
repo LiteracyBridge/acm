@@ -141,6 +141,15 @@ public class LuceneMetadataStore extends MetadataStore {
   }
 
   @Override
+  public Playlist findPlaylistById(String id) {
+    for (Playlist playlist : playlistCache.values()) {
+      if (playlist.getId().equals(id))
+        return playlist;
+    }
+    return null;
+  }
+
+  @Override
   public synchronized Transaction newTransaction() {
     try {
       final Transaction oldTransaction = activeTransaction.get();
@@ -183,5 +192,10 @@ public class LuceneMetadataStore extends MetadataStore {
   @Override
   public AudioItem newAudioItem(String uid) {
     return new AudioItem(uid);
+  }
+
+  @Override
+  public void newAudioItem(AudioItem audioItem) {
+    audioItemCache.put(audioItem.getId(), audioItem);
   }
 }

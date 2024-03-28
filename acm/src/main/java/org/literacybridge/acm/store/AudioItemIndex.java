@@ -97,6 +97,7 @@ public class AudioItemIndex {
   private final Taxonomy taxonomy;
 
   private int currentMaxPlaylistUuid;
+  private int currentMaxPromptsUuid;
 
   private AudioItemIndex(Directory dir, Taxonomy taxonomy) throws IOException {
     this.dir = dir;
