@@ -4,12 +4,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -31,20 +35,32 @@ fun CollectDataScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .weight(1f, false)
-            ) {
-                Text("Connect the Talking Book")
-            }
+            CircularProgressIndicator()
+
+//            Column(
+//                modifier = Modifier
+//                    .verticalScroll(rememberScrollState())
+//                    .weight(1f, false)
+//            ) {
+//                Text("Connect the Talking Book")
+//            }
 
             Box {
-                Column {
-                    Button(onClick = { /*TODO*/ }) {
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Button(
+                        onClick = { /*TODO*/ },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Update another Talking Book")
                     }
-                    Button(onClick = { /*TODO*/ }) {
+                    Button(
+                        onClick = { /*TODO*/ },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("I'm Finished")
                     }
                 }
