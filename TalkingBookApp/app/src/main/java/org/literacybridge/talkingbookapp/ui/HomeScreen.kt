@@ -38,17 +38,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.R
-import org.literacybridge.talkingbookapp.util.LOG_TAG
 import org.literacybridge.talkingbookapp.ui.components.NavigationDrawer
+import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
     viewModel: TalkingBookViewModel = viewModel(),
-    userViewModel: UserViewModel = viewModel()
+    userViewModel: UserViewModel = viewModel(),
 ) {
     // Retrieve data from next screen
     val msg =
@@ -139,6 +140,19 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Button(onClick = {
+//                            val tbDeviceInfo = TbDeviceInfo.getDeviceInfoFor(
+//                                mConnectedDevice.getTalkingBookRoot(),
+//                                mConnectedDevice.getDeviceLabel(),
+//                                TBLoaderConstants.NEW_TB_SRN_PREFIX
+//                            )
+
+//                            val deviceSerialNumber = tbDeviceInfo.serialNumber
+                            viewModel.updateTalkingBook(
+                                user = userViewModel.user.value,
+                                deployment = userViewModel.deployment.value!!,
+                                deviceSerialNumber = "C-0011",
+                                tbDeviceInfo = null
+                            )
                             navController.navigate(Screen.COLLECT_DATA.name)
                         }) {
                             Text("Collect Data")

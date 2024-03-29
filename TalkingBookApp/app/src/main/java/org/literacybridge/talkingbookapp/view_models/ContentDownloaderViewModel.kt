@@ -22,7 +22,7 @@ import org.literacybridge.talkingbookapp.database.ProgramContentDao
 import org.literacybridge.talkingbookapp.database.ProgramContentEntity
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
-import org.literacybridge.talkingbookapp.util.LOG_TAG
+import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
 import java.io.File
 import java.time.LocalDateTime

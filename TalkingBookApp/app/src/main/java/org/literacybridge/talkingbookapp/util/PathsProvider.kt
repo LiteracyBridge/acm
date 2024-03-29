@@ -3,6 +3,7 @@ package org.literacybridge.talkingbookapp.util
 import android.util.Log
 import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.database.ProgramContentEntity
+import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files

@@ -23,6 +23,9 @@ class App : Application() {
     var programSpec: ProgramSpec? = null
         private set
 
+    var programContent: ProgramContentEntity? = null
+        private set
+
     override fun onCreate() {
         super.onCreate()
         application = this
@@ -47,6 +50,8 @@ class App : Application() {
     }
 
     fun setProgramSpec(project: ProgramContentEntity): ProgramSpec? {
+        this.programContent = project
+
         if (programSpec == null) {
             val progspecDir: File = PathsProvider.getProgramSpecDir(project)
             programSpec = ProgramSpec(progspecDir)

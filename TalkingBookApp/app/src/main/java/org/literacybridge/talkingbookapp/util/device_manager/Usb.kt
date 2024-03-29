@@ -23,9 +23,19 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
+import android.net.Uri
 import android.os.Build
+import android.os.storage.StorageManager
+import android.os.storage.StorageVolume
 import android.util.Log
-import org.literacybridge.talkingbookapp.util.LOG_TAG
+import androidx.documentfile.provider.DocumentFile
+import org.literacybridge.core.fs.TbFile
+import org.literacybridge.core.tbdevice.TbDeviceInfo
+import org.literacybridge.talkingbookapp.App
+import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
+import java.io.File
+import java.lang.reflect.Method
+
 
 class Usb(private val mContext: Context) {
     enum class ConnectionMode {
@@ -184,6 +194,7 @@ class Usb(private val mContext: Context) {
             connectionMode = ConnectionMode.MASS_STORAGE
             mInterface = device.getInterface(MASS_STORAGE_INTERFACE)
         } else {
+//            device.getKey()
             connectionMode = ConnectionMode.DFU
             mInterface = device.getInterface(DFU_INTERFACE)
         }
@@ -198,6 +209,21 @@ class Usb(private val mContext: Context) {
             deviceVersion = rawDescriptor[13].toInt() shl 8
             deviceVersion = deviceVersion or rawDescriptor[12].toInt()
             Log.i("USB", getDeviceInfo(device))
+
+            // Create talking book instance
+            val volumesMap: Map<String, MountedDevice> = getSecondaryMountedVolumesMap()
+//            Log.d(TAG, "getSecondaryMountedVolumesMap: " + getSecondaryMountedVolumesMap().size())
+//            val deviceBaseUri: Uri = Uri.parse(volumesMap.values.first<MountedDevice>().toString())
+
+            val root = DocumentFile.fromFile(File(MASS_STORAGE_PATH))
+            val fs: TbFile = AndroidDocFile(root, App.context.contentResolver)
+            val mConnectedTalkingBook = TalkingBook(
+                fs,
+                TbDeviceInfo.getSerialNumberFromFileSystem(fs),
+//                device.getValue().mLabel,
+                "Label",
+                MASS_STORAGE_PATH
+            )
         } else {
             Log.e(TAG, "open FAIL")
             mConnection = null
@@ -206,6 +232,50 @@ class Usb(private val mContext: Context) {
 
     val isConnected: Boolean
         get() = mConnection != null
+
+    private fun getSecondaryMountedVolumesMap(): Map<String, MountedDevice> {
+        val mStorageManager =
+            App.context.getSystemService(Context.STORAGE_SERVICE) as StorageManager
+        val volumesMap: MutableMap<String, MountedDevice> = HashMap<String, MountedDevice>()
+
+        try {
+//            val volumes: Array<Any>
+            val volumes: MutableList<StorageVolume> = mStorageManager.storageVolumes
+//            volumes = getVolumeListMethod.invoke(mStorageManager)
+            for (volume in volumes) {
+                val getStateMethod: Method = volume.javaClass.getMethod("getState")
+                val mState = getStateMethod.invoke(volume) as String
+                val isPrimaryMethod: Method = volume.javaClass.getMethod("isPrimary")
+                val mPrimary = isPrimaryMethod.invoke(volume) as Boolean
+                if (!mPrimary && mState == "mounted") {
+                    val getPathMethod: Method = volume.javaClass.getMethod("getPath")
+                    val path = getPathMethod.invoke(volume) as String
+                    val getUuidMethod: Method = volume.javaClass.getMethod("getUuid")
+                    val uuid = getUuidMethod.invoke(volume) as String
+                    val getUserLabelMethod: Method = volume.javaClass.getMethod("getUserLabel")
+                    val userLabel = getUserLabelMethod.invoke(volume) as String
+                    Log.d(
+                        TAG,
+                        "Found one mounted device: $uuid -> $volume, label=$userLabel"
+                    )
+                    if (uuid != null && path != null) {
+                        volumesMap[uuid] = MountedDevice(userLabel, uuid, path)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Unable to load list of mounted secondary storage devices")
+        }
+        return volumesMap
+    }
+
+
+    private class MountedDevice internal constructor(
+        private val mLabel: String,
+        private val mUuid: String,
+        private val mPath: String
+    )
+
 
     // FIXME: remove this function
     fun getDeviceInfo(device: UsbDevice?): String {
@@ -293,4 +363,12 @@ class Usb(private val mContext: Context) {
         const val ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION"
 
     }
+
+
+    class TalkingBook(
+        val talkingBookRoot: TbFile,
+        val serialNumber: String,
+        val deviceLabel: String,
+        private val mPath: String
+    )
 }

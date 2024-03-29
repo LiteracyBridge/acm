@@ -16,6 +16,7 @@ import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
 import org.literacybridge.talkingbookapp.models.UserModel
 
+
 // Datastore
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -24,7 +25,8 @@ data class SettingsDataStore(
     var cognitoSubjectId: String? = null,
     var user: UserModel? = null,
     var program: Program? = null,
-    var deployment: Deployment? = null
+    var deployment: Deployment? = null,
+    var talkingBookCd: String? = null
 )
 
 class DataStoreManager() {
@@ -38,6 +40,8 @@ class DataStoreManager() {
     val program get() = data.program
 
     val deployment get() = data.deployment
+
+    val tbcdid get() = data.talkingBookCd
 
     companion object {
         private val KEY_DATA = stringPreferencesKey("data");
@@ -63,8 +67,32 @@ class DataStoreManager() {
     }
 
     suspend fun updateUser(user: UserModel) {
+        // If the email has changed, then we need to clear the stale TBCD value. It will be re-filled
+        // in prepareForSerialNumberAllocation
+        if (data.user == null || data.user?.email != user.email) {
+            this.data.talkingBookCd = null
+        }
         this.data.user = user
+
         this.updateData()
+        this.prepareForSerialNumberAllocation()
+    }
+
+
+    /**
+     * Get the user config from server. If no connectivity, and have a cached config use that.
+     *
+     * @param listener A Listener to accept the results.
+     */
+    suspend fun prepareForSerialNumberAllocation() {
+        val mTbSrnHelper = TBSerialNumberHelper()
+//        val email: String = getEmail()
+        val _result = mTbSrnHelper.prepareForAllocation(currentUser?.email)
+        val tbcd: String = mTbSrnHelper.tbLoaderIdHex.lowercase()
+        if (tbcdid == null || tbcd.lowercase() != tbcd) {
+            data.talkingBookCd = tbcd
+            updateData()
+        }
     }
 
     suspend fun setAccessToken(token: String, subId: String) {
