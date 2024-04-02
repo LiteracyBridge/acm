@@ -79,8 +79,7 @@ object PathsProvider {
     }
 
     fun getProgramSpecDir(project: ProgramContentEntity): File {
-        val deploymentDir = getLocalDeploymentDirectory(project)
-        return File(deploymentDir, "programspec")
+        return File(project.localPath, "content/programspec")
     }
 
     val localTempDirectory: File?
@@ -91,6 +90,7 @@ object PathsProvider {
          * @return the temporary directory's File.
          */
         get() = App.context.externalCacheDir
+
     val uploadDirectory: File?
         /**
          * Gets a File object that represents a directory into which files intended to be uploaded

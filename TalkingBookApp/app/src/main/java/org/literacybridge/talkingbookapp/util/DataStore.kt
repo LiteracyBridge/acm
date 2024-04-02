@@ -86,7 +86,6 @@ class DataStoreManager() {
      */
     suspend fun prepareForSerialNumberAllocation() {
         val mTbSrnHelper = TBSerialNumberHelper()
-//        val email: String = getEmail()
         val _result = mTbSrnHelper.prepareForAllocation(currentUser?.email)
         val tbcd: String = mTbSrnHelper.tbLoaderIdHex.lowercase()
         if (tbcdid == null || tbcd.lowercase() != tbcd) {

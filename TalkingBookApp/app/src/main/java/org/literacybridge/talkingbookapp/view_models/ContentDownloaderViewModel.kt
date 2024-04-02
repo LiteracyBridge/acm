@@ -150,12 +150,12 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                 // Update database
                 viewModelScope.launch {
                     withContext(Dispatchers.IO) {
-                        val contentDir = unzipFile(downloadedZip = done.file, destinationDir = dest)
+                        unzipFile(downloadedZip = done.file, destinationDir = dest)
                         val entity = ProgramContentEntity(
                             programId = program.program_id,
                             deploymentName = deployment.deploymentname,
                             latestRevision = latestDeploymentRevision!!,
-                            localPath = contentDir.path,
+                            localPath = dest.path,
                             status = ProgramContentDao.ProgramEntityStatus.SYNCNED,
                             lastSync = LocalDateTime.now(),
                             s3Path = s3key

@@ -147,13 +147,18 @@ fun HomeScreen(
 //                            )
 
 //                            val deviceSerialNumber = tbDeviceInfo.serialNumber
-                            viewModel.updateTalkingBook(
+                            viewModel.collectUsageStatistics(
                                 user = userViewModel.user.value,
                                 deployment = userViewModel.deployment.value!!,
-                                deviceSerialNumber = "C-0011",
-                                tbDeviceInfo = null
+                                navController = navController
                             )
-                            navController.navigate(Screen.COLLECT_DATA.name)
+//                            viewModel.updateTalkingBook(
+//                                user = userViewModel.user.value,
+//                                deployment = userViewModel.deployment.value!!,
+//                                deviceSerialNumber = "C-0011",
+//                                tbDeviceInfo = tbDeviceInfo
+//                            )
+//                            navController.navigate(Screen.COLLECT_DATA.name)
                         }) {
                             Text("Collect Data")
                         }

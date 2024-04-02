@@ -2,10 +2,12 @@ package org.literacybridge.talkingbookapp.view_models
 
 //import dagger.hilt.android.lifecycle.HiltViewModel
 
+import Screen
 import android.hardware.usb.UsbDevice
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,7 +33,6 @@ import org.literacybridge.talkingbookapp.models.UserModel
 import org.literacybridge.talkingbookapp.util.Constants
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
-import org.literacybridge.talkingbookapp.util.PathsProvider.getLocalDeploymentDirectory
 import org.literacybridge.talkingbookapp.util.Util.getStackTrace
 import org.literacybridge.talkingbookapp.util.dataStoreManager
 import java.io.File
@@ -96,8 +97,29 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun updateTalkingBook(
-        tbDeviceInfo: TbDeviceInfo?,
+    fun collectUsageStatistics(
+        user: UserModel,
+        deployment: Deployment,
+        navController: NavController
+    ) {
+        val tbDeviceInfo = TbDeviceInfo.getDeviceInfoFor(
+            mConnectedDevice.getTalkingBookRoot(),
+            mConnectedDevice.getDeviceLabel(),
+            TBLoaderConstants.NEW_TB_SRN_PREFIX
+        )
+
+//                            val deviceSerialNumber = tbDeviceInfo.serialNumber
+        updateTalkingBook(
+            user = user,
+            deployment = deployment,
+            deviceSerialNumber = "C-0011",
+            tbDeviceInfo = tbDeviceInfo
+        )
+        navController.navigate(Screen.COLLECT_DATA.name)
+    }
+
+    private fun updateTalkingBook(
+        tbDeviceInfo: TbDeviceInfo,
         deviceSerialNumber: String,
         user: UserModel,
         deployment: Deployment
@@ -135,7 +157,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
             .withUserName(user.first_name)
             .build()
 
-        val oldDeploymentInfo = tbDeviceInfo?.createDeploymentInfo(deployment.program_id)
+        val oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(deployment.program_id)
 
 //        getActivity().runOnUiThread { mTalkingBookWarningsTextView.setText(getString(R.string.do_not_disconnect)) }
 
@@ -145,12 +167,12 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         val builder = TBLoaderCore.Builder()
             .withTbLoaderConfig(tbLoaderConfig)
             .withTbDeviceInfo(tbDeviceInfo)
-//            .withOldDeploymentInfo(oldDeploymentInfo)
+            .withOldDeploymentInfo(oldDeploymentInfo)
 //            .withLocation(mLocation)
             .withCoordinates(null) // May be null; ok because it's optional anyway.
             .withAcceptableFirmware(acceptableFirmwareVersions)
             .withRefreshFirmware(false)
-//            .withProgressListener(mProgressListener)
+            .withProgressListener(mProgressListener)
             .withStatsOnly(collectStatsOnly)
             .withPostUpdateDelay(Constants.AndroidPostUpdateSleepTime)
 

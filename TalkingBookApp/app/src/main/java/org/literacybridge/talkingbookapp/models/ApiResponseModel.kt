@@ -10,6 +10,6 @@ data class TalkingBookSerial(
     val n: Int?,
     val id: Int?,
     val hexid: String?,
-    val msec: Int?,
+    val msec: Float?,
     val status: String?
 )
