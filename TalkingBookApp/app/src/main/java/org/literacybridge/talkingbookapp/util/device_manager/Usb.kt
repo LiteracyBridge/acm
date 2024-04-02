@@ -23,7 +23,6 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
-import android.net.Uri
 import android.os.Build
 import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
@@ -37,7 +36,7 @@ import java.io.File
 import java.lang.reflect.Method
 
 
-class Usb(private val mContext: Context) {
+class Usb {
     enum class ConnectionMode {
         MASS_STORAGE,
         DFU
@@ -50,6 +49,9 @@ class Usb(private val mContext: Context) {
         private set
 
     var usbDevice: UsbDevice? = null
+        private set
+
+    var talkingBookDevice: TalkingBook? = null
         private set
 
     private var mConnection: UsbDeviceConnection? = null
@@ -91,7 +93,7 @@ class Usb(private val mContext: Context) {
             } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED == action) {
                 synchronized(this) {
                     // Request permission for just attached USB Device if it matches the VID/PID
-                    requestPermission(mContext)
+                    requestPermission(App.context)
                 }
             } else if (UsbManager.ACTION_USB_DEVICE_DETACHED == action) {
                 synchronized(this) {
@@ -178,7 +180,7 @@ class Usb(private val mContext: Context) {
         if (!mUsbManager!!.hasPermission(device)) {
             // Request permission from the user
             val pendingIntent = PendingIntent.getBroadcast(
-                mContext,
+                App.context,
                 0,
                 Intent(ACTION_USB_PERMISSION),
                 PendingIntent.FLAG_IMMUTABLE
@@ -217,9 +219,10 @@ class Usb(private val mContext: Context) {
 
             val root = DocumentFile.fromFile(File(MASS_STORAGE_PATH))
             val fs: TbFile = AndroidDocFile(root, App.context.contentResolver)
-            val mConnectedTalkingBook = TalkingBook(
+            talkingBookDevice = TalkingBook(
                 fs,
                 TbDeviceInfo.getSerialNumberFromFileSystem(fs),
+                // TODO: get device label
 //                device.getValue().mLabel,
                 "Label",
                 MASS_STORAGE_PATH
@@ -362,13 +365,21 @@ class Usb(private val mContext: Context) {
 
         const val ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION"
 
+
+        @Volatile
+        private var instance: Usb? = null // Volatile modifier is necessary
+
+        fun getInstance() =
+            instance ?: synchronized(this) { // synchronized to avoid concurrency problem
+                instance ?: Usb().also { instance = it }
+            }
     }
 
 
     class TalkingBook(
-        val talkingBookRoot: TbFile,
+        val root: TbFile,
         val serialNumber: String,
         val deviceLabel: String,
-        private val mPath: String
+        private val path: String
     )
 }

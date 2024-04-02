@@ -147,7 +147,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         super.onStart()
 
         /* Setup USB */
-        usb = Usb(this)
+        usb = Usb.getInstance()
         usb.setUsbManager(getSystemService(USB_SERVICE) as UsbManager)
         usb.setOnUsbChangeListener(this)
 
@@ -188,8 +188,10 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 
     override fun onUsbConnected() {
         talkingBookViewModel.setDevice(usb.usbDevice)
+        talkingBookViewModel.talkingBookDevice.value = usb.talkingBookDevice
 
         val deviceInfo = usb.getDeviceInfo(usb.usbDevice)
+
         Log.d(TAG, "$deviceInfo")
 //        status.setText(deviceInfo)
         dfu.setUsb(usb)

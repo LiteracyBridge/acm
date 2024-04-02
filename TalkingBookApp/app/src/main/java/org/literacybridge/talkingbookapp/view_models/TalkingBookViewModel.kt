@@ -35,6 +35,7 @@ import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
 import org.literacybridge.talkingbookapp.util.Util.getStackTrace
 import org.literacybridge.talkingbookapp.util.dataStoreManager
+import org.literacybridge.talkingbookapp.util.device_manager.Usb
 import java.io.File
 import java.io.IOException
 import java.text.DateFormat
@@ -57,7 +58,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         COLLECT_STATS_AND_REFRESH_FIRMWARE
     }
 
-    private val device = mutableStateOf<UsbDevice?>(null)
+    val talkingBookDevice = mutableStateOf<Usb.TalkingBook?>(null)
     private val tbOperation = mutableStateOf(TalkingBookOperation.COLLECT_STATS_ONLY)
 
     private val _deviceState = MutableStateFlow(DeviceState())
@@ -102,9 +103,14 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         deployment: Deployment,
         navController: NavController
     ) {
+        val tb = talkingBookDevice.value
+        if (tb == null) {
+            TODO("Display error to user that TB is not connected")
+        }
+
         val tbDeviceInfo = TbDeviceInfo.getDeviceInfoFor(
-            mConnectedDevice.getTalkingBookRoot(),
-            mConnectedDevice.getDeviceLabel(),
+            tb.root,
+            tb.deviceLabel,
             TBLoaderConstants.NEW_TB_SRN_PREFIX
         )
 
