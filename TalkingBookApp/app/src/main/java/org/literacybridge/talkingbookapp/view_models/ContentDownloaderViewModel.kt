@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.literacybridge.core.fs.ZipUnzip
 import org.literacybridge.talkingbookapp.App
+import org.literacybridge.talkingbookapp.BuildConfig
 import org.literacybridge.talkingbookapp.database.ProgramContentDao
 import org.literacybridge.talkingbookapp.database.ProgramContentEntity
 import org.literacybridge.talkingbookapp.models.Deployment
@@ -35,6 +36,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         COMPARING,
         DOWNLOADING,
         NO_CONTENT,
+        OUT_DATED,
         ERROR,
         SUCCESS,
         UNZIPPING
@@ -81,6 +83,14 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
             .setPageSize(1000)
             .build()
 
+        // To speed up development, skip revision check in development
+        if (BuildConfig.DEBUG) {
+            val result = getLocalContent(null)
+            if (result != null) {
+                return
+            }
+        }
+
         Amplify.Storage.list("$basePath/${deployment.deploymentname}",
             options,
             { result ->
@@ -91,22 +101,15 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                     return@list
                 }
 
-                val latest = result.items.sortedByDescending { it.key }.first()
-                latestDeploymentRevision = getLatestRevisionName(latest.key)
-
-                val lastDownload =
-                    App().db.programContentDao().findLatestRevision(deployment.deploymentname)
-                if (lastDownload != null && lastDownload.latestRevision == latestDeploymentRevision && File(
-                        lastDownload.localPath
-                    ).exists()
-                ) {
-                    // Content is up to date, no need to download
-                    App.getInstance().setProgramSpec(lastDownload)
-                    _syncState.value = SyncState.SUCCESS
-                    return@list
-                }
-
                 viewModelScope.launch {
+                    val latest = result.items.sortedByDescending { it.key }.first()
+                    latestDeploymentRevision = getLatestRevisionName(latest.key)
+
+                    val content = getLocalContent(latestDeploymentRevision)
+                    if (_syncState.value == SyncState.SUCCESS && content != null) {
+                        return@launch
+                    }
+
                     // No local record is available, download
                     val downloadPath =
                         "$basePath/$latestDeploymentRevision/content-$latestDeploymentRevision.zip"
@@ -117,9 +120,20 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                     )
                 }
             },
-            {
-                Log.e(LOG_TAG, "List failure", it)
-                _syncState.value = SyncState.ERROR
+            { error ->
+                // TODO: show a dialog error, with option to retry content download / use local content
+
+                viewModelScope.launch {
+                    // If a local content exists, use it like that
+                    val result = getLocalContent(null)
+                    if (result != null) {
+                        _syncState.value = SyncState.SUCCESS
+                    } else {
+                        Log.e(LOG_TAG, "List failure", error)
+                        _syncState.value = SyncState.ERROR
+                    }
+                }
+
             }
         )
     }
@@ -171,7 +185,6 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
             { _syncState.value = SyncState.ERROR }
         )
     }
-
 
     private fun unzipFile(downloadedZip: File, destinationDir: File): File {
         val temp = File("${destinationDir.absolutePath}/tmp")
@@ -225,4 +238,42 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         return "$programId/TB-Loaders/published";
     }
 
+    private suspend fun getLocalContent(latestDeploymentRevision: String?): ProgramContentEntity? {
+        return withContext(Dispatchers.IO) {
+            val result = App().db.programContentDao().findLatestRevision(deployment.deploymentname)
+
+            // No content stored, needs to download
+            if (result == null) {
+                _syncState.value = SyncState.DOWNLOADING
+                return@withContext null
+            }
+
+            // If record exists in db but actual has been deleted from disk, assume there's no content
+            // and download from server
+            if (!File(result.localPath).exists()) {
+                _syncState.value = SyncState.DOWNLOADING
+                return@withContext null
+            }
+
+            // If no latest revision is provided, assume local content is the latest
+            // This might be due to network error whilst fetching from s3 or no internet available
+            if (latestDeploymentRevision == null) {
+                // Content is up to date, no need to download
+                App.getInstance().setProgramSpec(result)
+                _syncState.value = SyncState.SUCCESS
+                return@withContext result
+            }
+
+            return@withContext if (result.latestRevision == latestDeploymentRevision) {
+                // Content up to date, can proceed with the stored deployment revision
+                App.getInstance().setProgramSpec(result)
+                _syncState.value = SyncState.SUCCESS
+                result
+            } else { // Outdated content, set program spec and try to download latest version
+                App.getInstance().setProgramSpec(result)
+                _syncState.value = SyncState.OUT_DATED
+                result
+            }
+        }
+    }
 }

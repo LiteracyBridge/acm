@@ -111,7 +111,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         val tbDeviceInfo = TbDeviceInfo.getDeviceInfoFor(
             tb.root,
             tb.deviceLabel,
-            TBLoaderConstants.NEW_TB_SRN_PREFIX
+            TBLoaderConstants.NEW_TB_SRN_PREFIX,
+            TbDeviceInfo.DEVICE_VERSION.TBv2
         )
 
 //                            val deviceSerialNumber = tbDeviceInfo.serialNumber
