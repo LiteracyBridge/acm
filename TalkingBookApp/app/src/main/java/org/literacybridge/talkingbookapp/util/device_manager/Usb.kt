@@ -24,6 +24,7 @@ import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
 import android.os.Build
+import android.os.Environment
 import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
 import android.util.Log
@@ -34,6 +35,7 @@ import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import java.io.File
 import java.lang.reflect.Method
+import java.nio.file.Paths
 
 
 class Usb {
@@ -201,16 +203,16 @@ class Usb {
             mInterface = device.getInterface(DFU_INTERFACE)
         }
 
-        val connection = mUsbManager!!.openDevice(device)
-        if (connection != null && connection.claimInterface(mInterface, true)) {
+//        val connection = mUsbManager!!.openDevice(device)
+//        if (connection != null && connection.claimInterface(mInterface, true)) {
             Log.i(TAG, "open SUCCESS")
-            mConnection = connection
+//            mConnection = connection
 
             // get the bcdDevice version
-            val rawDescriptor = mConnection!!.rawDescriptors
-            deviceVersion = rawDescriptor[13].toInt() shl 8
-            deviceVersion = deviceVersion or rawDescriptor[12].toInt()
-            Log.i("USB", getDeviceInfo(device))
+//            val rawDescriptor = mConnection!!.rawDescriptors
+//            deviceVersion = rawDescriptor[13].toInt() shl 8
+//            deviceVersion = deviceVersion or rawDescriptor[12].toInt()
+//            Log.i("USB", getDeviceInfo(device))
 
             // Create talking book instance
             val volumesMap: Map<String, MountedDevice> = getSecondaryMountedVolumesMap()
@@ -218,7 +220,9 @@ class Usb {
 //            val deviceBaseUri: Uri = Uri.parse(volumesMap.values.first<MountedDevice>().toString())
 
             val root = DocumentFile.fromFile(File(MASS_STORAGE_PATH))
-            val fs: TbFile = AndroidDocFile(root, App.context.contentResolver)
+            val externalStorage = Environment.getExternalStoragePublicDirectory(MASS_STORAGE_PATH)
+            Log.d(LOG_TAG, externalStorage.absolutePath)
+            val fs: TbFile = AndroidDocFile(Paths.get(MASS_STORAGE_PATH).toFile())
             talkingBookDevice = TalkingBook(
                 fs,
                 TbDeviceInfo.getSerialNumberFromFileSystem(fs),
@@ -227,10 +231,10 @@ class Usb {
                 "Label",
                 MASS_STORAGE_PATH
             )
-        } else {
-            Log.e(TAG, "open FAIL")
-            mConnection = null
-        }
+//        } else {
+//            Log.e(TAG, "open FAIL")
+//            mConnection = null
+//        }
     }
 
     val isConnected: Boolean

@@ -1,9 +1,7 @@
 package org.literacybridge.talkingbookapp.util.device_manager
 
-import android.content.ContentResolver
-import androidx.documentfile.provider.DocumentFile
 import org.literacybridge.core.fs.TbFile
-import java.io.IOException
+import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.Arrays
@@ -17,19 +15,19 @@ import java.util.Arrays
 class AndroidDocFile : TbFile {
     private var parent: AndroidDocFile?
     private var filename: String?
-    private var file: DocumentFile?
-    private var resolver: ContentResolver
+    private var file: File?
+//    private var resolver: ContentResolver
 
     /**
      * Creates a "root" AndroidDocFile.
      * @param file The DocFile.
      * @param resolver The ContentResolver for the docfile and it's children.
      */
-    internal constructor(file: DocumentFile?, resolver: ContentResolver) {
+    internal constructor(file: File?) {
         parent = null
         filename = null
         this.file = file
-        this.resolver = resolver
+//        this.resolver = resolver
     }
 
     /**
@@ -41,7 +39,7 @@ class AndroidDocFile : TbFile {
         this.parent = parent
         filename = child
         file = null
-        resolver = parent.resolver
+//        resolver = parent.resolver
     }
 
     /**
@@ -49,11 +47,11 @@ class AndroidDocFile : TbFile {
      * @param parent Parent directory of the new file.
      * @param child The new DocumentFile.
      */
-    private constructor(parent: AndroidDocFile, child: DocumentFile) {
+    private constructor(parent: AndroidDocFile, child: File) {
         this.parent = parent
-        filename = child.name!!
+        filename = child.name
         file = child
-        resolver = parent.resolver
+//        resolver = parent.resolver
     }
 
     /**
@@ -61,12 +59,12 @@ class AndroidDocFile : TbFile {
      * parent first.
      */
     private fun resolve() {
-        if (file == null) {
-            parent?.resolve()
-            if (parent?.file != null) {
-                file = filename?.let { parent?.file?.findFile(it) }
-            }
-        }
+//        if (file == null) {
+//            parent?.resolve()
+//            if (parent?.file != null) {
+//                file = filename?.let { parent. ?.file?.findFile(it) }
+//            }
+//        }
     }
 
     override fun open(child: String): AndroidDocFile {
@@ -83,13 +81,13 @@ class AndroidDocFile : TbFile {
 
     override fun getAbsolutePath(): String {
         resolve()
-        return file!!.uri.path!!
+        return file!!.path!!
     }
 
     override fun renameTo(newName: String) {
         resolve()
         if (file != null) {
-            file!!.renameTo(newName)
+            file!!.renameTo(File(newName)) //TODO: Verify this is not breaking change!!
             filename = newName
         }
     }
@@ -110,8 +108,8 @@ class AndroidDocFile : TbFile {
         if (file != null) return false
         // Is there a parent? If not, can't create this child.
         if (parent?.file == null) return false
-        file = filename?.let { parent?.file!!.createDirectory(it) }
-        return file != null
+
+        return parent?.file?.mkdir() ?: false
     }
 
     override fun mkdirs(): Boolean {
@@ -120,37 +118,56 @@ class AndroidDocFile : TbFile {
         if (file != null) return false
         // If there's no parent, try to create it.
         if (parent?.file == null) {
-            val parentOk = parent!!.mkdirs()
+            val parentOk = parent?.mkdirs() ?: false
+//            val parentOk = parent!!.mkdirs()
             if (!parentOk) return false
         }
         // See if the directory already exists.
-        file = parent?.file!!.findFile(filename!!)
+        file = parent?.file!!
         // TODO: throw error if exists as a file?
         // If not, create it.
-        if (file == null) file = parent?.file!!.createDirectory(filename!!)
+        if (file == null) {
+            parent?.file!!.mkdirs()
+            file = parent?.file
+        }
         return file != null
     }
 
-    @Throws(IOException::class)
+    //    @Throws(IOException::class)
     override fun createNew(content: InputStream, vararg flags: Flags) {
         val appendToExisting = Arrays.asList(*flags).contains(Flags.append)
         val streamFlags = if (appendToExisting) "wa" else "w"
         resolve()
         if (file == null) {
-            file = parent?.file!!.createFile("application/octet-stream", filename!!)
+            file = File(parent?.file!!.absolutePath, filename!!)
         }
-        resolver.openOutputStream(file!!.uri, streamFlags).use { out -> copy(content, out) }
+
+        // TODO: implement write append
+        content.use { input ->
+            file!!.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+
+//        val fileOutputStream = FileOutputStream(file, true) // Open in append mode
+//
+//        fileOutputStream.use {
+//            it(content)
+//        }
+
+//        resolver.openOutputStream(file!!.uri, streamFlags).use { out -> copy(content, out) }
     }
 
-    @Throws(IOException::class)
+    //    @Throws(IOException::class)
     override fun createNew(vararg flags: Flags): OutputStream {
         val appendToExisting = Arrays.asList(*flags).contains(Flags.append)
         val streamFlags = if (appendToExisting) "wa" else "w"
         resolve()
         if (file == null) {
-            file = parent?.file!!.createFile("application/octet-stream", filename!!)
+            file = File(parent?.absolutePath, filename!!)
         }
-        return resolver.openOutputStream(file!!.uri, streamFlags)!!
+        return file!!.outputStream()
+//        return resolver.openOutputStream(file!!.uri, streamFlags)!!
     }
 
     override fun delete(): Boolean {
@@ -195,9 +212,9 @@ class AndroidDocFile : TbFile {
         return fileNames.toTypedArray()
     }
 
-    override fun listFiles(filter: FilenameFilter): Array<out AndroidDocFile?> {
-        resolve()
-        if (file == null || !file!!.isDirectory) return arrayOfNulls(0)
+    override fun listFiles(filter: FilenameFilter?): Array<AndroidDocFile?> {
+//        resolve()
+        if (file == null || !file!!.isDirectory) return emptyArray()
         val filteredFiles: MutableList<AndroidDocFile> = ArrayList()
         val files = file!!.listFiles()
         for (file in files) {
@@ -215,9 +232,9 @@ class AndroidDocFile : TbFile {
         return 0
     }
 
-    @Throws(IOException::class)
+    //    @Throws(IOException::class)
     override fun openFileInputStream(): InputStream {
-        return resolver.openInputStream(file!!.uri)!!
+        return file!!.inputStream()
     }
 }
 

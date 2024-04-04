@@ -118,7 +118,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         updateTalkingBook(
             user = user,
             deployment = deployment,
-            deviceSerialNumber = "C-0011",
+//            deviceSerialNumber = "C-0011",
             tbDeviceInfo = tbDeviceInfo
         )
         navController.navigate(Screen.COLLECT_DATA.name)
@@ -126,7 +126,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 
     private fun updateTalkingBook(
         tbDeviceInfo: TbDeviceInfo,
-        deviceSerialNumber: String,
+//        deviceSerialNumber: String,
         user: UserModel,
         deployment: Deployment
     ) {
@@ -359,7 +359,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         override fun step(step: Steps) {
             mStep = step.description()
             mDetail = ""
-            Log.d(LOG_TAG, "New steps")
+            Log.d(LOG_TAG, "$mStep")
 
 //            activity()!!.runOnUiThread {
 //                mUpdateStepTextView.setText(mStep)
