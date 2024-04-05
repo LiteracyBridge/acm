@@ -120,7 +120,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         updateTalkingBook(
             user = user,
             deployment = deployment,
-//            deviceSerialNumber = "C-0011",
+            deviceSerialNumber = tbDeviceInfo.serialNumber,
             tbDeviceInfo = tbDeviceInfo
         )
         navController.navigate(Screen.COLLECT_DATA.name)
@@ -128,7 +128,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 
     private fun updateTalkingBook(
         tbDeviceInfo: TbDeviceInfo,
-//        deviceSerialNumber: String,
+        deviceSerialNumber: String,
         user: UserModel,
         deployment: Deployment
     ) {
@@ -152,8 +152,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 
         // Working storage.
         val tempTbFile: TbFile = FsFile(PathsProvider.localTempDirectory)
-//            .open("temp")
         tempTbFile.parent.mkdirs()
+
         val tbLoaderConfig = TBLoaderConfig.Builder()
             .withTbLoaderId(dataStoreManager.tbcdid)
             .withCollectedDataDirectory(collectedDataTbFile)
@@ -176,7 +176,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 //            .withLocation(mLocation)
             .withCoordinates(null) // May be null; ok because it's optional anyway.
             .withAcceptableFirmware(acceptableFirmwareVersions)
-            .withRefreshFirmware(false)
+            .withRefreshFirmware(!collectStatsOnly)
             .withProgressListener(mProgressListener)
             .withStatsOnly(collectStatsOnly)
             .withPostUpdateDelay(Constants.AndroidPostUpdateSleepTime)

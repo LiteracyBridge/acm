@@ -216,30 +216,7 @@
           "resourceName": "talkingbookappbfee43d5"
         }
       ]
-    },
-    "AMPLIFY_storage_talkingbookapp28e3673f_bucketName": {
-      "usedBy": [
-        {
-          "category": "storage",
-          "resourceName": "talkingbookapp28e3673f"
-        }
-      ]
-    },
-    "AMPLIFY_storage_talkingbookapp28e3673f_region": {
-      "usedBy": [
-        {
-          "category": "storage",
-          "resourceName": "talkingbookapp28e3673f"
-        }
-      ]
     }
   },
-  "storage": {
-    "talkingbookapp28e3673f": {
-      "dependsOn": [],
-      "providerPlugin": "awscloudformation",
-      "service": "S3",
-      "serviceType": "imported"
-    }
-  }
+  "storage": {}
 }
