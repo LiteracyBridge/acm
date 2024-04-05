@@ -103,6 +103,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         deployment: Deployment,
         navController: NavController
     ) {
+        tbOperation.value = TalkingBookOperation.COLLECT_STATS_ONLY
         val tb = talkingBookDevice.value
         if (tb == null) {
             TODO("Display error to user that TB is not connected")

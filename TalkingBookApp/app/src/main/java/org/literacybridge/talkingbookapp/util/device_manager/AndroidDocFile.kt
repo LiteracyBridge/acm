@@ -59,12 +59,12 @@ class AndroidDocFile : TbFile {
      * parent first.
      */
     private fun resolve() {
-//        if (file == null) {
-//            parent?.resolve()
-//            if (parent?.file != null) {
-//                file = filename?.let { parent. ?.file?.findFile(it) }
-//            }
-//        }
+        if (file == null) {
+            parent?.resolve()
+            if (parent?.file != null) {
+                file = filename?.let { parent?.file?.resolve(it) }
+            }
+        }
     }
 
     override fun open(child: String): AndroidDocFile {
@@ -135,19 +135,32 @@ class AndroidDocFile : TbFile {
 
     //    @Throws(IOException::class)
     override fun createNew(content: InputStream, vararg flags: Flags) {
-        val appendToExisting = Arrays.asList(*flags).contains(Flags.append)
+        val appendToExisting = listOf(*flags).contains(Flags.append)
         val streamFlags = if (appendToExisting) "wa" else "w"
-        resolve()
+//        resolve()
         if (file == null) {
-            file = File(parent?.file!!.absolutePath, filename!!)
+            file = parent?.file!!.resolve(filename!!)
         }
 
-        // TODO: implement write append
-        content.use { input ->
-            file!!.outputStream().use { output ->
-                input.copyTo(output)
-            }
+        if(!file!!.exists()){
+            file!!.createNewFile()
         }
+
+
+        // TODO: implement write append
+//        file!!.outputStream().use { output ->
+//            ObjectOutputStream(output).use { objOut ->
+//                objOut.writeObject(user)
+//            }
+//        }
+        file!!.outputStream().use { outputStream ->
+            content.copyTo(outputStream)  // More efficient for byte arrays
+        }
+//        content.use { input ->
+//            file!!.outputStream().use { output ->
+//                input.copyTo(output)
+//            }
+//        }
 
 //        val fileOutputStream = FileOutputStream(file, true) // Open in append mode
 //
@@ -195,7 +208,9 @@ class AndroidDocFile : TbFile {
 
     override fun list(filter: FilenameFilter?): Array<String?> {
         resolve()
+
         if (file == null || !file!!.isDirectory) return mutableListOf<String>().toTypedArray()
+
         val fileNames: MutableList<String?> = ArrayList()
         val files = file!!.listFiles()
         for (file in files) {
@@ -213,7 +228,7 @@ class AndroidDocFile : TbFile {
     }
 
     override fun listFiles(filter: FilenameFilter?): Array<AndroidDocFile?> {
-//        resolve()
+        resolve()
         if (file == null || !file!!.isDirectory) return emptyArray()
         val filteredFiles: MutableList<AndroidDocFile> = ArrayList()
         val files = file!!.listFiles()
@@ -234,7 +249,7 @@ class AndroidDocFile : TbFile {
 
     //    @Throws(IOException::class)
     override fun openFileInputStream(): InputStream {
-        return file!!.inputStream()
+        return parent!!.file!!.resolve(filename!!).inputStream()
     }
 }
 
