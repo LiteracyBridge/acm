@@ -142,9 +142,9 @@ class AndroidDocFile : TbFile {
             file = parent?.file!!.resolve(filename!!)
         }
 
-        if(!file!!.exists()){
-            file!!.createNewFile()
-        }
+//        if(!file!!.exists()){
+//            file!!.createNewFile()
+//        }
 
 
         // TODO: implement write append

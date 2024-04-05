@@ -147,15 +147,12 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         val df: DateFormat = SimpleDateFormat("yyyy/MM/dd", Locale.US)
         df.setTimeZone(TBLoaderConstants.UTC)
         val todaysDate: String = df.format(Date())
-        val collectedDataDirectory = File(
-            PathsProvider.localTempDirectory,
-            TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME + File.separator
-                    + collectionTimestamp
-        )
+        val collectedDataDirectory = PathsProvider.getStatsDirectory(collectionTimestamp)
         val collectedDataTbFile: TbFile = FsFile(collectedDataDirectory)
 
         // Working storage.
-        val tempTbFile: TbFile = FsFile(PathsProvider.localTempDirectory).open("temp")
+        val tempTbFile: TbFile = FsFile(PathsProvider.localTempDirectory)
+//            .open("temp")
         tempTbFile.parent.mkdirs()
         val tbLoaderConfig = TBLoaderConfig.Builder()
             .withTbLoaderId(dataStoreManager.tbcdid)

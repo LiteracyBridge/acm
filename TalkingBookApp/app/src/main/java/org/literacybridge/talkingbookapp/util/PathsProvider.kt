@@ -1,6 +1,7 @@
 package org.literacybridge.talkingbookapp.util
 
 import android.util.Log
+import org.literacybridge.core.tbloader.TBLoaderConstants
 import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.database.ProgramContentEntity
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
@@ -9,7 +10,6 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import kotlin.io.path.exists
 
 
 /**
@@ -20,7 +20,7 @@ import kotlin.io.path.exists
  */
 object PathsProvider {
     private const val TAG = "TBL!:" + "PathsProvider"
-    private var sTbLoaderAppContext: App = App()
+//    private var sTbLoaderAppContext: App = App()
 
 //    fun init(applicationContext: App) {
 //        sTbLoaderAppContext = applicationContext
@@ -82,14 +82,21 @@ object PathsProvider {
         return File(project.localPath, "content/programspec")
     }
 
-    val localTempDirectory: File?
+    fun getStatsDirectory(timestamp: String): File {
+        return File(
+            localTempDirectory,
+            "${TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME}${File.separator}${timestamp}"
+        )
+    }
+
+    val localTempDirectory: File
         /**
          * Gets a File object that represents a temporary directory into which files from
          * the Talking Book can be copied (or zipped).
          *
          * @return the temporary directory's File.
          */
-        get() = App.context.externalCacheDir
+        get() = File(App.context.getExternalFilesDir("temp"), "")
 
     val uploadDirectory: File?
         /**
@@ -99,6 +106,7 @@ object PathsProvider {
          * @return the staging directory's File.
          */
         get() = App.context.getExternalFilesDir("upload")
+
     val logDirectory: File?
         /**
          * Gets a File object that represents a directory into which log files should be placed. The
