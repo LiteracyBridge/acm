@@ -66,7 +66,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     val talkingBookDevice = mutableStateOf<Usb.TalkingBook?>(null)
     val totalFilesPendingUpload = mutableIntStateOf(0)
     val totalFilesUploaded = mutableIntStateOf(0)
-    private val tbOperation = mutableStateOf(TalkingBookOperation.COLLECT_STATS_ONLY)
+    val tbOperation = mutableStateOf(TalkingBookOperation.COLLECT_STATS_ONLY)
 
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState.asStateFlow()
@@ -76,6 +76,10 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 
     fun getDevice(): UsbDevice? {
         return deviceState.value.device
+    }
+
+    fun isDeviceConnected(): Boolean {
+        return deviceState.value.device?.deviceName != null
     }
 
     fun setDevice(device: UsbDevice?) {
@@ -99,7 +103,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         deployment: Deployment,
         navController: NavController
     ) {
-        tbOperation.value = TalkingBookOperation.COLLECT_STATS_ONLY
         val tb = talkingBookDevice.value
         if (tb == null) {
             TODO("Display error to user that TB is not connected")
@@ -112,7 +115,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
             TbDeviceInfo.DEVICE_VERSION.TBv2
         )
 
-//                            val deviceSerialNumber = tbDeviceInfo.serialNumber
         updateTalkingBook(
             user = user,
             deployment = deployment,
@@ -208,7 +210,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 
             val zippedPath = "tbcd${dataStoreManager.tbcdid}/$collectionTimestamp.zip"
 //            val collectedDataZipName =
-            val uploadableZipFile = File(PathsProvider.localTempDirectory, "collected-data/$zippedPath")
+            val uploadableZipFile =
+                File(PathsProvider.localTempDirectory, "collected-data/$zippedPath")
 
             // Zip all the files together. We don't really get any compression, but it collects them into
             // a single archive file.
@@ -246,7 +249,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         opLog: OperationLog.Operation,
         tbDeviceInfo: TbDeviceInfo,
         deviceSerialNumber: String,
-        collectionTimestamp: String, todaysDate: String,
+        collectionTimestamp: String,
+        todaysDate: String,
         collectedDataDirectory: File,
         deploymentDirectory: File
     ): DeploymentInfo {
@@ -309,22 +313,9 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun uploadCollectedData(file: File, s3Key: String) {
-//        val upload = Amplify.Storage.uploadFile("ExampleKey", exampleFile)
-//
-//        try {
-//
-//            val result = upload.result()
-//
-//            Log.i("MyAmplifyApp", "Successfully uploaded: ${result.key}")
-//
-//        } catch (error: StorageException) {
-//
-//            Log.e("MyAmplifyApp", "Upload failed", error)
-//
-//        }
         val options = StorageUploadFileOptions.defaultInstance()
 
-        val opt = Amplify.Storage.uploadFile("$COLLECTED_DATA_DIR_NAME/$s3Key", file,
+        val transfer = Amplify.Storage.uploadFile("$COLLECTED_DATA_DIR_NAME/$s3Key", file,
             options,
             { progress ->
 //                result.
