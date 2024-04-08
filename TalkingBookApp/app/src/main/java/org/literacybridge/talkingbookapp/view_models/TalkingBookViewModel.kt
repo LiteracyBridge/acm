@@ -5,9 +5,12 @@ package org.literacybridge.talkingbookapp.view_models
 import Screen
 import android.hardware.usb.UsbDevice
 import android.util.Log
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
+import com.amplifyframework.core.Amplify
+import com.amplifyframework.storage.options.StorageUploadFileOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,8 +34,10 @@ import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.UserModel
 import org.literacybridge.talkingbookapp.util.Constants
+import org.literacybridge.talkingbookapp.util.Constants.Companion.COLLECTED_DATA_DIR_NAME
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
+import org.literacybridge.talkingbookapp.util.Util
 import org.literacybridge.talkingbookapp.util.Util.getStackTrace
 import org.literacybridge.talkingbookapp.util.dataStoreManager
 import org.literacybridge.talkingbookapp.util.device_manager.Usb
@@ -59,6 +64,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     }
 
     val talkingBookDevice = mutableStateOf<Usb.TalkingBook?>(null)
+    val totalFilesPendingUpload = mutableIntStateOf(0)
+    val totalFilesUploaded = mutableIntStateOf(0)
     private val tbOperation = mutableStateOf(TalkingBookOperation.COLLECT_STATS_ONLY)
 
     private val _deviceState = MutableStateFlow(DeviceState())
@@ -66,17 +73,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 
     private val app = App.getInstance()
     private val dataStore get() = dataStoreManager.data
-
-    // Handle business logic
-//    fun rollDice() {
-//        _uiState.update { currentState ->
-//            currentState.copy(
-//                firstDieValue = Random.nextInt(from = 1, until = 7),
-//                secondDieValue = Random.nextInt(from = 1, until = 7),
-//                numberOfRolls = currentState.numberOfRolls + 1,
-//            )
-//        }
-//    }
 
     fun getDevice(): UsbDevice? {
         return deviceState.value.device
@@ -209,9 +205,10 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         try {
             val zipStart = System.currentTimeMillis()
             mProgressListener.extraStep("Zipping statistics and user feedback")
-            val collectedDataZipName =
-                "collected-data/tbcd" + dataStoreManager.tbcdid + "/" + collectionTimestamp + ".zip"
-            val uploadableZipFile = File(PathsProvider.localTempDirectory, collectedDataZipName)
+
+            val zippedPath = "tbcd${dataStoreManager.tbcdid}/$collectionTimestamp.zip"
+//            val collectedDataZipName =
+            val uploadableZipFile = File(PathsProvider.localTempDirectory, "collected-data/$zippedPath")
 
             // Zip all the files together. We don't really get any compression, but it collects them into
             // a single archive file.
@@ -219,20 +216,22 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
             collectedDataTbFile.deleteDirectory()
 
             // TODO: add to amplify upload queue
+            uploadCollectedData(uploadableZipFile, zippedPath)
+
 //            mAppContext.getUploadService().uploadFileAsName(uploadableZipFile, collectedDataZipName)
-//            var message = java.lang.String.format(
-//                "Zipped statistics and user feedback in %s", Util.formatElapsedTime(
-//                    System.currentTimeMillis() - zipStart
-//                )
-//            )
+            var message = java.lang.String.format(
+                "Zipped statistics and user feedback in %s", Util.formatElapsedTime(
+                    System.currentTimeMillis() - zipStart
+                )
+            )
 //
-//            mProgressListener.log(message)
-//            message = java.lang.String.format(
-//                "TB-Loader completed in %s",
-//                Util.formatElapsedTime(System.currentTimeMillis() - startTime)
-//            )
-//            mProgressListener.log(message)
-//            mProgressListener.extraStep("Finished")
+            mProgressListener.log(message)
+            message = java.lang.String.format(
+                "TB-Loader completed in %s",
+                Util.formatElapsedTime(System.currentTimeMillis() - startTime)
+            )
+            mProgressListener.log(message)
+            mProgressListener.extraStep("Finished")
         } catch (e: IOException) {
             e.printStackTrace()
             mProgressListener.log(getStackTrace(e))
@@ -299,15 +298,51 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         if (recipient.variant.isNotEmpty()) {
             key = key + ',' + recipient.variant
         }
-        var imageName: String = deploymentProperties.getProperty(key)
+        var imageName: String? = deploymentProperties.getProperty(key)
         if (imageName == null) {
             imageName = deploymentProperties.getProperty(recipient.languagecode)
         }
-        val ok = imageName != null
-        if (!ok) {
+        if (imageName == null) {
             imageName = ""
         }
         return imageName
+    }
+
+    private fun uploadCollectedData(file: File, s3Key: String) {
+//        val upload = Amplify.Storage.uploadFile("ExampleKey", exampleFile)
+//
+//        try {
+//
+//            val result = upload.result()
+//
+//            Log.i("MyAmplifyApp", "Successfully uploaded: ${result.key}")
+//
+//        } catch (error: StorageException) {
+//
+//            Log.e("MyAmplifyApp", "Upload failed", error)
+//
+//        }
+        val options = StorageUploadFileOptions.defaultInstance()
+
+        val opt = Amplify.Storage.uploadFile("$COLLECTED_DATA_DIR_NAME/$s3Key", file,
+            options,
+            { progress ->
+//                result.
+                Log.i("MyAmplifyApp", "Successfully uploaded: ${progress.fractionCompleted}")
+            },
+            { result ->
+                totalFilesPendingUpload.intValue = totalFilesPendingUpload.intValue - 1
+                totalFilesUploaded.intValue = totalFilesUploaded.intValue + 1
+
+//                result.
+                Log.i("MyAmplifyApp", "Successfully uploaded: ${result.key}")
+            },
+
+            { Log.e("MyAmplifyApp", "Upload failed", it) }
+
+        )
+
+        opt.transferId
     }
 
     /**
