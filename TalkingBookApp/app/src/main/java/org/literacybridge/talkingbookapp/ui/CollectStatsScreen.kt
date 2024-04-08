@@ -70,12 +70,12 @@ fun CollectStatisticsScreen(
                 OperationCompleted(result = viewModel.operationResult.value)
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 20.dp, horizontal = 15.dp)
-            ) {
-                if (!viewModel.isOperationInProgress.value) {
+            if (!viewModel.isOperationInProgress.value) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 20.dp, horizontal = 15.dp)
+                ) {
                     Button(
                         onClick = { /*TODO*/ },
                         modifier = Modifier
@@ -107,8 +107,7 @@ fun OperationProgress(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
+            .fillMaxSize()
             .padding(horizontal = 15.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -159,8 +158,7 @@ fun OperationProgress(
 fun OperationCompleted(result: TalkingBookViewModel.OperationResult) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
+            .fillMaxSize()
             .padding(horizontal = 15.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -171,7 +169,7 @@ fun OperationCompleted(result: TalkingBookViewModel.OperationResult) {
                 .width(80.dp)
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(top = 30.dp, bottom = 60.dp),
+                .padding(top = 100.dp, bottom = 60.dp),
             strokeWidth = 5.dp,
             progress = 1.0f
         )
