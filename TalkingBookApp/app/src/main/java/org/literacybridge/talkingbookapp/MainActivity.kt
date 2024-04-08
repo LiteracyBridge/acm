@@ -2,13 +2,18 @@ package org.literacybridge.talkingbookapp
 
 import AppNavHost
 import android.Manifest
+import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbManager
+import android.net.Uri
 import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Message
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,8 +43,8 @@ const val TAG = "TalkingBook";
 class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListener,
     Dfu.DfuListener {
 
-    val PERMISSION_WRITE_STORAGE_CODE = 12
-    val PERMISSION_READ_AUDIO_CODE = 13
+    private val PERMISSION_WRITE_STORAGE_CODE = 12
+    private val PERMISSION_READ_AUDIO_CODE = 13
 
     private lateinit var usb: Usb
     private lateinit var dfu: Dfu
@@ -63,14 +68,19 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             Log.i(LOG_TAG, "Amplify plugin already configured")
         }
 
-        // Request write storage is on  api level <32
-        // https://developer.android.com/about/versions/13/behavior-changes-13#granular-media-permissions
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S_V2) {
+        // Manage external storage is available in Android 11+, request user to enable it
+        // if we don't have it yet
+        if (SDK_INT >= Build.VERSION_CODES.R) {
+            // TODO: Improve the UX for this, maybe show a dialog explaining why we need it
+            if (!Environment.isExternalStorageManager()) {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                val uri = Uri.fromParts("package", packageName, null)
+                intent.setData(uri)
+                startActivity(intent)
+            }
+        } else { // Below Android 11, we have to request for write external storage permission
             val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             requestPermissions(permissions, PERMISSION_WRITE_STORAGE_CODE)
-        } else {
-            val permissions = arrayOf(Manifest.permission.READ_MEDIA_AUDIO)
-            requestPermissions(permissions, PERMISSION_READ_AUDIO_CODE)
         }
 
         // Setup dfu

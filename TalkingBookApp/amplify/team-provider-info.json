@@ -45,12 +45,6 @@
           "unauthRoleArn": "arn:aws:iam::856701711513:role/Cognito_AmplioUnauth_Role",
           "unauthRoleName": "Cognito_AmplioUnauth_Role"
         }
-      },
-      "storage": {
-        "talkingbookapp28e3673f": {
-          "bucketName": "acm-content-updates",
-          "region": "us-west-2"
-        }
       }
     }
   }

@@ -139,30 +139,14 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Button(onClick = {
-//                            val tbDeviceInfo = TbDeviceInfo.getDeviceInfoFor(
-//                                mConnectedDevice.getTalkingBookRoot(),
-//                                mConnectedDevice.getDeviceLabel(),
-//                                TBLoaderConstants.NEW_TB_SRN_PREFIX
-//                            )
-
-//                            val deviceSerialNumber = tbDeviceInfo.serialNumber
-                            viewModel.collectUsageStatistics(
-                                user = userViewModel.user.value,
-                                deployment = userViewModel.deployment.value!!,
-                                navController = navController
-                            )
-//                            viewModel.updateTalkingBook(
-//                                user = userViewModel.user.value,
-//                                deployment = userViewModel.deployment.value!!,
-//                                deviceSerialNumber = "C-0011",
-//                                tbDeviceInfo = tbDeviceInfo
-//                            )
-//                            navController.navigate(Screen.COLLECT_DATA.name)
-                        }) {
-                            Text("Collect Data")
+                        Button(
+                            enabled = viewModel.isDeviceConnected(),
+                            onClick = { navController.navigate(Screen.COLLECT_DATA.name) }) {
+                            Text("Collect Statistics")
                         }
-                        Button(onClick = { /*TODO*/ }) {
+                        Button(
+                            enabled = viewModel.isDeviceConnected(),
+                            onClick = { /*TODO*/ }) {
                             Text("Update Talking Book")
                         }
                     }

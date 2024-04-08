@@ -2,18 +2,22 @@ package org.literacybridge.talkingbookapp.view_models
 
 //import dagger.hilt.android.lifecycle.HiltViewModel
 
-import Screen
 import android.hardware.usb.UsbDevice
 import android.util.Log
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
+import com.amplifyframework.core.Amplify
+import com.amplifyframework.storage.options.StorageUploadFileOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
+import kotlinx.coroutines.withContext
 import org.literacybridge.core.fs.FsFile
 import org.literacybridge.core.fs.OperationLog
 import org.literacybridge.core.fs.TbFile
@@ -31,8 +35,10 @@ import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.UserModel
 import org.literacybridge.talkingbookapp.util.Constants
+import org.literacybridge.talkingbookapp.util.Constants.Companion.COLLECTED_DATA_DIR_NAME
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
+import org.literacybridge.talkingbookapp.util.Util
 import org.literacybridge.talkingbookapp.util.Util.getStackTrace
 import org.literacybridge.talkingbookapp.util.dataStoreManager
 import org.literacybridge.talkingbookapp.util.device_manager.Usb
@@ -58,28 +64,33 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         COLLECT_STATS_AND_REFRESH_FIRMWARE
     }
 
+    enum class OperationResult {
+        Success,
+        Failure,
+        InProgress,
+    }
+
+    val totalFilesPendingUpload = mutableIntStateOf(0)
+    val totalFilesUploaded = mutableIntStateOf(0)
+    val isOperationInProgress = mutableStateOf(false)
+    val operationResult = mutableStateOf(OperationResult.InProgress)
+
     val talkingBookDevice = mutableStateOf<Usb.TalkingBook?>(null)
-    private val tbOperation = mutableStateOf(TalkingBookOperation.COLLECT_STATS_ONLY)
+    val operationType = mutableStateOf(TalkingBookOperation.COLLECT_STATS_ONLY)
+    val operationStep = mutableStateOf("")
+    val operationStepDetail = mutableStateOf("")
 
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState.asStateFlow()
 
     private val app = App.getInstance()
-    private val dataStore get() = dataStoreManager.data
-
-    // Handle business logic
-//    fun rollDice() {
-//        _uiState.update { currentState ->
-//            currentState.copy(
-//                firstDieValue = Random.nextInt(from = 1, until = 7),
-//                secondDieValue = Random.nextInt(from = 1, until = 7),
-//                numberOfRolls = currentState.numberOfRolls + 1,
-//            )
-//        }
-//    }
 
     fun getDevice(): UsbDevice? {
         return deviceState.value.device
+    }
+
+    fun isDeviceConnected(): Boolean {
+        return deviceState.value.device?.deviceName != null
     }
 
     fun setDevice(device: UsbDevice?) {
@@ -98,7 +109,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun collectUsageStatistics(
+    suspend fun collectUsageStatistics(
         user: UserModel,
         deployment: Deployment,
         navController: NavController
@@ -111,85 +122,86 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         val tbDeviceInfo = TbDeviceInfo.getDeviceInfoFor(
             tb.root,
             tb.deviceLabel,
-            TBLoaderConstants.NEW_TB_SRN_PREFIX
+            TBLoaderConstants.NEW_TB_SRN_PREFIX,
+            TbDeviceInfo.DEVICE_VERSION.TBv2
         )
 
-//                            val deviceSerialNumber = tbDeviceInfo.serialNumber
         updateTalkingBook(
             user = user,
             deployment = deployment,
-            deviceSerialNumber = "C-0011",
+            deviceSerialNumber = tbDeviceInfo.serialNumber,
             tbDeviceInfo = tbDeviceInfo
         )
-        navController.navigate(Screen.COLLECT_DATA.name)
     }
 
-    private fun updateTalkingBook(
+    private suspend fun updateTalkingBook(
         tbDeviceInfo: TbDeviceInfo,
         deviceSerialNumber: String,
         user: UserModel,
         deployment: Deployment
     ) {
-        val collectStatsOnly = tbOperation.value == TalkingBookOperation.COLLECT_STATS_ONLY
-        val opLog = OperationLog.startOperation(
-            if (collectStatsOnly) "CollectStatistics" else "UpdateTalkingBook"
-        )
+        isOperationInProgress.value = true
+        val collectStatsOnly =
+            operationType.value == TalkingBookOperation.COLLECT_STATS_ONLY
 
-//        val config: Config = App.getInstance().config
-        val startTime = System.currentTimeMillis()
+        withContext(Dispatchers.IO) {
+            val opLog = OperationLog.startOperation(
+                if (collectStatsOnly) "CollectStatistics" else "UpdateTalkingBook"
+            )
 
-        // Where to gather the statistics and user recordings, to be uploaded.
+            try {
+                val startTime = System.currentTimeMillis()
+
+                // Where to gather the statistics and user recordings, to be uploaded.
 //        TbFile collectionTbFile = new FsFile(PathsProvider.getUploadDirectory());
 //        TbFile collectedDataDirectory = collectionTbFile.open(COLLECTED_DATA_SUBDIR_NAME);
-        val collectionTimestamp = TBLoaderConstants.ISO8601.format(Date())
-        val df: DateFormat = SimpleDateFormat("yyyy/MM/dd", Locale.US)
-        df.setTimeZone(TBLoaderConstants.UTC)
-        val todaysDate: String = df.format(Date())
-        val collectedDataDirectory = File(
-            PathsProvider.localTempDirectory,
-            TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME + File.separator
-                    + collectionTimestamp
-        )
-        val collectedDataTbFile: TbFile = FsFile(collectedDataDirectory)
+                val collectionTimestamp = TBLoaderConstants.ISO8601.format(Date())
+                val df: DateFormat = SimpleDateFormat("yyyy/MM/dd", Locale.US)
+                df.setTimeZone(TBLoaderConstants.UTC)
+                val todaysDate: String = df.format(Date())
+                val collectedDataDirectory =
+                    PathsProvider.getStatsDirectory(collectionTimestamp)
+                val collectedDataTbFile: TbFile = FsFile(collectedDataDirectory)
 
-        // Working storage.
-        val tempTbFile: TbFile = FsFile(PathsProvider.localTempDirectory).open("temp")
-        tempTbFile.parent.mkdirs()
-        val tbLoaderConfig = TBLoaderConfig.Builder()
-            .withTbLoaderId(dataStoreManager.tbcdid)
-            .withCollectedDataDirectory(collectedDataTbFile)
-            .withTempDirectory(tempTbFile)
-            .withUserEmail(user.email)
-            .withUserName(user.first_name)
-            .build()
+                // Working storage.
+                val tempTbFile: TbFile = FsFile(PathsProvider.localTempDirectory)
+                tempTbFile.parent.mkdirs()
 
-        val oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(deployment.program_id)
+                val tbLoaderConfig = TBLoaderConfig.Builder()
+                    .withTbLoaderId(dataStoreManager.tbcdid)
+                    .withCollectedDataDirectory(collectedDataTbFile)
+                    .withTempDirectory(tempTbFile)
+                    .withUserEmail(user.email)
+                    .withUserName(user.first_name)
+                    .build()
+
+                val oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(deployment.program_id)
 
 //        getActivity().runOnUiThread { mTalkingBookWarningsTextView.setText(getString(R.string.do_not_disconnect)) }
 
-        val acceptableFirmwareVersions: String = app.programSpec!!.deploymentProperties
-            .getProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS)
+                val acceptableFirmwareVersions: String = app.programSpec!!.deploymentProperties
+                    .getProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS)
 
-        val builder = TBLoaderCore.Builder()
-            .withTbLoaderConfig(tbLoaderConfig)
-            .withTbDeviceInfo(tbDeviceInfo)
-            .withOldDeploymentInfo(oldDeploymentInfo)
+                val builder = TBLoaderCore.Builder()
+                    .withTbLoaderConfig(tbLoaderConfig)
+                    .withTbDeviceInfo(tbDeviceInfo)
+                    .withOldDeploymentInfo(oldDeploymentInfo)
 //            .withLocation(mLocation)
-            .withCoordinates(null) // May be null; ok because it's optional anyway.
-            .withAcceptableFirmware(acceptableFirmwareVersions)
-            .withRefreshFirmware(false)
-            .withProgressListener(mProgressListener)
-            .withStatsOnly(collectStatsOnly)
-            .withPostUpdateDelay(Constants.AndroidPostUpdateSleepTime)
+                    .withCoordinates(null) // May be null; ok because it's optional anyway.
+                    .withAcceptableFirmware(acceptableFirmwareVersions)
+                    .withRefreshFirmware(!collectStatsOnly)
+                    .withProgressListener(mProgressListener)
+                    .withStatsOnly(collectStatsOnly)
+                    .withPostUpdateDelay(Constants.AndroidPostUpdateSleepTime)
 
-        val result: TBLoaderCore.Result
-        result = if (collectStatsOnly) {
-            builder.build().collectStatistics()
-        } else {
-            //TODO: implement this
-            Log.d(LOG_TAG, "Multi operation")
-            builder.build().update()
-            // The directory with images. {project}/content/{Deployment}
+                val result: TBLoaderCore.Result
+                result = if (collectStatsOnly) {
+                    builder.build().collectStatistics()
+                } else {
+                    //TODO: implement this
+                    Log.d(LOG_TAG, "Multi operation")
+                    builder.build().update()
+                    // The directory with images. {project}/content/{Deployment}
 //            val deploymentDirectory: File = getLocalDeploymentDirectory(app.programContent!!)!!
 //            val newDeploymentInfo: DeploymentInfo = getUpdateDeploymentInfo(
 //                opLog, tbDeviceInfo,
@@ -203,44 +215,59 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 //                .withDeploymentDirectory(FsFile(deploymentDirectory))
 //                .withNewDeploymentInfo(newDeploymentInfo)
 //                .build().update()
-        }
-        opLog.put("gotstatistics", result.gotStatistics)
+                }
+                opLog.put("gotstatistics", result.gotStatistics)
 
-        // Zip up the files, and give the .zip to the uploader.
-        try {
-            val zipStart = System.currentTimeMillis()
-            mProgressListener.extraStep("Zipping statistics and user feedback")
-            val collectedDataZipName =
-                "collected-data/tbcd" + dataStoreManager.tbcdid + "/" + collectionTimestamp + ".zip"
-            val uploadableZipFile = File(PathsProvider.localTempDirectory, collectedDataZipName)
+                // Zip up the files, and give the .zip to the uploader.
+                val zipStart = System.currentTimeMillis()
+                mProgressListener.extraStep("Zipping statistics and user feedback")
 
-            // Zip all the files together. We don't really get any compression, but it collects them into
-            // a single archive file.
-            ZipUnzip.zip(collectedDataDirectory, uploadableZipFile, true)
-            collectedDataTbFile.deleteDirectory()
+                val zippedPath = "tbcd${dataStoreManager.tbcdid}/$collectionTimestamp.zip"
+//            val collectedDataZipName =
+                val uploadableZipFile =
+                    File(PathsProvider.localTempDirectory, "collected-data/$zippedPath")
 
-            // TODO: add to amplify upload queue
+                // Zip all the files together. We don't really get any compression, but it collects them into
+                // a single archive file.
+                ZipUnzip.zip(collectedDataDirectory, uploadableZipFile, true)
+                collectedDataTbFile.deleteDirectory()
+
+                // TODO: add to amplify upload queue
+                uploadCollectedData(uploadableZipFile, zippedPath)
+
 //            mAppContext.getUploadService().uploadFileAsName(uploadableZipFile, collectedDataZipName)
-//            var message = java.lang.String.format(
-//                "Zipped statistics and user feedback in %s", Util.formatElapsedTime(
-//                    System.currentTimeMillis() - zipStart
-//                )
-//            )
+                var message = java.lang.String.format(
+                    "Zipped statistics and user feedback in %s", Util.formatElapsedTime(
+                        System.currentTimeMillis() - zipStart
+                    )
+                )
 //
-//            mProgressListener.log(message)
-//            message = java.lang.String.format(
-//                "TB-Loader completed in %s",
-//                Util.formatElapsedTime(System.currentTimeMillis() - startTime)
-//            )
-//            mProgressListener.log(message)
-//            mProgressListener.extraStep("Finished")
-        } catch (e: IOException) {
-            e.printStackTrace()
-            mProgressListener.log(getStackTrace(e))
-            mProgressListener.log("Exception zipping stats")
-            opLog.put("zipException", e)
+                mProgressListener.log(message)
+                message = java.lang.String.format(
+                    "TB-Loader completed in %s",
+                    Util.formatElapsedTime(System.currentTimeMillis() - startTime)
+                )
+                mProgressListener.log(message)
+                mProgressListener.extraStep("Finished")
+
+                operationResult.value = OperationResult.Success
+                isOperationInProgress.value = false
+            } catch (e: IOException) {
+                e.printStackTrace()
+                mProgressListener.log(getStackTrace(e))
+                mProgressListener.log("Exception zipping stats")
+                opLog.put("zipException", e)
+                Log.e(LOG_TAG, e.toString())
+
+                operationResult.value = OperationResult.Failure
+                isOperationInProgress.value = false
+            } finally {
+                opLog.finish()
+                isOperationInProgress.value = false
+            }
         }
-        opLog.finish()
+
+
     }
 
 
@@ -248,7 +275,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         opLog: OperationLog.Operation,
         tbDeviceInfo: TbDeviceInfo,
         deviceSerialNumber: String,
-        collectionTimestamp: String, todaysDate: String,
+        collectionTimestamp: String,
+        todaysDate: String,
         collectedDataDirectory: File,
         deploymentDirectory: File
     ): DeploymentInfo {
@@ -300,15 +328,36 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         if (recipient.variant.isNotEmpty()) {
             key = key + ',' + recipient.variant
         }
-        var imageName: String = deploymentProperties.getProperty(key)
+        var imageName: String? = deploymentProperties.getProperty(key)
         if (imageName == null) {
             imageName = deploymentProperties.getProperty(recipient.languagecode)
         }
-        val ok = imageName != null
-        if (!ok) {
+        if (imageName == null) {
             imageName = ""
         }
         return imageName
+    }
+
+    private fun uploadCollectedData(file: File, s3Key: String) {
+        val options = StorageUploadFileOptions.defaultInstance()
+
+        val transfer = Amplify.Storage.uploadFile("$COLLECTED_DATA_DIR_NAME/$s3Key", file,
+            options,
+            { progress ->
+//                result.
+                Log.i("MyAmplifyApp", "Successfully uploaded: ${progress.fractionCompleted}")
+            },
+            { result ->
+                totalFilesPendingUpload.intValue = totalFilesPendingUpload.intValue - 1
+                totalFilesUploaded.intValue = totalFilesUploaded.intValue + 1
+
+//                result.
+                Log.i("MyAmplifyApp", "Successfully uploaded: ${result.key}")
+            },
+
+            { Log.e("MyAmplifyApp", "Upload failed", it) }
+
+        )
     }
 
     /**
@@ -321,24 +370,19 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     }
 
     private val mProgressListener: MyProgressListener = object : MyProgressListener() {
-        private var mStep: String? = null
-        private var mDetail: String? = null
         private var mLog: String? = null
-//        private var mActivity: Activity? = null
-
 
         override fun clear() {
+            operationStepDetail.value = ""
+            operationStep.value = ""
             mLog = ""
-            mDetail = mLog
-            mStep = mDetail
             refresh()
         }
 
         override fun refresh() {
+            operationStepDetail.value = ""
+            operationStep.value = ""
             Log.d(LOG_TAG, "Refreshed")
-//            mUpdateStepTextView.setText(mStep)
-//            mUpdateDetailTextView.setText(mDetail)
-//            mUpdateLogTextView.setText(mLog)
         }
 
         /**
@@ -346,50 +390,27 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
          * @param step in string form.
          */
         override fun extraStep(step: String?) {
-            mStep = step
-            mDetail = ""
-            Log.d(LOG_TAG, "Extra steps")
-
-//            activity()!!.runOnUiThread {
-//                mUpdateStepTextView.setText(mStep)
-//                mUpdateDetailTextView.setText(mDetail)
-//            }
+            operationStep.value = step ?: ""
+            operationStepDetail.value = ""
         }
 
         override fun step(step: Steps) {
-            mStep = step.description()
-            mDetail = ""
-            Log.d(LOG_TAG, "New steps")
-
-//            activity()!!.runOnUiThread {
-//                mUpdateStepTextView.setText(mStep)
-//                mUpdateDetailTextView.setText(mDetail)
-//            }
+            operationStep.value = step.description ?: ""
+            operationStepDetail.value = ""
         }
 
         override fun detail(detail: String?) {
-            mDetail = detail
-            Log.d(LOG_TAG, "Detail")
-
-//            activity()!!.runOnUiThread { mUpdateDetailTextView.setText(mDetail) }
+            operationStepDetail.value = detail ?: ""
         }
 
         override fun log(line: String) {
-            mLog = """
-             $line
-             $mLog
-             """.trimIndent()
+            mLog = "$line\n$mLog\n".trimIndent()
             Log.d(LOG_TAG, "Logs")
-
-//            activity()!!.runOnUiThread { mUpdateLogTextView.setText(mLog) }
         }
 
         override fun log(append: Boolean, line: String) {
             mLog = if (!append) {
-                """
-     $line
-     $mLog
-     """.trimIndent()
+                "$line\n$mLog\n".trimIndent()
             } else {
                 // Find first (or only) line break
                 val nl = mLog!!.indexOf("\n")
@@ -397,17 +418,12 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                     // {old stuff from before line break} {new stuff} {line break} {old stuff from after line break}
                     val pref = mLog!!.substring(0, nl)
                     val suff = mLog!!.substring(nl + 1)
-                    """
-     $pref$line
-     $suff
-     """.trimIndent()
+                    "$pref\n$line\n$suff\n".trimIndent()
                 } else {
                     // No line breaks, so simply append to anything already there.
                     mLog + line
                 }
             }
-            Log.d(LOG_TAG, "Extra Log")
-
 //            activity()!!.runOnUiThread { mUpdateLogTextView.setText(mLog) }
         }
     }
