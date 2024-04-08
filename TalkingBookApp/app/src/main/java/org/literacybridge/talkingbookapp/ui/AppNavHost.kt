@@ -5,7 +5,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import org.literacybridge.talkingbookapp.ui.CollectDataScreen
+import org.literacybridge.talkingbookapp.ui.CollectStatisticsScreen
 import org.literacybridge.talkingbookapp.ui.ContentDownloaderScreen
 import org.literacybridge.talkingbookapp.ui.ProgramSelectionScreen
 
@@ -50,7 +50,7 @@ fun AppNavHost(
             CompositionLocalProvider(
                 LocalViewModelStoreOwner provides viewModelStoreOwner
             ) {
-                CollectDataScreen(navController)
+                CollectStatisticsScreen(navController)
             }
         }
         composable(NavigationItem.ContentDownloader.route) {

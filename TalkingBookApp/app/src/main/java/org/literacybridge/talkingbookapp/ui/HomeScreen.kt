@@ -141,16 +141,8 @@ fun HomeScreen(
                     ) {
                         Button(
                             enabled = viewModel.isDeviceConnected(),
-                            onClick = {
-                                viewModel.tbOperation.value =
-                                    TalkingBookViewModel.TalkingBookOperation.COLLECT_STATS_ONLY
-                                viewModel.collectUsageStatistics(
-                                    user = userViewModel.user.value,
-                                    deployment = userViewModel.deployment.value!!,
-                                    navController = navController
-                                )
-                            }) {
-                            Text("Collect Data")
+                            onClick = { navController.navigate(Screen.COLLECT_DATA.name) }) {
+                            Text("Collect Statistics")
                         }
                         Button(
                             enabled = viewModel.isDeviceConnected(),

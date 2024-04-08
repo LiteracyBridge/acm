@@ -59,6 +59,7 @@ fun ContentDownloaderScreen(
                 CircularProgressIndicator(
                     modifier = Modifier.width(70.dp),
                     progress = viewModel.downloadProgress.floatValue
+
                 )
             } else {
                 CircularProgressIndicator(modifier = Modifier.width(70.dp))
