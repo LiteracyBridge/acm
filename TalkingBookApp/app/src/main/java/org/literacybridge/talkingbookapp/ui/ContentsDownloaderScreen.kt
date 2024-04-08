@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import org.literacybridge.talkingbookapp.ui.components.AppScaffold
-import org.literacybridge.talkingbookapp.util.SCREEN_MARGIN
+import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.view_models.ContentDownloaderViewModel
 import org.literacybridge.talkingbookapp.view_models.ContentDownloaderViewModel.SyncState
 import org.literacybridge.talkingbookapp.view_models.UserViewModel

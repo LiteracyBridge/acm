@@ -24,10 +24,19 @@ import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
 import android.os.Build
+import android.os.storage.StorageManager
+import android.os.storage.StorageVolume
 import android.util.Log
-import org.literacybridge.talkingbookapp.util.LOG_TAG
+import androidx.documentfile.provider.DocumentFile
+import org.literacybridge.core.fs.TbFile
+import org.literacybridge.core.tbdevice.TbDeviceInfo
+import org.literacybridge.talkingbookapp.App
+import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
+import java.io.File
+import java.lang.reflect.Method
 
-class Usb(private val mContext: Context) {
+
+class Usb {
     enum class ConnectionMode {
         MASS_STORAGE,
         DFU
@@ -40,6 +49,9 @@ class Usb(private val mContext: Context) {
         private set
 
     var usbDevice: UsbDevice? = null
+        private set
+
+    var talkingBookDevice: TalkingBook? = null
         private set
 
     private var mConnection: UsbDeviceConnection? = null
@@ -81,7 +93,7 @@ class Usb(private val mContext: Context) {
             } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED == action) {
                 synchronized(this) {
                     // Request permission for just attached USB Device if it matches the VID/PID
-                    requestPermission(mContext)
+                    requestPermission(App.context)
                 }
             } else if (UsbManager.ACTION_USB_DEVICE_DETACHED == action) {
                 synchronized(this) {
@@ -168,7 +180,7 @@ class Usb(private val mContext: Context) {
         if (!mUsbManager!!.hasPermission(device)) {
             // Request permission from the user
             val pendingIntent = PendingIntent.getBroadcast(
-                mContext,
+                App.context,
                 0,
                 Intent(ACTION_USB_PERMISSION),
                 PendingIntent.FLAG_IMMUTABLE
@@ -184,6 +196,7 @@ class Usb(private val mContext: Context) {
             connectionMode = ConnectionMode.MASS_STORAGE
             mInterface = device.getInterface(MASS_STORAGE_INTERFACE)
         } else {
+//            device.getKey()
             connectionMode = ConnectionMode.DFU
             mInterface = device.getInterface(DFU_INTERFACE)
         }
@@ -198,6 +211,22 @@ class Usb(private val mContext: Context) {
             deviceVersion = rawDescriptor[13].toInt() shl 8
             deviceVersion = deviceVersion or rawDescriptor[12].toInt()
             Log.i("USB", getDeviceInfo(device))
+
+            // Create talking book instance
+            val volumesMap: Map<String, MountedDevice> = getSecondaryMountedVolumesMap()
+//            Log.d(TAG, "getSecondaryMountedVolumesMap: " + getSecondaryMountedVolumesMap().size())
+//            val deviceBaseUri: Uri = Uri.parse(volumesMap.values.first<MountedDevice>().toString())
+
+            val root = DocumentFile.fromFile(File(MASS_STORAGE_PATH))
+            val fs: TbFile = AndroidDocFile(root, App.context.contentResolver)
+            talkingBookDevice = TalkingBook(
+                fs,
+                TbDeviceInfo.getSerialNumberFromFileSystem(fs),
+                // TODO: get device label
+//                device.getValue().mLabel,
+                "Label",
+                MASS_STORAGE_PATH
+            )
         } else {
             Log.e(TAG, "open FAIL")
             mConnection = null
@@ -206,6 +235,50 @@ class Usb(private val mContext: Context) {
 
     val isConnected: Boolean
         get() = mConnection != null
+
+    private fun getSecondaryMountedVolumesMap(): Map<String, MountedDevice> {
+        val mStorageManager =
+            App.context.getSystemService(Context.STORAGE_SERVICE) as StorageManager
+        val volumesMap: MutableMap<String, MountedDevice> = HashMap<String, MountedDevice>()
+
+        try {
+//            val volumes: Array<Any>
+            val volumes: MutableList<StorageVolume> = mStorageManager.storageVolumes
+//            volumes = getVolumeListMethod.invoke(mStorageManager)
+            for (volume in volumes) {
+                val getStateMethod: Method = volume.javaClass.getMethod("getState")
+                val mState = getStateMethod.invoke(volume) as String
+                val isPrimaryMethod: Method = volume.javaClass.getMethod("isPrimary")
+                val mPrimary = isPrimaryMethod.invoke(volume) as Boolean
+                if (!mPrimary && mState == "mounted") {
+                    val getPathMethod: Method = volume.javaClass.getMethod("getPath")
+                    val path = getPathMethod.invoke(volume) as String
+                    val getUuidMethod: Method = volume.javaClass.getMethod("getUuid")
+                    val uuid = getUuidMethod.invoke(volume) as String
+                    val getUserLabelMethod: Method = volume.javaClass.getMethod("getUserLabel")
+                    val userLabel = getUserLabelMethod.invoke(volume) as String
+                    Log.d(
+                        TAG,
+                        "Found one mounted device: $uuid -> $volume, label=$userLabel"
+                    )
+                    if (uuid != null && path != null) {
+                        volumesMap[uuid] = MountedDevice(userLabel, uuid, path)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Unable to load list of mounted secondary storage devices")
+        }
+        return volumesMap
+    }
+
+
+    private class MountedDevice internal constructor(
+        private val mLabel: String,
+        private val mUuid: String,
+        private val mPath: String
+    )
+
 
     // FIXME: remove this function
     fun getDeviceInfo(device: UsbDevice?): String {
@@ -292,5 +365,21 @@ class Usb(private val mContext: Context) {
 
         const val ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION"
 
+
+        @Volatile
+        private var instance: Usb? = null // Volatile modifier is necessary
+
+        fun getInstance() =
+            instance ?: synchronized(this) { // synchronized to avoid concurrency problem
+                instance ?: Usb().also { instance = it }
+            }
     }
+
+
+    class TalkingBook(
+        val root: TbFile,
+        val serialNumber: String,
+        val deviceLabel: String,
+        private val path: String
+    )
 }

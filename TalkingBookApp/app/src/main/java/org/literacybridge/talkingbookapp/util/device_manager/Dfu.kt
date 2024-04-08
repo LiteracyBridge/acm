@@ -18,7 +18,7 @@ package org.literacybridge.talkingbookapp.util.device_manager
 import android.nfc.FormatException
 import android.os.Environment
 import android.util.Log
-import org.literacybridge.talkingbookapp.util.LOG_TAG
+import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException

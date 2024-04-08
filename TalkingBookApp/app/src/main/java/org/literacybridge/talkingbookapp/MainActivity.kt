@@ -25,7 +25,7 @@ import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import com.amplifyframework.storage.s3.configuration.AWSS3StoragePluginConfiguration
 import dagger.hilt.android.AndroidEntryPoint
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
-import org.literacybridge.talkingbookapp.util.LOG_TAG
+import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.content_manager.CustomS3PathResolver
 import org.literacybridge.talkingbookapp.util.device_manager.Dfu
 import org.literacybridge.talkingbookapp.util.device_manager.Usb
@@ -147,7 +147,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         super.onStart()
 
         /* Setup USB */
-        usb = Usb(this)
+        usb = Usb.getInstance()
         usb.setUsbManager(getSystemService(USB_SERVICE) as UsbManager)
         usb.setOnUsbChangeListener(this)
 
@@ -188,8 +188,10 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 
     override fun onUsbConnected() {
         talkingBookViewModel.setDevice(usb.usbDevice)
+        talkingBookViewModel.talkingBookDevice.value = usb.talkingBookDevice
 
         val deviceInfo = usb.getDeviceInfo(usb.usbDevice)
+
         Log.d(TAG, "$deviceInfo")
 //        status.setText(deviceInfo)
         dfu.setUsb(usb)
