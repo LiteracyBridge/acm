@@ -1,5 +1,7 @@
 package org.literacybridge.acm.gui.assistants;
 
+import org.literacybridge.acm.config.DBConfiguration;
+import org.literacybridge.acm.config.PermissionsControl;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.Assistant;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
@@ -63,6 +65,8 @@ public class Chooser extends JDialog {
         panel.setLayout(new GridBagLayout());
         setBackground(new Color(0xe0fff0));
 
+        PermissionsControl permissionsControl = new PermissionsControl();
+
         // USB Flash Drive by fahmionline from the Noun Project
         ImageIcon usbIcon = new ImageIcon(UIConstants.getResource("usb_64.png"));
         ImageIcon tbIcon = new ImageIcon(UIConstants.getResource("tb_64g.png"));
@@ -96,6 +100,9 @@ public class Chooser extends JDialog {
         playlistButton.setMinimumSize(size);
         playlistButton.setPreferredSize(size);
         panel.add(playlistButton, gbc);
+        if (!permissionsControl.hasManagePlaylist()) {
+            playlistButton.setEnabled(false);
+        }
 //        playlistButton.setEnabled(true);
 
         LabelButton deploymentButton = new LabelButton(tbIcon, "Create Deployment");
@@ -103,6 +110,9 @@ public class Chooser extends JDialog {
         deploymentButton.setMinimumSize(size);
         deploymentButton.setPreferredSize(size);
         panel.add(deploymentButton, gbc);
+        if (!permissionsControl.hasDeployContent()) {
+            deploymentButton.setEnabled(false);
+        }
 
         LabelButton greetingsButton = new LabelButton(peopleIcon, "Custom Greetings");
         greetingsButton.addActionListener(e -> runAssistant(GreetingsImportAssistant::create));
@@ -116,6 +126,9 @@ public class Chooser extends JDialog {
         languageButton.setMinimumSize(size);
         languageButton.setPreferredSize(size);
         panel.add(languageButton, gbc);
+        if (!permissionsControl.hasManagePrompt()) {
+            languageButton.setEnabled(false);
+        }
 //        languageButton.setEnabled(true);
 
         // To experiment with sizes, uncomment this, and comment out "setUndecorated(true)"

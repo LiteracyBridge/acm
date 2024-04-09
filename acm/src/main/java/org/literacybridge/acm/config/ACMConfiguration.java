@@ -141,6 +141,10 @@ public class ACMConfiguration {
         
         loadUserProps();
 
+        // can we check user permissions control here?
+        PermissionsControl control = new PermissionsControl();
+        control.getAccessControls();
+
         boolean propsChanged = false;
         for (String prop : Constants.OBSOLETE_PROPERTY_NAMES) {
             if (UsersConfigurationProperties.getProperty(prop) != null) {
