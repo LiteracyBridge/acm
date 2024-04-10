@@ -1,4 +1,3 @@
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -39,7 +38,6 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.R
 import org.literacybridge.talkingbookapp.ui.components.NavigationDrawer
-import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
@@ -146,7 +144,10 @@ fun HomeScreen(
                         }
                         Button(
                             enabled = viewModel.isDeviceConnected(),
-                            onClick = { /*TODO*/ }) {
+                            onClick = {
+                                // TODO: check if device needs firmware updates, navigate to firmware update screen
+                                navController.navigate(Screen.RECIPIENT.name)
+                            }) {
                             Text("Update Talking Book")
                         }
                     }

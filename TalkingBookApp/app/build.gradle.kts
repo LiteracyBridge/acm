@@ -27,7 +27,11 @@ android {
 
         // Env variables
         buildConfigField("Boolean", "DEBUG_MODE", "false")
-        buildConfigField("String", "API_URL", "\"https://nhr12r5plj.execute-api.us-west-2.amazonaws.com/dev/\"")
+        buildConfigField(
+            "String",
+            "API_URL",
+            "\"https://nhr12r5plj.execute-api.us-west-2.amazonaws.com/dev/\""
+        )
     }
 
     buildTypes {
@@ -37,7 +41,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "API_URL", "\"https://nhr12r5plj.execute-api.us-west-2.amazonaws.com/production/\"")
+            buildConfigField(
+                "String",
+                "API_URL",
+                "\"https://nhr12r5plj.execute-api.us-west-2.amazonaws.com/production/\""
+            )
         }
         debug {
             isMinifyEnabled = false

@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import org.literacybridge.talkingbookapp.ui.CollectStatisticsScreen
 import org.literacybridge.talkingbookapp.ui.ContentDownloaderScreen
 import org.literacybridge.talkingbookapp.ui.ProgramSelectionScreen
+import org.literacybridge.talkingbookapp.ui.talkingbook_update.RecipientScreen
 
 @Composable
 fun AppNavHost(
@@ -58,6 +59,13 @@ fun AppNavHost(
                 LocalViewModelStoreOwner provides viewModelStoreOwner
             ) {
                 ContentDownloaderScreen(navController)
+            }
+        }
+        composable(NavigationItem.Recipient.route) {
+            CompositionLocalProvider(
+                LocalViewModelStoreOwner provides viewModelStoreOwner
+            ) {
+                RecipientScreen(navController)
             }
         }
     }

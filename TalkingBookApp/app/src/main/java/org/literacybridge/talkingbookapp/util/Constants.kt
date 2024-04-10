@@ -32,6 +32,6 @@ class Constants {
         const val AndroidPostUpdateSleepTime = 5000 // millis
 
 
-        val SCREEN_MARGIN = 1.dp
+        val SCREEN_MARGIN = 5.dp
     }
 }

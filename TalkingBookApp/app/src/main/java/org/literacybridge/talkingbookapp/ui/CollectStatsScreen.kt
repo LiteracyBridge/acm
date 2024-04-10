@@ -81,7 +81,7 @@ fun CollectStatisticsScreen(
         }
     }
 
-    AppScaffold(title = "Collect Statistics", navController = navController) { contentPadding ->
+    AppScaffold(title = "Statistics Collection", navController = navController) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
