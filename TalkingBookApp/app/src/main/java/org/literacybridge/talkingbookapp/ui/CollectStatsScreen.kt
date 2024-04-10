@@ -15,8 +15,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,7 +22,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.ui.theme.Green40
 import org.literacybridge.talkingbookapp.util.device_manager.Usb
@@ -84,22 +80,6 @@ fun CollectStatisticsScreen(
             )
         }
     }
-
-//    if (!viewModel.isOperationInProgress.value) {
-//        if (viewModel.operationResult.value == TalkingBookViewModel.OperationResult.Success) {
-//            Toast.makeText(
-//                LocalContext.current,
-//                "Statistics collected successfully!",
-//                Toast.LENGTH_LONG
-//            ).show()
-//        } else if (viewModel.operationResult.value == TalkingBookViewModel.OperationResult.Failure) {
-//            Toast.makeText(
-//                LocalContext.current,
-//                "Statistics collection failed! Reconnect device and try again",
-//                Toast.LENGTH_LONG
-//            ).show()
-//        }
-//    }
 
     AppScaffold(title = "Collect Statistics", navController = navController) { contentPadding ->
         Column(
@@ -274,9 +254,12 @@ fun ConnectDeviceDialog(
                 modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(strokeWidth = 40.dp)
 
-                Text(text = "No device detected, waiting for Talking Book to be connected ....")
+                Text(
+                    text = "No device detected, waiting for connection...",
+                    modifier = Modifier.padding(top = 10.dp)
+                )
             }
         },
         onDismissRequest = { onDismissRequest() },
