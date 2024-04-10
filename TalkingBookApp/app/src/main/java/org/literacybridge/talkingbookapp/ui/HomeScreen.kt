@@ -57,7 +57,7 @@ fun HomeScreen(
 
     val uiState by viewModel.deviceState.collectAsStateWithLifecycle()
 
-    Log.d(LOG_TAG, "Device updated/set ${uiState.device}");
+//    Log.d(LOG_TAG, "Device updated/set ${uiState.device}");
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()

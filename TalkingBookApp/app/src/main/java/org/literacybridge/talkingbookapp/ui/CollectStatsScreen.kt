@@ -1,9 +1,9 @@
 package org.literacybridge.talkingbookapp.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,24 +11,36 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.ui.theme.Green40
+import org.literacybridge.talkingbookapp.util.device_manager.Usb
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
@@ -38,6 +50,8 @@ fun CollectStatisticsScreen(
     viewModel: TalkingBookViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel()
 ) {
+    val showDialog = remember { mutableStateOf(false) }
+    val device by viewModel.deviceState.collectAsStateWithLifecycle()
 
     // Initialize talking book data collection when the screen is open
     LaunchedEffect("init-data-collection") {
@@ -49,6 +63,43 @@ fun CollectStatisticsScreen(
             navController = navController
         )
     }
+
+    // If new device is detected while the dialog is open, we assume a different talking book has
+    // been connected. Proceed to collect stats
+    if (showDialog.value && device.device?.deviceName != null) {
+        showDialog.value = false
+        Toast.makeText(
+            LocalContext.current,
+            "New talking book detected, statistics collection in progress...",
+            Toast.LENGTH_LONG
+        ).show()
+
+        LaunchedEffect("new-device-connection") {
+            viewModel.operationType.value =
+                TalkingBookViewModel.TalkingBookOperation.COLLECT_STATS_ONLY
+            viewModel.collectUsageStatistics(
+                user = userViewModel.user.value,
+                deployment = userViewModel.deployment.value!!,
+                navController = navController
+            )
+        }
+    }
+
+//    if (!viewModel.isOperationInProgress.value) {
+//        if (viewModel.operationResult.value == TalkingBookViewModel.OperationResult.Success) {
+//            Toast.makeText(
+//                LocalContext.current,
+//                "Statistics collected successfully!",
+//                Toast.LENGTH_LONG
+//            ).show()
+//        } else if (viewModel.operationResult.value == TalkingBookViewModel.OperationResult.Failure) {
+//            Toast.makeText(
+//                LocalContext.current,
+//                "Statistics collection failed! Reconnect device and try again",
+//                Toast.LENGTH_LONG
+//            ).show()
+//        }
+//    }
 
     AppScaffold(title = "Collect Statistics", navController = navController) { contentPadding ->
         Column(
@@ -77,7 +128,11 @@ fun CollectStatisticsScreen(
                         .padding(vertical = 20.dp, horizontal = 15.dp)
                 ) {
                     Button(
-                        onClick = { /*TODO*/ },
+                        onClick = {
+                            // Disconnect device and wait for new connection
+                            Usb.getInstance().forceDisconnectDevice()
+                            showDialog.value = true
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 5.dp)
@@ -96,6 +151,15 @@ fun CollectStatisticsScreen(
             }
 
         }
+    }
+
+    if (showDialog.value) {
+        ConnectDeviceDialog(
+            onDismissRequest = {
+                showDialog.value = false
+                navController.popBackStack()
+            }
+        )
     }
 }
 
@@ -197,3 +261,33 @@ fun OperationCompleted(result: TalkingBookViewModel.OperationResult) {
     }
 }
 
+@Composable
+fun ConnectDeviceDialog(
+    onDismissRequest: () -> Unit,
+) {
+    val selectedOption = remember { mutableStateOf("") }
+
+    AlertDialog(
+//        title = { Text(text = "Connect Another Talking Book") },
+        text = {
+            Column(
+                modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                CircularProgressIndicator()
+
+                Text(text = "No device detected, waiting for Talking Book to be connected ....")
+            }
+        },
+        onDismissRequest = { onDismissRequest() },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = {
+                selectedOption.value = ""
+                onDismissRequest()
+            }) {
+                Text("Cancel")
+            }
+        }
+    )
+}

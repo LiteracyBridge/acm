@@ -109,6 +109,16 @@ class Usb {
         }
     }
 
+    /**
+     * Force disconnection of Talking Book device by setting the device instance to null,
+     * which tricks the apply into thinking no device is connected.
+     * Android does not provide any API to unmount an external storage, the user has to
+     * manually disconnect the device.
+     */
+    fun forceDisconnectDevice(){
+        mOnUsbChangeListener?.onUsbDisconnected()
+    }
+
     fun getmUsbReceiver(): BroadcastReceiver {
         return mUsbReceiver
     }

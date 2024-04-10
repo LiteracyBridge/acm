@@ -141,6 +141,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         deployment: Deployment
     ) {
         isOperationInProgress.value = true
+        operationResult.value = OperationResult.InProgress
+
         val collectStatsOnly =
             operationType.value == TalkingBookOperation.COLLECT_STATS_ONLY
 
@@ -250,6 +252,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                 mProgressListener.log(message)
                 mProgressListener.extraStep("Finished")
 
+                // Update ui to reflect state
                 operationResult.value = OperationResult.Success
                 isOperationInProgress.value = false
             } catch (e: IOException) {
