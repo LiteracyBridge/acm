@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.amplifyframework.core.Amplify
+import com.amplifyframework.storage.StorageItem
 import com.amplifyframework.storage.options.StorageDownloadFileOptions
 import com.amplifyframework.storage.options.StoragePagedListOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +28,8 @@ import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
 import java.io.File
 import java.time.LocalDateTime
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 import javax.inject.Inject
 
 
@@ -41,6 +44,13 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         SUCCESS,
         UNZIPPING
     }
+    // Matches deploymentName-suffix.current or .rev. Like TEST-19-2-ab.rev
+    // group(0) is entire string, like 'TEST-19-2-ab.rev'
+    // group(1) is deployment + revision, like 'TEST-19-2-ab'
+    // group(2) is deployment, like 'TEST-19-2'
+    // group(3) is revision, like 'ab'
+    val markerPattern: Pattern =
+        Pattern.compile("((\\w+(?:-\\w+)*)-(\\w+))\\.(current|rev)", Pattern.CASE_INSENSITIVE)
 
     val downloadProgress = mutableFloatStateOf(0.0F)
 
@@ -91,7 +101,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
             }
         }
 
-        Amplify.Storage.list("$basePath/${deployment.deploymentname}",
+        Amplify.Storage.list("$basePath/${deployment.program_id}",
             options,
             { result ->
                 if (result.items.isEmpty()) {
@@ -102,8 +112,12 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                 }
 
                 viewModelScope.launch {
-                    val latest = result.items.sortedByDescending { it.key }.first()
-                    latestDeploymentRevision = getLatestRevisionName(latest.key)
+                    val latest = findLatestDeployment(result.items)
+                    if(latest == null){
+                        TODO("Show error that no latest deployment was found")
+                    }
+
+                    latestDeploymentRevision = latest.key.split('/').last().replace("\\.(current|rev)".toRegex(), "")
 
                     val content = getLocalContent(latestDeploymentRevision)
                     if (_syncState.value == SyncState.SUCCESS && content != null) {
@@ -136,6 +150,47 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
 
             }
         )
+    }
+
+    /**
+     * Given a list of s3ObjectSummaries and a map of program id to revision, find the latest
+     * deployments from that list, and add or update the list of revisions.
+     * @param s3ObjectSummaries The list of S3 objects.
+     */
+    private fun findLatestDeployment(
+        s3ObjectSummaries: List<StorageItem>,
+    ): StorageItem? {
+
+        val revKeyLength = 4
+        val zipKeyLength = 5
+        val programidIx = 0
+
+        // First, look for all of the ".current" (or ".rev") files. This will let us know what versions
+        // are current in s3.
+        for (summary in s3ObjectSummaries) {
+            val parts: List<String> = summary.key.split("/")
+            if (parts.size == revKeyLength) {
+                val matcher: Matcher = markerPattern.matcher(parts[revKeyLength - 1])
+                if (matcher.matches()) {
+                    // The key is like projects/${programid}/TEST-19-2-ab.rev
+                    // or ${programid}/TB-Loaders/published/${deplid}.rev
+                    val programId = parts[programidIx]
+                    val deployment = matcher.group(2)
+                    val revision = matcher.group(3)
+                    Log.i(
+                        LOG_TAG,
+                        String.format(
+                            "Found deployment revision %s %s %s",
+                            programId,
+                            deployment,
+                            revision
+                        )
+                    )
+                    return summary
+                }
+            }
+        }
+        return null
     }
 
     private suspend fun downloadContent(s3key: String, navController: NavController) {

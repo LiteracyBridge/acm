@@ -23,6 +23,7 @@ import org.literacybridge.core.fs.OperationLog
 import org.literacybridge.core.fs.TbFile
 import org.literacybridge.core.fs.ZipUnzip
 import org.literacybridge.core.spec.Recipient
+import org.literacybridge.core.spec.RecipientList
 import org.literacybridge.core.tbdevice.TbDeviceInfo
 import org.literacybridge.core.tbloader.DeploymentInfo
 import org.literacybridge.core.tbloader.DeploymentInfo.DeploymentInfoBuilder
@@ -38,6 +39,7 @@ import org.literacybridge.talkingbookapp.util.Constants
 import org.literacybridge.talkingbookapp.util.Constants.Companion.COLLECTED_DATA_DIR_NAME
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
+import org.literacybridge.talkingbookapp.util.PathsProvider.getLocalDeploymentDirectory
 import org.literacybridge.talkingbookapp.util.Util
 import org.literacybridge.talkingbookapp.util.Util.getStackTrace
 import org.literacybridge.talkingbookapp.util.dataStoreManager
@@ -59,7 +61,7 @@ data class DeviceState(
 @HiltViewModel
 class TalkingBookViewModel @Inject constructor() : ViewModel() {
     enum class TalkingBookOperation {
-        UPDATE_FIRMWARE,
+        UPDATE_DEVICE,
         COLLECT_STATS_ONLY,
         COLLECT_STATS_AND_REFRESH_FIRMWARE
     }
@@ -80,10 +82,16 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     val operationStep = mutableStateOf("")
     val operationStepDetail = mutableStateOf("")
 
+    // Talking Book Update state
+    val selectedGroup = mutableStateOf<String?>(null)
+    val selectedDistrict = mutableStateOf<String?>(null)
+    val selectedCommunity = mutableStateOf<String?>(null)
+
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState.asStateFlow()
 
     private val app = App.getInstance()
+    private var deployment: Deployment? = null
 
     fun getDevice(): UsbDevice? {
         return deviceState.value.device
@@ -107,6 +115,59 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         _deviceState.update { state ->
             state.copy(device = null)
         }
+    }
+
+    fun recipients(): RecipientList? {
+        return app.programSpec!!.recipients
+    }
+
+    fun districts(): List<String> {
+        return recipients()?.map { it.district }?.distinct() ?: emptyList()
+    }
+
+    fun communities(): List<String> {
+        if (selectedDistrict.value != null) {
+            return recipients()?.map { it.communityname }?.distinct() ?: emptyList()
+        }
+        return recipients()?.filter { it.district.equals(selectedDistrict.value) }
+            ?.map { it.communityname }?.distinct() ?: emptyList()
+    }
+
+    fun groups(): List<String> {
+        if (selectedCommunity.value != null) {
+            return recipients()?.map { it.groupname }?.distinct() ?: emptyList()
+        }
+        return recipients()?.filter { it.communityname.equals(selectedCommunity.value) }
+            ?.map { it.groupname }?.distinct() ?: emptyList()
+    }
+
+    fun getSelectedRecipient(): Recipient? {
+        if (!selectedGroup.value.isNullOrBlank()) {
+            return recipients()?.first {
+                it.groupname.equals(
+                    selectedGroup.value,
+                    true
+                ) && it.communityname.equals(selectedCommunity.value, true) && it.district.equals(
+                    selectedDistrict.value,
+                    true
+                )
+            }
+        }
+
+        if (!selectedCommunity.value.isNullOrBlank()) {
+            return recipients()?.first {
+                it.communityname.equals(
+                    selectedCommunity.value,
+                    true
+                ) && it.district.equals(selectedDistrict.value, true)
+            }
+        }
+
+        if (!selectedDistrict.value.isNullOrBlank()) {
+            return recipients()?.first { it.district.equals(selectedDistrict.value, true) }
+        }
+
+        return null
     }
 
     suspend fun collectUsageStatistics(
@@ -134,12 +195,39 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         )
     }
 
+    suspend fun updateDevice(
+        user: UserModel,
+        deployment: Deployment,
+        navController: NavController
+    ) {
+        val tb = talkingBookDevice.value
+        if (tb == null) {
+            TODO("Display error to user that TB is not connected")
+        }
+
+        val tbDeviceInfo = TbDeviceInfo.getDeviceInfoFor(
+            tb.root,
+            tb.deviceLabel,
+            TBLoaderConstants.NEW_TB_SRN_PREFIX,
+            TbDeviceInfo.DEVICE_VERSION.TBv2
+        )
+
+        operationType.value = TalkingBookOperation.UPDATE_DEVICE
+        updateTalkingBook(
+            user = user,
+            deployment = deployment,
+            deviceSerialNumber = tbDeviceInfo.serialNumber,
+            tbDeviceInfo = tbDeviceInfo
+        )
+    }
+
     private suspend fun updateTalkingBook(
         tbDeviceInfo: TbDeviceInfo,
         deviceSerialNumber: String,
         user: UserModel,
         deployment: Deployment
     ) {
+        this.deployment = deployment
         isOperationInProgress.value = true
         operationResult.value = OperationResult.InProgress
 
@@ -178,9 +266,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                     .build()
 
                 val oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(deployment.program_id)
-
-//        getActivity().runOnUiThread { mTalkingBookWarningsTextView.setText(getString(R.string.do_not_disconnect)) }
-
                 val acceptableFirmwareVersions: String = app.programSpec!!.deploymentProperties
                     .getProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS)
 
@@ -189,9 +274,10 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                     .withTbDeviceInfo(tbDeviceInfo)
                     .withOldDeploymentInfo(oldDeploymentInfo)
 //            .withLocation(mLocation)
+//                    .withRefreshFirmware(!collectStatsOnly)
                     .withCoordinates(null) // May be null; ok because it's optional anyway.
                     .withAcceptableFirmware(acceptableFirmwareVersions)
-                    .withRefreshFirmware(!collectStatsOnly)
+                    .withRefreshFirmware(false)
                     .withProgressListener(mProgressListener)
                     .withStatsOnly(collectStatsOnly)
                     .withPostUpdateDelay(Constants.AndroidPostUpdateSleepTime)
@@ -204,19 +290,22 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                     Log.d(LOG_TAG, "Multi operation")
                     builder.build().update()
                     // The directory with images. {project}/content/{Deployment}
-//            val deploymentDirectory: File = getLocalDeploymentDirectory(app.programContent!!)!!
-//            val newDeploymentInfo: DeploymentInfo = getUpdateDeploymentInfo(
-//                opLog, tbDeviceInfo,
-//                deviceSerialNumber,
-//                collectionTimestamp, todaysDate,
-//                collectedDataDirectory,
-//                deploymentDirectory
-//            )
-//            // Add in the update specific data, then go!
-//            builder
-//                .withDeploymentDirectory(FsFile(deploymentDirectory))
-//                .withNewDeploymentInfo(newDeploymentInfo)
-//                .build().update()
+                    val deploymentDirectory: File =
+                        getLocalDeploymentDirectory(app.programContent!!)
+                    val newDeploymentInfo: DeploymentInfo = getUpdateDeploymentInfo(
+                        opLog, tbDeviceInfo,
+                        deviceSerialNumber,
+                        collectionTimestamp, todaysDate,
+                        collectedDataDirectory,
+                        deploymentDirectory,
+                        getSelectedRecipient()!!
+                    )
+
+//                  // Add in the update specific data, then go!
+                    builder
+                        .withDeploymentDirectory(FsFile(deploymentDirectory))
+                        .withNewDeploymentInfo(newDeploymentInfo)
+                        .build().update()
                 }
                 opLog.put("gotstatistics", result.gotStatistics)
 
@@ -273,7 +362,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 
     }
 
-
     private fun getUpdateDeploymentInfo(
         opLog: OperationLog.Operation,
         tbDeviceInfo: TbDeviceInfo,
@@ -281,19 +369,21 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         collectionTimestamp: String,
         todaysDate: String,
         collectedDataDirectory: File,
-        deploymentDirectory: File
+        deploymentDirectory: File,
+        recipient: Recipient,
     ): DeploymentInfo {
 //        val config: Config = TBLoaderAppContext.getInstance().getConfig()
-        val mRecipient = app.programSpec!!.recipients.getRecipient(emptyList());
+//        val mRecipient = app.programSpec!!.recipients.getRecipient(emptyList());
 
         // TODO: check for null recipient
-        val recipientid: String = mRecipient.recipientid
-        // Get image for recipient; if not founc, fall back to directory.
-        var imageName: String = getPackageForRecipient(mRecipient!!)
+//        val recipientid: String = mRecipient.recipientid
+        // Get image for recipient; if not found, fall back to directory.
+        var imageName: String = getPackageForRecipient(recipient)
         if (imageName.isEmpty()) {
             // Find the image with the community's language and/or group (such as a/b test group).
 //            TODO: add community directory
-//            imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, mCommunityDirectory)
+            imageName =
+                TBLoaderUtils.getPackageForCommunity(deploymentDirectory, recipient.communityname)
         }
 
         // What firmware comes with this Deployment?
@@ -308,20 +398,22 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
             .withUpdateTimestamp(todaysDate) // TODO: this should be the "Deployment date", the first date the new content is deployed.
             .withFirmwareRevision(firmwareRevision)
 //            .withCommunity(mCommunityDirectory)  // TODO: set these values
-            .withRecipientid(recipientid)
+            .withRecipientid(recipient.recipientid)
 //            .asTestDeployment(mTestingDeployment) // TODO: set these values
+
         val newDeploymentInfo = builder.build()
         // TODO: set these values
-//        opLog.put<Any>("project", mProject)
-//            .put<String>("deployment", deploymentDirectory.name)
-//            .put<String>("package", imageName)
-//            .put<Any>("recipientid", mRecipient.recipientid)
-//            .put<Any>("community", mCommunityDirectory)
-//            .put<String>("sn", deviceSerialNumber)
-//            .put("tbloaderId", config.getTbcdid())
-//            .put("username", config.getName())
-//            .put("useremail", config.getEmail())
-//            .put<String>("timestamp", collectionTimestamp)
+        opLog.put<Any>("project", this.deployment!!.program_id)
+            .put("deployment", deploymentDirectory.name)
+            .put("package", imageName)
+            .put<Any>("recipientid", recipient.recipientid)
+            .put<Any>("community", "${this.app.programContent?.localPath}/communities")
+            .put("sn", deviceSerialNumber)
+            .put("tbloaderId", dataStoreManager.tbcdid)
+            .put("username", "${dataStoreManager.currentUser?.first_name} ${dataStoreManager.currentUser?.last_name}")
+            .put("useremail", dataStoreManager.currentUser?.email)
+            .put("timestamp", collectionTimestamp)
+
         return newDeploymentInfo
     }
 

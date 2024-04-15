@@ -66,16 +66,8 @@ object PathsProvider {
      * @param project The desired project.
      * @return The Deployment directory for the project.
      */
-    fun getLocalDeploymentDirectory(project: ProgramContentEntity): File? {
-        val contentDir = File(project.localPath, "content")
-        var deployments: Array<File?>? = null
-        if (contentDir.exists() && contentDir.isDirectory) {
-            deployments = contentDir.listFiles()
-            if (deployments != null && deployments.size == 1) {
-                return deployments[0]
-            }
-        }
-        return null
+    fun getLocalDeploymentDirectory(project: ProgramContentEntity): File {
+        return File(project.localPath, "content")
     }
 
     fun getProgramSpecDir(project: ProgramContentEntity): File {
