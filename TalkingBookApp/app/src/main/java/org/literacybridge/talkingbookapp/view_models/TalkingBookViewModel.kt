@@ -142,8 +142,10 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     }
 
     fun getSelectedRecipient(): Recipient? {
+        return recipients()?.first()!!
+
         if (!selectedGroup.value.isNullOrBlank()) {
-            return recipients()?.first {
+            return recipients()?.find {
                 it.groupname.equals(
                     selectedGroup.value,
                     true
@@ -155,7 +157,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         }
 
         if (!selectedCommunity.value.isNullOrBlank()) {
-            return recipients()?.first {
+            return recipients()?.find {
                 it.communityname.equals(
                     selectedCommunity.value,
                     true
@@ -164,7 +166,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         }
 
         if (!selectedDistrict.value.isNullOrBlank()) {
-            return recipients()?.first { it.district.equals(selectedDistrict.value, true) }
+            return recipients()?.find { it.district.equals(selectedDistrict.value, true) }
         }
 
         return null
@@ -187,7 +189,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
             TbDeviceInfo.DEVICE_VERSION.TBv2
         )
 
-        updateTalkingBook(
+        performOperation(
             user = user,
             deployment = deployment,
             deviceSerialNumber = tbDeviceInfo.serialNumber,
@@ -213,7 +215,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         )
 
         operationType.value = TalkingBookOperation.UPDATE_DEVICE
-        updateTalkingBook(
+        performOperation(
             user = user,
             deployment = deployment,
             deviceSerialNumber = tbDeviceInfo.serialNumber,
@@ -221,7 +223,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         )
     }
 
-    private suspend fun updateTalkingBook(
+    private suspend fun performOperation(
         tbDeviceInfo: TbDeviceInfo,
         deviceSerialNumber: String,
         user: UserModel,
@@ -288,7 +290,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                 } else {
                     //TODO: implement this
                     Log.d(LOG_TAG, "Multi operation")
-                    builder.build().update()
+//                    builder.build().update()
                     // The directory with images. {project}/content/{Deployment}
                     val deploymentDirectory: File =
                         getLocalDeploymentDirectory(app.programContent!!)

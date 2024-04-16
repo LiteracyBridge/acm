@@ -17,10 +17,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 @Composable
 fun NavigationDrawer(
     drawerState: DrawerState,
+    navController: NavController,
     content: @Composable () -> Unit
 ) {
     ModalNavigationDrawer(
@@ -49,7 +51,7 @@ fun NavigationDrawer(
                         )
                     },
                     selected = false,
-                    onClick = { /*TODO*/ }
+                    onClick = { navController.navigate(Screen.PROGRAM_SELECTION.name, ) }
                 )
                 NavigationDrawerItem(
                     label = { Text(text = "Upload Status") },

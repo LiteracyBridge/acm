@@ -8,26 +8,30 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.ui.components.SearchableExpandedDropDownMenu
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
-import org.literacybridge.talkingbookapp.view_models.TalkingBookUpdateViewModel
+import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
 @Composable
 fun RecipientScreen(
     navController: NavController,
-    viewModel: TalkingBookUpdateViewModel = viewModel(),
+    viewModel: TalkingBookViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
 ) {
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val sports =
         mutableListOf("Basketball", "Rugby", "Football", "MMA", "Motorsport", "Snooker", "Tennis")
@@ -123,6 +127,20 @@ fun RecipientScreen(
 //                    return true
                 }
             )
+
+            Button(
+//                enabled = viewModel.getSelectedRecipient() != null,
+                onClick = {
+                    scope.launch {
+                        viewModel.updateDevice(
+                            deployment = userViewModel.deployment.value!!,
+                            user = userViewModel.user.value,
+                            navController = navController
+                        )
+                    }
+                }) {
+                Text("Next")
+            }
         }
     }
 }

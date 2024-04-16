@@ -142,6 +142,9 @@ class AndroidDocFile : TbFile {
             file = parent?.file!!.resolve(filename!!)
         }
 
+        if(!file!!.parentFile?.exists()!!){
+            file!!.parentFile?.mkdirs()
+        }
 //        if(!file!!.exists()){
 //            file!!.createNewFile()
 //        }
@@ -212,7 +215,8 @@ class AndroidDocFile : TbFile {
         if (file == null || !file!!.isDirectory) return mutableListOf<String>().toTypedArray()
 
         val fileNames: MutableList<String?> = ArrayList()
-        val files = file!!.listFiles()
+        val files = file!!.listFiles() ?: return emptyArray()
+
         for (file in files) {
             val name = file.name
             if (name == null) {

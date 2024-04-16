@@ -2,6 +2,7 @@ package org.literacybridge.talkingbookapp.view_models
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import org.literacybridge.core.spec.Recipient
 import org.literacybridge.core.spec.RecipientList
 import org.literacybridge.talkingbookapp.App
 import javax.inject.Inject
@@ -35,5 +36,34 @@ class TalkingBookUpdateViewModel @Inject constructor() : ViewModel() {
         }
         return recipients()?.filter { it.communityname.equals(selectedCommunity.value) }
             ?.map { it.groupname }?.distinct() ?: emptyList()
+    }
+
+    fun selectedRecipient(): Recipient? {
+        if (!selectedGroup.value.isNullOrBlank()) {
+            return recipients()?.first {
+                it.groupname.equals(
+                    selectedGroup.value,
+                    true
+                ) && it.communityname.equals(selectedCommunity.value, true) && it.district.equals(
+                    selectedDistrict.value,
+                    true
+                )
+            }
+        }
+
+        if (!selectedCommunity.value.isNullOrBlank()) {
+            return recipients()?.first {
+                it.communityname.equals(
+                    selectedCommunity.value,
+                    true
+                ) && it.district.equals(selectedDistrict.value, true)
+            }
+        }
+
+        if (!selectedDistrict.value.isNullOrBlank()) {
+            return recipients()?.first { it.district.equals(selectedDistrict.value, true) }
+        }
+
+        return null
     }
 }
