@@ -1,9 +1,13 @@
 package org.literacybridge.talkingbookapp.ui.components
 
+import Screen
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Settings
@@ -28,14 +32,16 @@ fun NavigationDrawer(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
+            ModalDrawerSheet(
+                modifier = Modifier.fillMaxWidth(0.8f),
+                ) {
                 Text("Account Info Here!", modifier = Modifier.padding(16.dp))
                 Divider()
                 NavigationDrawerItem(
                     label = { Text(text = "Manage Program Content") },
                     icon = {
                         Icon(
-                            Icons.Outlined.Build,
+                            Icons.Outlined.List,
                             contentDescription = "Manage program audio content"
                         )
                     },
@@ -46,12 +52,12 @@ fun NavigationDrawer(
                     label = { Text(text = "Change Program") },
                     icon = {
                         Icon(
-                            Icons.Outlined.Build,
+                            Icons.Outlined.Edit,
                             contentDescription = "Change currently selected program"
                         )
                     },
                     selected = false,
-                    onClick = { navController.navigate(Screen.PROGRAM_SELECTION.name, ) }
+                    onClick = { navController.navigate(Screen.PROGRAM_SELECTION.name) }
                 )
                 NavigationDrawerItem(
                     label = { Text(text = "Upload Status") },

@@ -60,7 +60,7 @@ fun HomeScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    NavigationDrawer(drawerState) {
+    NavigationDrawer(drawerState, navController) {
         Scaffold(
             topBar = {
                 TopAppBar(
