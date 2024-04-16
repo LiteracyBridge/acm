@@ -86,8 +86,10 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
 
     // Others
-    implementation("com.google.code.gson:gson:2.10")
     implementation(project(":core"))
+    implementation("com.google.code.gson:gson:2.10")
+    implementation("io.sentry:sentry-android:7.8.0")
+    implementation("io.sentry:sentry-compose-android:7.8.0")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.51")

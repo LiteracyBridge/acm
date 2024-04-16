@@ -29,6 +29,7 @@ import com.amplifyframework.core.plugin.Plugin
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import com.amplifyframework.storage.s3.configuration.AWSS3StoragePluginConfiguration
 import dagger.hilt.android.AndroidEntryPoint
+import io.sentry.compose.withSentryObservableEffect
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.content_manager.CustomS3PathResolver
@@ -88,13 +89,18 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         dfu.setListener(this)
 
         setContent {
+            val navController = rememberNavController().withSentryObservableEffect(
+                enableNavigationBreadcrumbs = true,
+                enableNavigationTracing = true
+            )
+
             TalkingBookAppTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavHost(navController = rememberNavController())
+                    AppNavHost(navController = navController)
                 }
             }
         }
