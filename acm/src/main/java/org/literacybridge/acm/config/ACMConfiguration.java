@@ -265,6 +265,7 @@ public class ACMConfiguration {
         NOT_REQUIRED
     }
 
+    public static boolean migratePrompts = true;
     /**
      * "Open" the given db. Globally locks the database if not opening "sandboxed". (Here, "global" mean
      * "on planet Earth".)
@@ -300,8 +301,10 @@ public class ACMConfiguration {
 
         // It seems ACM DB is accessible only after we've initilaized config file
         // We can now go ahead and do the system prompts migration
-        PromptsDB promptsDB = new PromptsDB();
-        promptsDB.migrateSystemPrompts();
+        if (migratePrompts) {
+            PromptsDB PromptsDB = new PromptsDB();
+            PromptsDB.migrateSystemPrompts();
+        }
 
         return initialized;
     }

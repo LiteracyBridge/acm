@@ -10,7 +10,6 @@ import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.tbbuilder.CreateForV2;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
@@ -31,6 +30,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static org.literacybridge.acm.Constants.CATEGORY_TB_SYSTEM;
 import static org.literacybridge.acm.gui.assistants.common.AcmAssistantPage.getLanguageAndName;
 import static org.literacybridge.acm.tbbuilder.TBBuilder.MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
@@ -75,6 +75,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
             + "<br/>Click \"Finish\" to proceed. " + "</html>";
     private final JLabel welcomeLabel;
+
+    private final Category categoryTbSystem = store.getTaxonomy().getCategory(CATEGORY_TB_SYSTEM);
 
     ValidationPage(PageHelper<DeploymentContext> listener) {
         super(listener);
@@ -333,10 +335,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      */
     private void validateSystemPrompts(Collection<String> languages) {
         List<String> required_messages = TBBuilder.getRequiredSystemMessages(context.includeTbTutorial);
-        PromptsInfo sysPromptsInfo = new PromptsInfo();
-
-        // { id : description }
-        PromptsInfo promptsInfo = null;
+        PromptsInfo promptsInfo = PromptsInfo.getInstance();
 
         for (String language : languages) {
             List<Integer> missing = new ArrayList<>();
@@ -345,12 +344,12 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             context.systemprompts.put(language, systemPromptsMap);
 
             for (String prompt : required_messages) {
-                PromptsInfo.PromptInfo tempPromptInfo = sysPromptsInfo.getPrompt(prompt);
+                PromptsInfo.PromptInfo tempPromptInfo = promptsInfo.getPrompt(prompt);
                 // If prompt doesn't exist in repo, report as missing
                 if (tempPromptInfo != null) {
-                    String desc = tempPromptInfo.getFilename();
+                    String desc = tempPromptInfo.getPromptTitle();
                     SystemPrompts tempSystemPrompt = new SystemPrompts(prompt, desc, language);
-                    if (!tempSystemPrompt.findPrompts()) {
+                    if (tempSystemPrompt.findPrompt() == null) {
                         missing.add(Integer.parseInt(prompt));
                     } else {
                         systemPromptsMap.put(prompt, tempSystemPrompt);
@@ -382,20 +381,21 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     }
                     prevN = n;
                 }
+                if (combining) {
+                    // We were combining, and finished the list, so close out the final run.
+                    msg.append('-').append(prevN);
+                }
                 msg.insert(0, "System prompts are missing for language '%s': ");
                 Issues.Issue issue = context.issues.add(Issues.Severity.ERROR,
                     Issues.Area.SYSTEM_PROMPTS,
                     msg.toString(),
                     getLanguageAndName(language));
                 // Add details on the individual missing messages.
-                if (promptsInfo == null) {
-                    promptsInfo = new PromptsInfo();
-                }
                 for (int n : missing) {
                     PromptsInfo.PromptInfo pi = promptsInfo.getPrompt(Integer.toString(n));
                     // The 'ding' doesn't have a filename.
                     if (pi != null) {
-                        issue.addDetail(String.format("(%d) %s - \"%s\"", n, pi.getFilename(), pi.getText()));
+                        issue.addDetail(String.format("(%d) %s - \"%s\"", n, pi.getPromptTitle(), pi.getPromptText()));
                     }
                 }
             }
@@ -516,7 +516,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                                 "This message will be skipped in intro for language '%s': %s",
                                 getLanguageAndName(language), title);
                         }
-                    } else if (titles.size() == 0) {
+                    } else if (titles.isEmpty()) {
                         context.issues.add(Issues.Severity.INFO, Issues.Area.INTRO_MESSAGE,
                             "There is an 'Intro Message' category for language '%s', but it has no message.",
                             getLanguageAndName(language));
@@ -655,7 +655,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                 if (!isValid.test(directory)) {
                     context.issues.add(Issues.Severity.INFO,
                             Issues.Area.FIRMWARE,
-                            "'%s' not contain %s files. The default %2$s will be used",
+                            "'%s' does not contain %s files. The default %2$s will be used",
                             directory.getName(), label);
                 }
             }

@@ -25,11 +25,11 @@ public class PromptTarget extends Target {
      * @return the prompt's id.
      */
     String getPromptId() {
-        return promptInfo.getId();
+        return promptInfo.getPromptId();
     }
-    String getPromptFilename() { return promptInfo.getFilename(); }
+    String getPromptFilename() { return promptInfo.getPromptTitle(); }
     String getPromptText() {
-        return promptInfo.getText();
+        return promptInfo.getPromptText();
     }
     private boolean hasPrompt() {
         return hasPrompt;
@@ -57,7 +57,7 @@ public class PromptTarget extends Target {
 
     @Override
     public String toString() {
-        return getPromptId() + ": " + promptInfo.getFilename() + ": " + getPromptText();
+        return getPromptId() + ": " + promptInfo.getPromptTitle() + ": " + getPromptText();
     }
 
 }

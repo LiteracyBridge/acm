@@ -2,7 +2,7 @@
   <configuration default="false" name="ACM" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="org.literacybridge.acm.gui.Application" />
     <module name="acm.main" />
-    <option name="PROGRAM_PARAMETERS" value="ACM-TEST" />
+    <option name="PROGRAM_PARAMETERS" value="SURVEY-DEMO" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

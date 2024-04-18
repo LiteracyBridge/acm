@@ -77,9 +77,11 @@ public class Constants {
 
   public static final String TUTORIAL_LIST = CATEGORY_TUTORIAL + ".txt";
 
-  public static final String BELL_SOUND = "0.a18";
-  public static final String SILENCE = "7.a18";
-  public static final String CUSTOM_GREETING = "10.a18";
+  public static final String BELL_SOUND_V1 = "0.a18";
+  public static final String BELL_SOUND_V2 = "0.mp3";
+  public static final String SILENCE_V1 = "7.a18";
+  public static final String SILENCE_V2 = "7.mp3";
+  public static final String CUSTOM_GREETING_V1 = "10.a18";
 
   public static final int FUZZY_THRESHOLD_MAXIMUM = 100;
   public static final int FUZZY_THRESHOLD_DEFAULT = 80;

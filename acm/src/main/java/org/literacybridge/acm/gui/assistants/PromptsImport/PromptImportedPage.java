@@ -1,6 +1,5 @@
 package org.literacybridge.acm.gui.assistants.PromptsImport;
 
-import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
@@ -21,13 +20,9 @@ import org.literacybridge.acm.utils.EmailHelper.TD;
 import org.literacybridge.acm.utils.Version;
 
 import javax.swing.*;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
@@ -36,7 +31,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
-import static org.literacybridge.acm.Constants.*;
+import static org.literacybridge.acm.Constants.CATEGORY_TB_SYSTEM;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
 public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
@@ -53,12 +48,12 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
     private int importCount;
     private int updateCount;
     private int standardFileCount;
-    private Box standardLabelBox;
+    private final Box standardLabelBox;
     private int errorCount;
     private int progressCount;
     private StringBuilder summaryMessage;
     private EmailHelper.HtmlTable summaryTable;
-    private List<Exception> errors = new ArrayList<>();
+    private final List<Exception> errors = new ArrayList<>();
     private DBConfiguration dbConfig;
 
     PromptImportedPage(Assistant.PageHelper<PromptImportContext> listener) {
@@ -146,17 +141,13 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                 Category systemCategory = store.getTaxonomy().getCategory(CATEGORY_TB_SYSTEM);
                 ImportHandler handler = new ImportHandler(systemCategory, matchable);
                 SystemPrompts sysPrompts = new SystemPrompts(fileId, fileTitle, context.languagecode);
-                boolean isUpdate = sysPrompts.findPrompts();
-                if (isUpdate) {
+                AudioItem audioItem = sysPrompts.findPrompt();
+                if (audioItem != null) {
                     // Get the audio item of the existing file and update content repository
-                    AudioItem audioItem = null;
-                    if (sysPrompts.promptItem != null) {
-                        audioItem = sysPrompts.promptItem;
-                    }
                     importer.updateAudioItemFromFile(audioItem, importableFile, handler);
                 } else {
                     // create a new audio item from the file and store in content repo
-                    AudioItem audioItem = importer.importAudioItemFromFile(importableFile, handler);
+                    audioItem = importer.importAudioItemFromFile(importableFile, handler);
                     matchable.getLeft().setItem(audioItem);
                     store.newAudioItem(audioItem);
                 }
@@ -184,12 +175,12 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                 summaryMessage.append("</html>");
                 EmailHelper.sendNotificationEmail(
                     String.format("%s System Prompts Imported for language %s",
-                        dbConfig.getProjectName(), getLanguageAndName(context.languagecode)),
+                        dbConfig.getProgramId(), getLanguageAndName(context.languagecode)),
                     summaryMessage.toString());
                 UIUtils.setProgressBarValue(progressBar, ++progressCount);
                 setComplete();
                 progressBar.setVisible(false);
-                if (errors.size() > 0) {
+                if (!errors.isEmpty()) {
                     statusLabel.setForeground(Color.red);
                     setStatus("Finished, but with errors.");
                     viewErrorsButton.setVisible(true);
@@ -233,7 +224,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
         String reportHeading = String.format("Error report from System Prompts Import Assistant\n\n" +
                 "Program %s, User %s, Computer %s, Language %s\nSystem Prompts Import at %s\n" +
                 "ACM Version %s, built %s\n",
-            dbConfig.getProjectName(),
+            dbConfig.getProgramId(),
             ACMConfiguration.getInstance().getUserContact(),
             computerName, getLanguageAndName(context.languagecode),
             localDateTimeFormatter.format(LocalDateTime.now()),
@@ -249,7 +240,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
         String languagecode = context.languagecode;
         dbConfig = ACMConfiguration.getInstance().getCurrentDB();
 
-        summaryMessage.append(String.format("<h2>Program %s</h2>", dbConfig.getProjectName()));
+        summaryMessage.append(String.format("<h2>Program %s</h2>", dbConfig.getProgramId()));
         summaryMessage.append(String.format("<h3>%s</h3>", localDateTimeFormatter.format(LocalDateTime.now())));
         summaryMessage.append(String.format("<p>Importing System Prompts for language %s.</p>", getLanguageAndName(languagecode)));
 
@@ -265,7 +256,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                 try {
                     // Make sure the directories exist. Create the .grp file if it doesn't exist.
                     PromptsInfo.PromptInfo promptInfo = item.getLeft().getPromptInfo();
-                    String promptId = promptInfo.getId(); // 0, 1, etc.
+                    String promptId = promptInfo.getPromptId(); // 0, 1, etc.
                     UIUtils.setLabelText(currentMessage, item.getLeft().toString()); // 0: bell,...
                     File destDir = promptInfo.isPlaylistPrompt() ? context.promptsDir : context.languageDir;
                     File promptFile = new File(destDir, promptId+".a18");
@@ -301,34 +292,6 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                     // Ignore
                 }
             });
-
-        importBoilerplateFiles(TUTORIAL_LIST);
-        importBoilerplateFiles(BELL_SOUND);
-        importBoilerplateFiles(SILENCE);
-    }
-
-    /**
-     * Files that don't depend on program or language, the bell, and the .txt file for the tutorial.
-     * @param name of the boilerplate file.
-     */
-    private void importBoilerplateFiles(String name) {
-        File destFile = new File(context.languageDir, name);
-        if (!destFile.exists()) {
-            InputStream srcStream = PromptImportedPage.class.getClassLoader().getResourceAsStream(name);
-            try {
-                // srcStream may be null, in which case we'll catch and report the exception.
-                //noinspection ConstantConditions
-                FileUtils.copyInputStreamToFile(srcStream, destFile);
-                UIUtils.setVisible(standardLabelBox, true);
-                UIUtils.setLabelText(standardFileMessagesLabel, Integer.toString(++standardFileCount));
-            } catch (Exception e) {
-                errors.add(e);
-                errorCount++;
-                UIUtils.setLabelText(errorMessagesLabel, Integer.toString(errorCount));
-                summaryTable.append(new EmailHelper.TR("Exception saving standard file", name)
-                    .withStyler(pinkZebra));
-            }
-        }
     }
 
     @Override
@@ -360,17 +323,14 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
             }
 
             String existingTitle = item.getTitle();
-            if (!promptMatchable.getLeft().getPromptId().equals(existingTitle)) {
+            String newTitle = promptMatchable.getLeft().getPromptInfo().getPromptTitle();
+            if (!newTitle.equals(existingTitle)) {
                 System.out.printf("Renaming '%s' to '%s'.%n",
                         existingTitle,
-                        promptMatchable.getLeft().getPromptId());
+                        newTitle);
                 item.getMetadata()
-                        .put(MetadataSpecification.DC_TITLE, promptMatchable.getLeft().getPromptId());
+                        .put(MetadataSpecification.DC_TITLE, newTitle);
             }
-
-            // now let's rename file from id to readable text
-            item.getMetadata()
-                    .put(MetadataSpecification.DC_TITLE, promptMatchable.getLeft().getPromptFilename());
         }
     }
 }

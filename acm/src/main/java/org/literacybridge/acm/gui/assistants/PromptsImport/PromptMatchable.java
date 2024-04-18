@@ -1,13 +1,10 @@
 package org.literacybridge.acm.gui.assistants.PromptsImport;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableFileItem;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
-
-import java.util.regex.Matcher;
 
 public class PromptMatchable extends MatchableFileItem<PromptTarget, ImportableFile> {
 
@@ -45,7 +42,7 @@ public class PromptMatchable extends MatchableFileItem<PromptTarget, ImportableF
     public boolean isExactMatch(MatchableItem<PromptTarget, ImportableFile> o) {
         PromptsInfo.PromptInfo promptInfo = this.getLeft().getPromptInfo();
         String filename = FilenameUtils.getBaseName(o.getRight().getFile().getName());
-        return promptInfo.getId().equals(filename) || promptInfo.getFilename().equalsIgnoreCase(filename);
+        return promptInfo.getPromptId().equals(filename) || promptInfo.getPromptTitle().equalsIgnoreCase(filename);
     }
 
     /**

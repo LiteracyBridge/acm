@@ -5,127 +5,82 @@ import org.literacybridge.acm.store.*;
 
 import static org.literacybridge.acm.Constants.*;
 
-import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class SystemPrompts {
-    public final static String SYSTEM_MESSAGE_CATEGORY = "System Messages";
     private static final MetadataStore store = ACMConfiguration.getInstance()
             .getCurrentDB()
             .getMetadataStore();
 
-    private final String title;
-    private String language;
-    private String description;
-    private String categoryId;
+    private final String promptId;
+    private final String language;
+    private final String promptTitle;
+    private final Category promptCategory;
     public AudioItem promptItem;
 
     private static final Map<String, AudioItem> itemCache = new HashMap<>();
     private static long itemCacheStoreChangeCount = -1;
     private static Locale itemCacheLocale = null;
 
-    public SystemPrompts(String title, String languagecode) {
-        this.title = title;
-        this.description = "";
-        this.language = languagecode;
-        this.categoryId = null;
-        this.promptItem = null;
-    }
-
-    public SystemPrompts(String title, String description, String language) {
-        this.title = title;
-        this.description = description;
+    /**
+     * Constructor with support for pre-defined playlist prompts.
+     * @param promptId The prompt ID, like "1" or "9-0"
+     * @param promptTitle The friendly name, like "begin speaking" or "user feedback".
+     * @param language The language of the prompt, "en", "dga".
+     * @param promptCategory CATEGORY_TB_SYSTEM for system prompts, CATEGORY_TB_CATEGORY for playlist prompts.
+     */
+    public SystemPrompts(String promptId, String promptTitle, String language, Category promptCategory) {
+        this.promptId = promptId;
+        this.promptTitle = promptTitle;
         this.language = language;
-        this.categoryId = null;
         this.promptItem = null;
+        this.promptCategory = promptCategory;
     }
 
-    public SystemPrompts(String title) {
-        this.title = title;
+    /**
+     * Constructor with support for system prompts only.
+     * @param promptId The prompt ID, like "1".
+     * @param promptTitle The friendly name, like "begin speaking".
+     * @param language The language of the prompt, "en", "dga".
+     */
+    public SystemPrompts(String promptId, String promptTitle, String language) {
+        this(promptId, promptTitle, language, store.getTaxonomy().getCategory(CATEGORY_TB_SYSTEM));
     }
 
-    public SystemPrompts(String title, String languagecode, String categoryId, AudioItem promptItem) {
-        this.title = title;
-        this.language = languagecode;
-        this.categoryId = categoryId;
-        this.promptItem = promptItem;
-    }
-
-    public boolean findPrompts() {
-        return findPromptsInAcmContent();
-    }
-
-    public void addAudioItem(String name) {
-        AudioItem e = store.getAudioItem(name);
-        if (e != null) {
-            promptItem = e;
-        }
-    }
-
-    private boolean findPromptsInAcmContent() {
-        List<Category> categoryList = Collections.singletonList(store.getTaxonomy()
-                .getCategory(CATEGORY_TB_SYSTEM));    //   root
+        public AudioItem findPrompt() {
+        List<Category> categoryList = Collections.singletonList(promptCategory);    //   root
         List<Locale> localeList = Collections.singletonList(new RFC3066LanguageCode(language).getLocale());
 
-        // Names are displayed in human-readable forms
-        // so searches will have to take that form
-        // instead of the file id
-        SearchResult searchResult;
-        if (description.isEmpty()) {
-            searchResult = store.search(title, categoryList, localeList);
-        } else {
-            searchResult = store.search(description, categoryList, localeList);
+        // Names are displayed in human-readable forms, like "begin speaking", so prefer to search for that form
+        // instead of the prompt id.
+        SearchResult searchResult = null;
+        if (!promptTitle.isEmpty()) {
+            searchResult = store.search(promptTitle, categoryList, localeList);
         }
-
-        Map<String, AudioItem> items = searchResult.getAudioItems()
-                .stream()
-                .map(store::getAudioItem)
-                .collect(Collectors.toMap(audioItem -> audioItem.getTitle().trim(), c -> c)); //  getTitle
-
-        // Items list returns null. Can't find our system prompt in store
-        if (items.isEmpty()) {
-            // Okay there can be instances where the description field is not NULL
-            // but the search through file desc returns an empty item
-            // In such cases just try searching with the file id
-            searchResult = store.search(title, categoryList, localeList);
-            items = searchResult.getAudioItems()
-                    .stream()
-                    .map(store::getAudioItem)
-                    .collect(Collectors.toMap(audioItem -> audioItem.getTitle().trim(), c -> c));
-            // if we still get an empty item list then there is indeed no instance of the file
-            // in the content store
-            if (items.isEmpty()) {
-                return false;
-            }
+        // If there was no prompt title, or searching for the message title returned nothing, try searching for the
+        // prompt id, like "1".
+        if (searchResult == null || searchResult.getAudioItems().isEmpty()) {
+            searchResult = store.search(promptId, categoryList, localeList);
         }
-
+        // Did the search find something?
+        if (!searchResult.getAudioItems().isEmpty()) {
+            List<String> items = new ArrayList<>(searchResult.getAudioItems());
+            promptItem = store.getAudioItem(items.get(0));
+        }
+        // Nothing yet, look harder.
         if (promptItem == null) {
             searchIgnoringUnderscores(categoryList, localeList);
         }
 
-        if (promptItem == null) {
-            // search by audio items
-            Set<String> audioItems = searchResult.getAudioItems();
-            for (String audio_items : audioItems) {
-                AudioItem audioItem = store.getAudioItem(audio_items);
-
-                Metadata metadata = audioItem.getMetadata();
-                MetadataValue<String> dc_title = metadata.getMetadataValue(MetadataSpecification.DC_TITLE);
-                if (dc_title.getValue().equals(description)) {
-                    promptItem = audioItem;
-                }
-            }
-        }
-
-        return promptItem != null;
+        return promptItem;
     }
 
     private void searchIgnoringUnderscores(List<Category> categoryList, List<Locale> localeList) {
         assert(localeList.size() == 1);
+        // Keep a cache of all audio items. Refresh when the repository changes.
         if (itemCacheStoreChangeCount != store.getChangeCount() || !localeList.get(0).equals(itemCacheLocale)) {
             itemCacheStoreChangeCount = store.getChangeCount();
             itemCacheLocale = localeList.get(0);
@@ -138,17 +93,14 @@ public class SystemPrompts {
             itemCache.putAll(items);
         }
 
-        String regex = "(?i)^(" + title.replace(" ", "[ _]") + ")([: ]+(description|invite|invitation|prompt|long|action))?$";
+        // Replaces spaces and underscores with a regex accepting either one.
+        String regex = "(?i)^(" + promptId.replaceAll("[ _]", "[ _]") + ")([: ]+(description|invite|invitation|prompt|long|action))?$";
         Pattern pattern = Pattern.compile(regex);
         for (Map.Entry<String, AudioItem> e : itemCache.entrySet()) {
             Matcher matcher = pattern.matcher(e.getKey());
             if (matcher.matches() && matcher.groupCount()==3) {
-                if (promptItem == null) {
-                    promptItem = e.getValue();
-                    if (categoryId == null) {
-                        categoryId = SYSTEM_MESSAGE_CATEGORY;
-                    }
-                }
+                promptItem = e.getValue();
+                break;
             }
         }
     }
