@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,7 +23,6 @@ import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.ui.components.SearchableExpandedDropDownMenu
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
-import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
 @Composable
 fun RecipientScreen(
@@ -31,6 +31,14 @@ fun RecipientScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    LaunchedEffect("load-recipients") {
+        // Populates the recipients list if empty
+        if (viewModel.recipients.isEmpty()) {
+            viewModel.recipients.addAll(viewModel.app.programSpec!!.recipients)
+            viewModel.districts.addAll(viewModel.app.programSpec!!.recipients.map { it.district }.distinct())
+        }
+    }
 
     AppScaffold(title = "Choose Recipient", navController = navController,
         bottomBar = {

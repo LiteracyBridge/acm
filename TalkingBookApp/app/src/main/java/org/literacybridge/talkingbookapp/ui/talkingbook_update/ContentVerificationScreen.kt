@@ -1,5 +1,6 @@
 package org.literacybridge.talkingbookapp.ui.talkingbook_update
 
+import Screen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,7 +25,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
@@ -34,11 +34,7 @@ import org.literacybridge.talkingbookapp.view_models.UserViewModel
 fun ContentVerificationScreen(
     navController: NavController,
     viewModel: TalkingBookViewModel = viewModel(),
-    userViewModel: UserViewModel = viewModel(),
 ) {
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-
     AppScaffold(title = "Verify Content", navController = navController, bottomBar = {
         Column(
             modifier = Modifier
@@ -57,12 +53,7 @@ fun ContentVerificationScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = viewModel.selectedRecipient.value != null,
                 onClick = {
-                    scope.launch {
-                        viewModel.updateDevice(
-                            deployment = userViewModel.deployment.value!!,
-                            user = userViewModel.user.value,
-                        )
-                    }
+                    navController.navigate(Screen.CONTENT_UPDATE.name)
                 }
             ) {
                 Text("Update Device")

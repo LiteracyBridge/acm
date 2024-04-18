@@ -5,7 +5,8 @@ enum class Screen {
     COLLECT_DATA,
     CONTENT_DOWNLOADER,
     RECIPIENT,
-    CONTENT_VERIFICATION
+    CONTENT_VERIFICATION,
+    CONTENT_UPDATE,
 }
 
 sealed class NavigationItem(val route: String) {
@@ -16,5 +17,6 @@ sealed class NavigationItem(val route: String) {
     object ContentDownloader : NavigationItem(Screen.CONTENT_DOWNLOADER.name)
     object Recipient : NavigationItem(Screen.RECIPIENT.name)
     object ContentVerification : NavigationItem(Screen.CONTENT_VERIFICATION.name)
+    object ContentUpdate : NavigationItem(Screen.CONTENT_UPDATE.name)
 
 }

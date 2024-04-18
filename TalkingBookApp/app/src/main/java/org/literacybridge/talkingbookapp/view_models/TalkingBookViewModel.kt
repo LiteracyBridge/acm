@@ -94,15 +94,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState.asStateFlow()
 
-    private val app = App.getInstance()
+    val app = App.getInstance()
     private var deployment: Deployment? = null
-
-    init {
-        if (app.programSpec != null) {
-            recipients.addAll(app.programSpec!!.recipients)
-            districts.addAll(app.programSpec!!.recipients.map { it.district }.distinct())
-        }
-    }
 
     fun getDevice(): UsbDevice? {
         return deviceState.value.device
@@ -464,7 +457,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         override fun refresh() {
             operationStepDetail.value = ""
             operationStep.value = ""
-            Log.d(LOG_TAG, "Refreshed")
         }
 
         /**
@@ -487,7 +479,9 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 
         override fun log(line: String) {
             mLog = "$line\n$mLog\n".trimIndent()
-            Log.d(LOG_TAG, "Logs")
+            operationStepDetail.value = mLog!!
+
+            Log.d(LOG_TAG, "$mLog")
         }
 
         override fun log(append: Boolean, line: String) {
@@ -506,7 +500,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                     mLog + line
                 }
             }
-//            activity()!!.runOnUiThread { mUpdateLogTextView.setText(mLog) }
+            operationStepDetail.value = mLog ?: ""
         }
     }
 
