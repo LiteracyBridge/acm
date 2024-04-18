@@ -1,7 +1,5 @@
 package org.literacybridge.talkingbookapp.view_models
 
-//import dagger.hilt.android.lifecycle.HiltViewModel
-
 import android.hardware.usb.UsbDevice
 import android.util.Log
 import androidx.compose.runtime.mutableIntStateOf
@@ -83,11 +81,9 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     val operationStepDetail = mutableStateOf("")
 
     // Talking Book Update state
-    val selectedGroup = mutableStateOf<String?>(null)
-    val selectedDistrict = mutableStateOf<String?>(null)
-    val selectedCommunity = mutableStateOf<String?>(null)
     val recipients = mutableStateListOf<Recipient>()
     val districts = mutableStateListOf<String>()
+
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState.asStateFlow()
 
@@ -125,61 +121,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-//    fun recipients(): RecipientList? {
-//        return app.programSpec!!.recipients
-//    }
-
-//    fun districts(): List<String> {
-//        return recipients()?.map { it.district }?.distinct() ?: emptyList()
-//    }
-//
-//    fun communities(): List<String> {
-//        if (selectedDistrict.value != null) {
-//            return recipients()?.map { it.communityname }?.distinct() ?: emptyList()
-//        }
-//        return recipients()?.filter { it.district.equals(selectedDistrict.value) }
-//            ?.map { it.communityname }?.distinct() ?: emptyList()
-//    }
-//
-//    fun groups(): List<String> {
-//        if (selectedCommunity.value != null) {
-//            return recipients()?.map { it.groupname }?.distinct() ?: emptyList()
-//        }
-//        return recipients()?.filter { it.communityname.equals(selectedCommunity.value) }
-//            ?.map { it.groupname }?.distinct() ?: emptyList()
-//    }
-
-    fun getSelectedRecipient(): Recipient? {
-        return recipients?.first()!!
-
-//        if (!selectedGroup.value.isNullOrBlank()) {
-//            return recipients()?.find {
-//                it.groupname.equals(
-//                    selectedGroup.value,
-//                    true
-//                ) && it.communityname.equals(selectedCommunity.value, true) && it.district.equals(
-//                    selectedDistrict.value,
-//                    true
-//                )
-//            }
-//        }
-//
-//        if (!selectedCommunity.value.isNullOrBlank()) {
-//            return recipients()?.find {
-//                it.communityname.equals(
-//                    selectedCommunity.value,
-//                    true
-//                ) && it.district.equals(selectedDistrict.value, true)
-//            }
-//        }
-//
-//        if (!selectedDistrict.value.isNullOrBlank()) {
-//            return recipients()?.find { it.district.equals(selectedDistrict.value, true) }
-//        }
-
-//        return null
-    }
-
     suspend fun collectUsageStatistics(
         user: UserModel,
         deployment: Deployment,
@@ -208,7 +149,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     suspend fun updateDevice(
         user: UserModel,
         deployment: Deployment,
-        navController: NavController
+        recipient: Recipient
     ) {
         val tb = talkingBookDevice.value
         if (tb == null) {
@@ -227,7 +168,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
             user = user,
             deployment = deployment,
             deviceSerialNumber = tbDeviceInfo.serialNumber,
-            tbDeviceInfo = tbDeviceInfo
+            tbDeviceInfo = tbDeviceInfo,
+            recipient = recipient
         )
     }
 
@@ -235,7 +177,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         tbDeviceInfo: TbDeviceInfo,
         deviceSerialNumber: String,
         user: UserModel,
-        deployment: Deployment
+        deployment: Deployment,
+        recipient: Recipient? = null,
     ) {
         this.deployment = deployment
         isOperationInProgress.value = true
@@ -292,13 +235,9 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                     .withStatsOnly(collectStatsOnly)
                     .withPostUpdateDelay(Constants.AndroidPostUpdateSleepTime)
 
-                val result: TBLoaderCore.Result
-                result = if (collectStatsOnly) {
+                val result: TBLoaderCore.Result = if (collectStatsOnly) {
                     builder.build().collectStatistics()
                 } else {
-                    //TODO: implement this
-                    Log.d(LOG_TAG, "Multi operation")
-//                    builder.build().update()
                     // The directory with images. {project}/content/{Deployment}
                     val deploymentDirectory: File =
                         getLocalDeploymentDirectory(app.programContent!!)
@@ -308,10 +247,10 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                         collectionTimestamp, todaysDate,
                         collectedDataDirectory,
                         deploymentDirectory,
-                        getSelectedRecipient()!!
+                        recipient!!
                     )
 
-//                  // Add in the update specific data, then go!
+                    // Add in the update specific data, then go!
                     builder
                         .withDeploymentDirectory(FsFile(deploymentDirectory))
                         .withNewDeploymentInfo(newDeploymentInfo)
@@ -324,7 +263,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                 mProgressListener.extraStep("Zipping statistics and user feedback")
 
                 val zippedPath = "tbcd${dataStoreManager.tbcdid}/$collectionTimestamp.zip"
-//            val collectedDataZipName =
                 val uploadableZipFile =
                     File(PathsProvider.localTempDirectory, "collected-data/$zippedPath")
 
@@ -342,7 +280,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                         System.currentTimeMillis() - zipStart
                     )
                 )
-//
+
                 mProgressListener.log(message)
                 message = java.lang.String.format(
                     "TB-Loader completed in %s",
@@ -382,16 +320,10 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         deploymentDirectory: File,
         recipient: Recipient,
     ): DeploymentInfo {
-//        val config: Config = TBLoaderAppContext.getInstance().getConfig()
-//        val mRecipient = app.programSpec!!.recipients.getRecipient(emptyList());
-
-        // TODO: check for null recipient
-//        val recipientid: String = mRecipient.recipientid
         // Get image for recipient; if not found, fall back to directory.
         var imageName: String = getPackageForRecipient(recipient)
         if (imageName.isEmpty()) {
             // Find the image with the community's language and/or group (such as a/b test group).
-//            TODO: add community directory
             imageName =
                 TBLoaderUtils.getPackageForCommunity(deploymentDirectory, recipient.communityname)
         }
@@ -401,13 +333,13 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         val builder = DeploymentInfoBuilder()
             .withSerialNumber(deviceSerialNumber)
             .withNewSerialNumber(tbDeviceInfo.newSerialNumberNeeded())
-            .withProjectName("Test project") // TODO: set project name
+            .withProjectName(deployment!!.program_id)
             .withDeploymentName(deploymentDirectory.name)
             .withPackageName(imageName)
             .withUpdateDirectory(collectedDataDirectory.name)
             .withUpdateTimestamp(todaysDate) // TODO: this should be the "Deployment date", the first date the new content is deployed.
             .withFirmwareRevision(firmwareRevision)
-//            .withCommunity(mCommunityDirectory)  // TODO: set these values
+            .withCommunity(recipient.communityname)
             .withRecipientid(recipient.recipientid)
 //            .asTestDeployment(mTestingDeployment) // TODO: set these values
 

@@ -31,23 +31,12 @@ fun RecipientScreen(
     viewModel: TalkingBookViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
 ) {
-//    val recipients = remember { viewModel.recipients() ?: emptyList() }
-//    val districts = remember { mutableListOf<String>() }
-//    val recipients = remember { mutableStateOf<RecipientList?>(null) }
     val selectedDistrict = remember { mutableStateOf<String?>(null) }
     val selectedCommunity = remember { mutableStateOf<String?>(null) }
     val selectedGroup = remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val sports =
-        mutableListOf("Basketball", "Rugby", "Football", "MMA", "Motorsport", "Snooker", "Tennis")
-
-//    LaunchedEffect("load-recipients") {
-//        recipients.value = viewModel.recipients()
-//    }
-
-//    Log.d(LOG_TAG, "${viewModel.recipients()}")
 
     AppScaffold(title = "Choose Recipient", navController = navController) { contentPadding ->
         Column(
@@ -66,10 +55,7 @@ fun RecipientScreen(
                     selectedDistrict.value = item
                     Toast.makeText(context, item, Toast.LENGTH_SHORT).show()
                 },
-                enable = true,// controls the enabled state of the OutlinedTextField
-//                colors = TextFieldDefaults.textFieldColors(
-//                    backgroundColor = MaterialTheme.colorScheme.color1,
-//                ),
+                enable = true,
                 placeholder = {
                     Text("Select district")
                 },
@@ -77,13 +63,9 @@ fun RecipientScreen(
                     Text(name)
                 },
                 defaultItem = {
-                    sports.first()
-                },
-                onSearchTextFieldClicked = {
-//                    Log.d(LOG_TAG, "$it")
-//                    return true
+                    viewModel.districts.first()
                 }
-            )
+            ) {}
 
             Text(text = "Select Community")
             SearchableExpandedDropDownMenu(
@@ -106,13 +88,10 @@ fun RecipientScreen(
                     Text(name)
                 },
                 defaultItem = {
-                    sports.first()
-                },
-                onSearchTextFieldClicked = {
-//                    Log.d(LOG_TAG, "$it")
-//                    return true
+                    ""
                 }
-            )
+            ) {
+            }
 
             Text(text = "Select Group")
             SearchableExpandedDropDownMenu(
@@ -135,16 +114,12 @@ fun RecipientScreen(
                     Text(name)
                 },
                 defaultItem = {
-                    sports.first()
-                },
-                onSearchTextFieldClicked = {
-//                    Log.d(LOG_TAG, "$it")
-//                    return true
+                    ""
                 }
-            )
+            ) {
+            }
 
             Button(
-//                enabled = viewModel.getSelectedRecipient() != null,
                 onClick = {
                     val selectedRecipient = if (!selectedGroup.value.isNullOrBlank()) {
                         viewModel.recipients.find {
@@ -186,7 +161,7 @@ fun RecipientScreen(
                         viewModel.updateDevice(
                             deployment = userViewModel.deployment.value!!,
                             user = userViewModel.user.value,
-                            navController = navController
+                            recipient = selectedRecipient
                         )
                     }
                 }) {

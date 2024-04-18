@@ -35,7 +35,6 @@ import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProgramSelectionScreen(
     navController: NavController, viewModel: UserViewModel = viewModel()
