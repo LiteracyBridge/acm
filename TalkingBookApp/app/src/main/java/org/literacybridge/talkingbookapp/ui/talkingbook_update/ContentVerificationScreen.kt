@@ -1,9 +1,7 @@
 package org.literacybridge.talkingbookapp.ui.talkingbook_update
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,8 +14,6 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,56 +24,45 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
+import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
 @Composable
 fun ContentVerificationScreen(
     navController: NavController,
     viewModel: TalkingBookViewModel = viewModel(),
+    userViewModel: UserViewModel = viewModel(),
 ) {
-    val selectedDistrict = remember { mutableStateOf<String?>(null) }
-    val selectedCommunity = remember { mutableStateOf<String?>(null) }
-    val selectedGroup = remember { mutableStateOf<String?>(null) }
-
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     AppScaffold(title = "Verify Content", navController = navController, bottomBar = {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(SCREEN_MARGIN),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             OutlinedButton(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    Toast.makeText(context, "No recipient selected!", Toast.LENGTH_LONG).show()
-
-//                scope.launch {
-//                    viewModel.updateDevice(
-//                        deployment = userViewModel.deployment.value!!,
-//                        user = userViewModel.user.value,
-//                        recipient = selectedRecipient
-//                    )
-//                }
-                }
+                onClick = { navController.popBackStack() }
             ) {
                 Text("Change Recipient")
             }
             Button(
                 modifier = Modifier.fillMaxWidth(),
+                enabled = viewModel.selectedRecipient.value != null,
                 onClick = {
-                    Toast.makeText(context, "No recipient selected!", Toast.LENGTH_LONG).show()
-
-//                scope.launch {
-//                    viewModel.updateDevice(
-//                        deployment = userViewModel.deployment.value!!,
-//                        user = userViewModel.user.value,
-//                        recipient = selectedRecipient
-//                    )
-//                }
+                    scope.launch {
+                        viewModel.updateDevice(
+                            deployment = userViewModel.deployment.value!!,
+                            user = userViewModel.user.value,
+                        )
+                    }
                 }
             ) {
                 Text("Update Device")

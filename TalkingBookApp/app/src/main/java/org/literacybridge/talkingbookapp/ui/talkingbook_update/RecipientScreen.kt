@@ -12,8 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,69 +28,27 @@ import org.literacybridge.talkingbookapp.view_models.UserViewModel
 fun RecipientScreen(
     navController: NavController,
     viewModel: TalkingBookViewModel = viewModel(),
-    userViewModel: UserViewModel = viewModel(),
 ) {
-    val selectedDistrict = remember { mutableStateOf<String?>(null) }
-    val selectedCommunity = remember { mutableStateOf<String?>(null) }
-    val selectedGroup = remember { mutableStateOf<String?>(null) }
-
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     AppScaffold(title = "Choose Recipient", navController = navController,
         bottomBar = {
             Row(modifier = Modifier.fillMaxWidth()) {
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    val selectedRecipient = if (!selectedGroup.value.isNullOrBlank()) {
-                        viewModel.recipients.find {
-                            it.groupname.equals(
-                                selectedGroup.value,
-                                true
-                            ) && it.communityname.equals(
-                                selectedCommunity.value,
-                                true
-                            ) && it.district.equals(
-                                selectedDistrict.value,
-                                true
-                            )
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = viewModel.selectedRecipient.value != null,
+                    onClick = {
+                        if (viewModel.selectedRecipient.value == null) {
+                            Toast.makeText(context, "No recipient selected!", Toast.LENGTH_LONG)
+                                .show()
+                            return@Button
                         }
-                    } else if (!selectedCommunity.value.isNullOrBlank()) {
-                        viewModel.recipients.find {
-                            it.communityname.equals(
-                                selectedCommunity.value,
-                                true
-                            ) && it.district.equals(selectedDistrict.value, true)
-                        }
-                    } else if (!selectedDistrict.value.isNullOrBlank()) {
-                        viewModel.recipients.find {
-                            it.district.equals(
-                                selectedDistrict.value,
-                                true
-                            )
-                        }
-                    } else {
-                        null
-                    }
 
-                    if (selectedRecipient == null) {
-                        Toast.makeText(context, "No recipient selected!", Toast.LENGTH_LONG).show()
-                        return@Button
-                    }
-
-                    navController.navigate(Screen.CONTENT_VERIFICATION.name)
-
-//                    scope.launch {
-//                        viewModel.updateDevice(
-//                            deployment = userViewModel.deployment.value!!,
-//                            user = userViewModel.user.value,
-//                            recipient = selectedRecipient
-//                        )
-//                    }
-                }) {
-                Text("Next")
-            }
+                        navController.navigate(Screen.CONTENT_VERIFICATION.name)
+                    }) {
+                    Text("Next")
+                }
             }
         }
     ) { contentPadding ->
@@ -109,8 +65,8 @@ fun RecipientScreen(
                 listOfItems = viewModel.districts,
                 modifier = Modifier.fillMaxWidth(),
                 onDropDownItemSelected = { item ->
-                    selectedDistrict.value = item
-                    Toast.makeText(context, item, Toast.LENGTH_SHORT).show()
+                    viewModel.selectedDistrict.value = item
+                    viewModel.updateSelectedRecipient()
                 },
                 enable = true,
                 placeholder = {
@@ -126,18 +82,18 @@ fun RecipientScreen(
 
             Text(text = "Select Community")
             SearchableExpandedDropDownMenu(
-                listOfItems = if (selectedDistrict.value != null) {
+                listOfItems = if (viewModel.selectedDistrict.value != null) {
                     viewModel.recipients.map { it.communityname }.distinct()
                 } else {
-                    viewModel.recipients.filter { it.district.equals(selectedDistrict.value) }
+                    viewModel.recipients.filter { it.district.equals(viewModel.selectedDistrict.value) }
                         .map { it.communityname }.distinct()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 onDropDownItemSelected = { item ->
-                    selectedCommunity.value = item
-                    Toast.makeText(context, item, Toast.LENGTH_SHORT).show()
+                    viewModel.selectedCommunity.value = item
+                    viewModel.updateSelectedRecipient()
                 },
-                enable = !selectedDistrict.value.isNullOrEmpty(),
+                enable = !viewModel.selectedDistrict.value.isNullOrEmpty(),
                 placeholder = {
                     Text("Select community")
                 },
@@ -152,18 +108,18 @@ fun RecipientScreen(
 
             Text(text = "Select Group")
             SearchableExpandedDropDownMenu(
-                listOfItems = if (selectedCommunity.value != null) {
+                listOfItems = if (viewModel.selectedCommunity.value != null) {
                     viewModel.recipients.map { it.groupname }.distinct()
                 } else {
-                    viewModel.recipients.filter { it.communityname.equals(selectedCommunity.value) }
+                    viewModel.recipients.filter { it.communityname.equals(viewModel.selectedCommunity.value) }
                         .map { it.groupname }.distinct()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 onDropDownItemSelected = { item -> // Returns the item selected in the dropdown
-                    selectedGroup.value = item
-                    Toast.makeText(context, item, Toast.LENGTH_SHORT).show()
+                    viewModel.selectedGroup.value = item
+                    viewModel.updateSelectedRecipient()
                 },
-                enable = !selectedCommunity.value.isNullOrEmpty(),
+                enable = !viewModel.selectedCommunity.value.isNullOrEmpty(),
                 placeholder = {
                     Text("Select group")
                 },
