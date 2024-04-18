@@ -5,6 +5,7 @@ package org.literacybridge.talkingbookapp.view_models
 import android.hardware.usb.UsbDevice
 import android.util.Log
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
@@ -23,7 +24,6 @@ import org.literacybridge.core.fs.OperationLog
 import org.literacybridge.core.fs.TbFile
 import org.literacybridge.core.fs.ZipUnzip
 import org.literacybridge.core.spec.Recipient
-import org.literacybridge.core.spec.RecipientList
 import org.literacybridge.core.tbdevice.TbDeviceInfo
 import org.literacybridge.core.tbloader.DeploymentInfo
 import org.literacybridge.core.tbloader.DeploymentInfo.DeploymentInfoBuilder
@@ -86,12 +86,20 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     val selectedGroup = mutableStateOf<String?>(null)
     val selectedDistrict = mutableStateOf<String?>(null)
     val selectedCommunity = mutableStateOf<String?>(null)
-
+    val recipients = mutableStateListOf<Recipient>()
+    val districts = mutableStateListOf<String>()
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState.asStateFlow()
 
     private val app = App.getInstance()
     private var deployment: Deployment? = null
+
+    init {
+        if (app.programSpec != null) {
+            recipients.addAll(app.programSpec!!.recipients)
+            districts.addAll(app.programSpec!!.recipients.map { it.district }.distinct())
+        }
+    }
 
     fun getDevice(): UsbDevice? {
         return deviceState.value.device
@@ -117,59 +125,59 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun recipients(): RecipientList? {
-        return app.programSpec!!.recipients
-    }
+//    fun recipients(): RecipientList? {
+//        return app.programSpec!!.recipients
+//    }
 
-    fun districts(): List<String> {
-        return recipients()?.map { it.district }?.distinct() ?: emptyList()
-    }
-
-    fun communities(): List<String> {
-        if (selectedDistrict.value != null) {
-            return recipients()?.map { it.communityname }?.distinct() ?: emptyList()
-        }
-        return recipients()?.filter { it.district.equals(selectedDistrict.value) }
-            ?.map { it.communityname }?.distinct() ?: emptyList()
-    }
-
-    fun groups(): List<String> {
-        if (selectedCommunity.value != null) {
-            return recipients()?.map { it.groupname }?.distinct() ?: emptyList()
-        }
-        return recipients()?.filter { it.communityname.equals(selectedCommunity.value) }
-            ?.map { it.groupname }?.distinct() ?: emptyList()
-    }
+//    fun districts(): List<String> {
+//        return recipients()?.map { it.district }?.distinct() ?: emptyList()
+//    }
+//
+//    fun communities(): List<String> {
+//        if (selectedDistrict.value != null) {
+//            return recipients()?.map { it.communityname }?.distinct() ?: emptyList()
+//        }
+//        return recipients()?.filter { it.district.equals(selectedDistrict.value) }
+//            ?.map { it.communityname }?.distinct() ?: emptyList()
+//    }
+//
+//    fun groups(): List<String> {
+//        if (selectedCommunity.value != null) {
+//            return recipients()?.map { it.groupname }?.distinct() ?: emptyList()
+//        }
+//        return recipients()?.filter { it.communityname.equals(selectedCommunity.value) }
+//            ?.map { it.groupname }?.distinct() ?: emptyList()
+//    }
 
     fun getSelectedRecipient(): Recipient? {
-        return recipients()?.first()!!
+        return recipients?.first()!!
 
-        if (!selectedGroup.value.isNullOrBlank()) {
-            return recipients()?.find {
-                it.groupname.equals(
-                    selectedGroup.value,
-                    true
-                ) && it.communityname.equals(selectedCommunity.value, true) && it.district.equals(
-                    selectedDistrict.value,
-                    true
-                )
-            }
-        }
+//        if (!selectedGroup.value.isNullOrBlank()) {
+//            return recipients()?.find {
+//                it.groupname.equals(
+//                    selectedGroup.value,
+//                    true
+//                ) && it.communityname.equals(selectedCommunity.value, true) && it.district.equals(
+//                    selectedDistrict.value,
+//                    true
+//                )
+//            }
+//        }
+//
+//        if (!selectedCommunity.value.isNullOrBlank()) {
+//            return recipients()?.find {
+//                it.communityname.equals(
+//                    selectedCommunity.value,
+//                    true
+//                ) && it.district.equals(selectedDistrict.value, true)
+//            }
+//        }
+//
+//        if (!selectedDistrict.value.isNullOrBlank()) {
+//            return recipients()?.find { it.district.equals(selectedDistrict.value, true) }
+//        }
 
-        if (!selectedCommunity.value.isNullOrBlank()) {
-            return recipients()?.find {
-                it.communityname.equals(
-                    selectedCommunity.value,
-                    true
-                ) && it.district.equals(selectedDistrict.value, true)
-            }
-        }
-
-        if (!selectedDistrict.value.isNullOrBlank()) {
-            return recipients()?.find { it.district.equals(selectedDistrict.value, true) }
-        }
-
-        return null
+//        return null
     }
 
     suspend fun collectUsageStatistics(
@@ -412,7 +420,10 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
             .put<Any>("community", "${this.app.programContent?.localPath}/communities")
             .put("sn", deviceSerialNumber)
             .put("tbloaderId", dataStoreManager.tbcdid)
-            .put("username", "${dataStoreManager.currentUser?.first_name} ${dataStoreManager.currentUser?.last_name}")
+            .put(
+                "username",
+                "${dataStoreManager.currentUser?.first_name} ${dataStoreManager.currentUser?.last_name}"
+            )
             .put("useremail", dataStoreManager.currentUser?.email)
             .put("timestamp", collectionTimestamp)
 
