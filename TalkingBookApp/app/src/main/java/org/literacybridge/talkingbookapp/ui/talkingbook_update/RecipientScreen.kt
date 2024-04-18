@@ -1,7 +1,9 @@
 package org.literacybridge.talkingbookapp.ui.talkingbook_update
 
+import Screen
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import kotlinx.coroutines.launch
 import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.ui.components.SearchableExpandedDropDownMenu
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
@@ -38,7 +39,63 @@ fun RecipientScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    AppScaffold(title = "Choose Recipient", navController = navController) { contentPadding ->
+    AppScaffold(title = "Choose Recipient", navController = navController,
+        bottomBar = {
+            Row(modifier = Modifier.fillMaxWidth()) {
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    val selectedRecipient = if (!selectedGroup.value.isNullOrBlank()) {
+                        viewModel.recipients.find {
+                            it.groupname.equals(
+                                selectedGroup.value,
+                                true
+                            ) && it.communityname.equals(
+                                selectedCommunity.value,
+                                true
+                            ) && it.district.equals(
+                                selectedDistrict.value,
+                                true
+                            )
+                        }
+                    } else if (!selectedCommunity.value.isNullOrBlank()) {
+                        viewModel.recipients.find {
+                            it.communityname.equals(
+                                selectedCommunity.value,
+                                true
+                            ) && it.district.equals(selectedDistrict.value, true)
+                        }
+                    } else if (!selectedDistrict.value.isNullOrBlank()) {
+                        viewModel.recipients.find {
+                            it.district.equals(
+                                selectedDistrict.value,
+                                true
+                            )
+                        }
+                    } else {
+                        null
+                    }
+
+                    if (selectedRecipient == null) {
+                        Toast.makeText(context, "No recipient selected!", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
+
+                    navController.navigate(Screen.CONTENT_VERIFICATION.name)
+
+//                    scope.launch {
+//                        viewModel.updateDevice(
+//                            deployment = userViewModel.deployment.value!!,
+//                            user = userViewModel.user.value,
+//                            recipient = selectedRecipient
+//                        )
+//                    }
+                }) {
+                Text("Next")
+            }
+            }
+        }
+    ) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -119,54 +176,7 @@ fun RecipientScreen(
             ) {
             }
 
-            Button(
-                onClick = {
-                    val selectedRecipient = if (!selectedGroup.value.isNullOrBlank()) {
-                        viewModel.recipients.find {
-                            it.groupname.equals(
-                                selectedGroup.value,
-                                true
-                            ) && it.communityname.equals(
-                                selectedCommunity.value,
-                                true
-                            ) && it.district.equals(
-                                selectedDistrict.value,
-                                true
-                            )
-                        }
-                    } else if (!selectedCommunity.value.isNullOrBlank()) {
-                        viewModel.recipients.find {
-                            it.communityname.equals(
-                                selectedCommunity.value,
-                                true
-                            ) && it.district.equals(selectedDistrict.value, true)
-                        }
-                    } else if (!selectedDistrict.value.isNullOrBlank()) {
-                        viewModel.recipients.find {
-                            it.district.equals(
-                                selectedDistrict.value,
-                                true
-                            )
-                        }
-                    } else {
-                        null
-                    }
 
-                    if (selectedRecipient == null) {
-                        Toast.makeText(context, "No recipient selected!", Toast.LENGTH_LONG).show()
-                        return@Button
-                    }
-
-                    scope.launch {
-                        viewModel.updateDevice(
-                            deployment = userViewModel.deployment.value!!,
-                            user = userViewModel.user.value,
-                            recipient = selectedRecipient
-                        )
-                    }
-                }) {
-                Text("Next")
-            }
         }
     }
 }

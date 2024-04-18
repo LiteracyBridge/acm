@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavController
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.options.StorageUploadFileOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -75,7 +74,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     val isOperationInProgress = mutableStateOf(false)
     val operationResult = mutableStateOf(OperationResult.InProgress)
 
-    val talkingBookDevice = mutableStateOf<Usb.TalkingBook?>(null)
     val operationType = mutableStateOf(TalkingBookOperation.COLLECT_STATS_ONLY)
     val operationStep = mutableStateOf("")
     val operationStepDetail = mutableStateOf("")
@@ -83,6 +81,11 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     // Talking Book Update state
     val recipients = mutableStateListOf<Recipient>()
     val districts = mutableStateListOf<String>()
+
+    // Device info
+    val talkingBookDeviceInfo = mutableStateOf<TbDeviceInfo?>(null)
+//    private val talkingBookDevice = mutableStateOf<Usb.TalkingBook?>(null)
+    private val talkingBookDevice = mutableStateOf<Usb.TalkingBook?>(null)
 
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState.asStateFlow()
@@ -105,6 +108,20 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         return deviceState.value.device?.deviceName != null
     }
 
+    fun setTalkingBookDevice(tb: Usb.TalkingBook?){
+        if (tb == null) {
+            TODO("Display error to user that TB is not connected")
+        }
+
+        talkingBookDevice.value = tb
+        talkingBookDeviceInfo.value = TbDeviceInfo.getDeviceInfoFor(
+            tb.root,
+            tb.deviceLabel,
+            TBLoaderConstants.NEW_TB_SRN_PREFIX,
+            TbDeviceInfo.DEVICE_VERSION.TBv2
+        )
+    }
+
     fun setDevice(device: UsbDevice?) {
         Log.d(LOG_TAG, "Device has been set $device");
 
@@ -124,25 +141,17 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     suspend fun collectUsageStatistics(
         user: UserModel,
         deployment: Deployment,
-        navController: NavController
     ) {
         val tb = talkingBookDevice.value
         if (tb == null) {
             TODO("Display error to user that TB is not connected")
         }
 
-        val tbDeviceInfo = TbDeviceInfo.getDeviceInfoFor(
-            tb.root,
-            tb.deviceLabel,
-            TBLoaderConstants.NEW_TB_SRN_PREFIX,
-            TbDeviceInfo.DEVICE_VERSION.TBv2
-        )
-
         performOperation(
             user = user,
             deployment = deployment,
-            deviceSerialNumber = tbDeviceInfo.serialNumber,
-            tbDeviceInfo = tbDeviceInfo
+            deviceSerialNumber = talkingBookDeviceInfo.value!!.serialNumber,
+            tbDeviceInfo = talkingBookDeviceInfo.value!!
         )
     }
 
@@ -156,19 +165,12 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
             TODO("Display error to user that TB is not connected")
         }
 
-        val tbDeviceInfo = TbDeviceInfo.getDeviceInfoFor(
-            tb.root,
-            tb.deviceLabel,
-            TBLoaderConstants.NEW_TB_SRN_PREFIX,
-            TbDeviceInfo.DEVICE_VERSION.TBv2
-        )
-
         operationType.value = TalkingBookOperation.UPDATE_DEVICE
         performOperation(
             user = user,
             deployment = deployment,
-            deviceSerialNumber = tbDeviceInfo.serialNumber,
-            tbDeviceInfo = tbDeviceInfo,
+            deviceSerialNumber = talkingBookDeviceInfo.value!!.serialNumber,
+            tbDeviceInfo = talkingBookDeviceInfo.value!!,
             recipient = recipient
         )
     }

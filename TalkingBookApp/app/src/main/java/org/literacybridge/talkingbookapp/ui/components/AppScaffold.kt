@@ -20,7 +20,8 @@ import androidx.navigation.NavController
 fun AppScaffold(
     title: String,
     navController: NavController,
-    content: @Composable (PaddingValues) -> Unit
+    bottomBar: @Composable () -> Unit = {},
+    content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -43,6 +44,7 @@ fun AppScaffold(
                 },
             )
         },
+        bottomBar = bottomBar
     ) { innerPadding ->
         content(innerPadding)
     }

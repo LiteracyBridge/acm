@@ -44,7 +44,7 @@ import org.literacybridge.talkingbookapp.view_models.UserViewModel
 fun CollectStatisticsScreen(
     navController: NavController,
     viewModel: TalkingBookViewModel = viewModel(),
-    userViewModel: UserViewModel = viewModel()
+    userViewModel: UserViewModel = viewModel(),
 ) {
     val showDialog = remember { mutableStateOf(false) }
     val device by viewModel.deviceState.collectAsStateWithLifecycle()
@@ -56,7 +56,6 @@ fun CollectStatisticsScreen(
         viewModel.collectUsageStatistics(
             user = userViewModel.user.value,
             deployment = userViewModel.deployment.value!!,
-            navController = navController
         )
     }
 
@@ -76,7 +75,6 @@ fun CollectStatisticsScreen(
             viewModel.collectUsageStatistics(
                 user = userViewModel.user.value,
                 deployment = userViewModel.deployment.value!!,
-                navController = navController
             )
         }
     }
