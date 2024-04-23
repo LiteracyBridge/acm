@@ -442,6 +442,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         abstract fun clear()
         abstract fun refresh()
         abstract fun extraStep(step: String?)
+
+        abstract override fun error(value: String)
     }
 
     private val mProgressListener: MyProgressListener = object : MyProgressListener() {
@@ -471,10 +473,15 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         override fun step(step: Steps) {
             operationStep.value = step.description ?: ""
             operationStepDetail.value = ""
+
+            Log.d(LOG_TAG, "$step")
+
         }
 
         override fun detail(detail: String?) {
             operationStepDetail.value = detail ?: ""
+            Log.d(LOG_TAG, "$detail")
+
         }
 
         override fun log(line: String) {
@@ -500,7 +507,12 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                     mLog + line
                 }
             }
+            Log.d(LOG_TAG, "$mLog")
             operationStepDetail.value = mLog ?: ""
+        }
+
+        override fun error(value: String) {
+            throw Exception(value)
         }
     }
 

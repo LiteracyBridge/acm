@@ -2,10 +2,10 @@ package org.literacybridge.talkingbookapp.util.device_manager
 
 import org.literacybridge.core.fs.TbFile
 import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.Arrays
-
 
 /**
  * This is an implementation of TbFile that wraps the Android DocumentFile. The DocumentFile is
@@ -142,7 +142,7 @@ class AndroidDocFile : TbFile {
             file = parent?.file!!.resolve(filename!!)
         }
 
-        if(!file!!.parentFile?.exists()!!){
+        if (!file!!.parentFile?.exists()!!) {
             file!!.parentFile?.mkdirs()
         }
 //        if(!file!!.exists()){
@@ -156,33 +156,24 @@ class AndroidDocFile : TbFile {
 //                objOut.writeObject(user)
 //            }
 //        }
-        file!!.outputStream().use { outputStream ->
+        FileOutputStream(file!!, appendToExisting).use { outputStream ->
             content.copyTo(outputStream)  // More efficient for byte arrays
+            outputStream.flush()
+//            outputStream.close()
+//            content.close()
         }
-//        content.use { input ->
-//            file!!.outputStream().use { output ->
-//                input.copyTo(output)
-//            }
-//        }
-
-//        val fileOutputStream = FileOutputStream(file, true) // Open in append mode
-//
-//        fileOutputStream.use {
-//            it(content)
-//        }
-
-//        resolver.openOutputStream(file!!.uri, streamFlags).use { out -> copy(content, out) }
     }
 
     //    @Throws(IOException::class)
     override fun createNew(vararg flags: Flags): OutputStream {
         val appendToExisting = Arrays.asList(*flags).contains(Flags.append)
-        val streamFlags = if (appendToExisting) "wa" else "w"
+//        val streamFlags = if (appendToExisting) "wa" else "w"
         resolve()
         if (file == null) {
             file = File(parent?.absolutePath, filename!!)
         }
-        return file!!.outputStream()
+        return FileOutputStream(file!!, appendToExisting)
+//        return file!!.outputStream()
 //        return resolver.openOutputStream(file!!.uri, streamFlags)!!
     }
 
