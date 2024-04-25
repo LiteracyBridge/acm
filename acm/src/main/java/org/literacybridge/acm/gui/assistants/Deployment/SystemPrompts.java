@@ -4,6 +4,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.*;
 
 import static org.literacybridge.acm.Constants.*;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -67,8 +68,18 @@ public class SystemPrompts {
         }
         // Did the search find something?
         if (!searchResult.getAudioItems().isEmpty()) {
+            boolean found = false;
             List<String> items = new ArrayList<>(searchResult.getAudioItems());
-            promptItem = store.getAudioItem(items.get(0));
+            for (String itemId : items) {
+                promptItem = store.getAudioItem(itemId);
+                if (promptItem != null) {
+                    if (promptItem.getMetadata().getMetadataValue(DC_TITLE).getValue().equals(promptTitle)) {
+                        found = true;
+                    }
+                }
+            }
+            if (!found) promptItem = null;
+            //promptItem = store.getAudioItem(items.get(0));
         }
         // Nothing yet, look harder.
         if (promptItem == null) {

@@ -331,6 +331,8 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                 item.getMetadata()
                         .put(MetadataSpecification.DC_TITLE, newTitle);
             }
+
+            item.getMetadata().put(MetadataSpecification.DC_SOURCE, promptMatchable.getRight().getFile().getName());
         }
     }
 }
