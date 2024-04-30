@@ -122,14 +122,15 @@ class AndroidDocFile : TbFile {
 //            val parentOk = parent!!.mkdirs()
             if (!parentOk) return false
         }
+
         // See if the directory already exists.
         file = parent?.file!!
         // TODO: throw error if exists as a file?
         // If not, create it.
-        if (file == null) {
-            parent?.file!!.mkdirs()
-            file = parent?.file
-        }
+//        if (file == null) {
+        parent?.file!!.mkdirs()
+        file = parent?.file
+//        }
         return file != null
     }
 
