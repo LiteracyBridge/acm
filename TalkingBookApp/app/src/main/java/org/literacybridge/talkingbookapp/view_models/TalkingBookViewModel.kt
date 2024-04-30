@@ -6,15 +6,18 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.options.StorageUploadFileOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.literacybridge.core.fs.FsFile
 import org.literacybridge.core.fs.OperationLog
@@ -38,7 +41,6 @@ import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.PathsProvider
 import org.literacybridge.talkingbookapp.util.PathsProvider.getLocalDeploymentDirectory
 import org.literacybridge.talkingbookapp.util.Util
-import org.literacybridge.talkingbookapp.util.Util.getStackTrace
 import org.literacybridge.talkingbookapp.util.dataStoreManager
 import org.literacybridge.talkingbookapp.util.device_manager.Usb
 import java.io.File
@@ -129,11 +131,38 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                 device = device
             )
         }
+
+        // Start device discovery
+        viewModelScope.launch {
+            discoverMassStorageDevice()
+        }
     }
 
     fun disconnected() {
+        isMassStorageReady.value = false
+
         _deviceState.update { state ->
             state.copy(device = null)
+        }
+
+    }
+
+    /**
+     * Continuously checks for whether the device is ready in mass storage mode every
+     * 500ms. This It takes a while (maybe 1s+ depending on the device's performance) for connected
+     * talking book to be ready for mass storage.
+     * This does the trick, FileObserver is **very unreliable
+     */
+    private suspend fun discoverMassStorageDevice(waitTime: Long = 100) {
+        withContext(Dispatchers.IO) {
+            val f = File(Usb.MASS_STORAGE_PATH)
+            while (!isMassStorageReady.value) {
+                if (f.exists()) {
+                    isMassStorageReady.value = true
+                    break
+                }
+                delay(waitTime) // sleep for half a second
+            }
         }
     }
 
@@ -201,6 +230,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         if (tb == null) {
             TODO("Display error to user that TB is not connected")
         }
+
 
         operationType.value = TalkingBookOperation.UPDATE_DEVICE
         performOperation(
@@ -330,13 +360,14 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                 isOperationInProgress.value = false
             } catch (e: IOException) {
                 e.printStackTrace()
-                mProgressListener.log(getStackTrace(e))
-                mProgressListener.log("Exception zipping stats")
-                opLog.put("zipException", e)
-                Log.e(LOG_TAG, e.toString())
-
-                operationResult.value = OperationResult.Failure
-                isOperationInProgress.value = false
+                throw e
+//                mProgressListener.log(getStackTrace(e))
+//                mProgressListener.log("Exception zipping stats")
+//                opLog.put("zipException", e)
+//                Log.e(LOG_TAG, e.toString())
+//
+//                operationResult.value = OperationResult.Failure
+//                isOperationInProgress.value = false
             } finally {
                 opLog.finish()
                 isOperationInProgress.value = false
