@@ -88,8 +88,9 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     val selectedRecipient = mutableStateOf<Recipient?>(null)
 
     // Device info
-    private val talkingBookDeviceInfo = mutableStateOf<TbDeviceInfo?>(null)
+    val talkingBookDeviceInfo = mutableStateOf<TbDeviceInfo?>(null)
     private val talkingBookDevice = mutableStateOf<Usb.TalkingBook?>(null)
+    val isMassStorageReady = mutableStateOf(false)
 
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState.asStateFlow()
@@ -102,7 +103,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     }
 
     fun isDeviceConnected(): Boolean {
-        return deviceState.value.device?.deviceName != null
+        return isMassStorageReady.value
+//        return deviceState.value.device?.deviceName != null
     }
 
     fun setTalkingBookDevice(tb: Usb.TalkingBook?) {

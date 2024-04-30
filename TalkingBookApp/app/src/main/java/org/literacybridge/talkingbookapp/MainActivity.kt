@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import android.os.Environment
+import android.os.FileObserver
 import android.os.Handler
 import android.os.Message
 import android.provider.Settings
@@ -32,10 +33,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.sentry.compose.withSentryObservableEffect
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
+import org.literacybridge.talkingbookapp.util.FileObserverWrapper
 import org.literacybridge.talkingbookapp.util.content_manager.CustomS3PathResolver
 import org.literacybridge.talkingbookapp.util.device_manager.Dfu
 import org.literacybridge.talkingbookapp.util.device_manager.Usb
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
+import java.io.File
 
 
 const val TAG = "TalkingBook";
@@ -95,7 +98,6 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             )
 
             TalkingBookAppTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -104,6 +106,22 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
                 }
             }
         }
+
+        // Set up a file observer to watch the mass storage path, to detect when the device
+        // is ready for writes
+        val observer =
+            object : FileObserverWrapper(
+                Usb.MASS_STORAGE_PATH,
+                FileObserver.CREATE + FileObserver.CLOSE_WRITE + FileObserver.MODIFY
+            ) {
+                override fun onEvent(event: Int, path: String?) {
+                    talkingBookViewModel.isMassStorageReady.value =
+                        path?.let { File(it).exists() } == true
+                    Log.d(LOG_TAG, "Device ready in mass storage mode")
+                }
+            }
+        observer.startWatching()
+
 
 //        todo: add usb manager code here
         // Get the USB manager service

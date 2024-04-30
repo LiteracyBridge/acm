@@ -15,20 +15,21 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
-import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
 @Composable
 fun ContentVerificationScreen(
@@ -75,6 +76,47 @@ fun ContentVerificationScreen(
                     defaultElevation = 6.dp
                 ),
                 modifier = Modifier
+                    .size(width = 300.dp, height = 100.dp)
+            ) {
+                Text(
+                    text = "Before Update",
+                    modifier = Modifier
+                        .padding(16.dp),
+                    textAlign = TextAlign.Center,
+                    style = TextStyle(fontWeight = FontWeight.Bold)
+                )
+
+                Text(text = buildAnnotatedString {
+                    withStyle(
+                        SpanStyle(fontWeight = FontWeight.Bold)
+                    ) {
+                        append("District: \t")
+                    }
+                    // TODO: change to get district
+                    append(viewModel.talkingBookDeviceInfo.value?.communityName)
+
+                    withStyle(
+                        SpanStyle(fontWeight = FontWeight.Bold)
+                    ) {
+                        append("Community: \t")
+                    }
+                    append(viewModel.talkingBookDeviceInfo.value?.communityName)
+
+                    withStyle(
+                        SpanStyle(fontWeight = FontWeight.Bold)
+                    ) {
+                        append("Group: \t")
+                    }
+                    // TODO: change to get community
+                    append(viewModel.talkingBookDeviceInfo.value?.communityName)
+                })
+            }
+
+            ElevatedCard(
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 6.dp
+                ),
+                modifier = Modifier
                     .size(width = 240.dp, height = 100.dp)
             ) {
                 Text(
@@ -84,21 +126,30 @@ fun ContentVerificationScreen(
                     textAlign = TextAlign.Center,
                     style = TextStyle(fontWeight = FontWeight.Bold)
                 )
-            }
-            ElevatedCard(
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 6.dp
-                ),
-                modifier = Modifier
-                    .size(width = 240.dp, height = 100.dp)
-            ) {
-                Text(
-                    text = "Before Update",
-                    modifier = Modifier
-                        .padding(16.dp),
-                    textAlign = TextAlign.Center,
-                    style = TextStyle(fontWeight = FontWeight.Bold)
-                )
+
+                Text(text = buildAnnotatedString {
+                    withStyle(
+                        SpanStyle(fontWeight = FontWeight.Bold)
+                    ) {
+                        append("District: \t")
+                    }
+                    append(viewModel.selectedRecipient.value?.district)
+
+                    withStyle(
+                        SpanStyle(fontWeight = FontWeight.Bold)
+                    ) {
+                        append("Community: \t")
+                    }
+                    append(viewModel.selectedRecipient.value?.communityname)
+
+                    withStyle(
+                        SpanStyle(fontWeight = FontWeight.Bold)
+                    ) {
+                        append("Group: \t")
+                    }
+                    append(viewModel.selectedRecipient.value?.groupname)
+
+                })
             }
 
 
