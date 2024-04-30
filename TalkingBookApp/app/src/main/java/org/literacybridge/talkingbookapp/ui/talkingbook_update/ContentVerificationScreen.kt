@@ -3,6 +3,7 @@ package org.literacybridge.talkingbookapp.ui.talkingbook_update
 import Screen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -76,10 +77,12 @@ fun ContentVerificationScreen(
                     defaultElevation = 6.dp
                 ),
                 modifier = Modifier
-                    .size(width = 300.dp, height = 100.dp)
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+//                    .size(width = Modifier.fillMaxWidth(), height = 100.dp)
             ) {
                 Text(
-                    text = "Before Update",
+                    text = "Current",
                     modifier = Modifier
                         .padding(16.dp),
                     textAlign = TextAlign.Center,
@@ -93,7 +96,8 @@ fun ContentVerificationScreen(
                         append("District: \t")
                     }
                     // TODO: change to get district
-                    append(viewModel.talkingBookDeviceInfo.value?.communityName)
+                    append(viewModel.talkingBookDeviceInfo.value?.deploymentName)
+                    append(viewModel.talkingBookDeviceInfo.value?.deploymentPropertiesString)
 
                     withStyle(
                         SpanStyle(fontWeight = FontWeight.Bold)

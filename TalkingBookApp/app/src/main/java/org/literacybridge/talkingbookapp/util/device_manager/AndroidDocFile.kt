@@ -160,8 +160,7 @@ class AndroidDocFile : TbFile {
         FileOutputStream(file!!, appendToExisting).use { outputStream ->
             content.copyTo(outputStream)  // More efficient for byte arrays
             outputStream.flush()
-//            outputStream.close()
-//            content.close()
+            outputStream.close()
         }
     }
 

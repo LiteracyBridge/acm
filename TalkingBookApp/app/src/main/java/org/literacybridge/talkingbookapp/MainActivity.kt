@@ -111,7 +111,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         // is ready for writes
         val observer =
             object : FileObserverWrapper(
-                Usb.MASS_STORAGE_PATH,
+                Usb.MASS_STORAGE_PATH + "/",
                 FileObserver.CREATE + FileObserver.CLOSE_WRITE + FileObserver.MODIFY
             ) {
                 override fun onEvent(event: Int, path: String?) {
@@ -221,8 +221,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
     }
 
     override fun onUsbConnected() {
-        talkingBookViewModel.setDevice(usb.usbDevice)
-        talkingBookViewModel.setTalkingBookDevice(usb.talkingBookDevice)
+        talkingBookViewModel.setDevice(usb.usbDevice, usb.talkingBookDevice)
 
         val deviceInfo = usb.getDeviceInfo(usb.usbDevice)
 

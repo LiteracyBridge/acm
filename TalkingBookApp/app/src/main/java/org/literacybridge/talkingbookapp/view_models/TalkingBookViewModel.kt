@@ -100,30 +100,24 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     val app = App.getInstance()
     private var deployment: Deployment? = null
 
-    fun getDevice(): UsbDevice? {
-        return deviceState.value.device
-    }
+//    fun getDevice(): UsbDevice? {
+//        return deviceState.value.device
+//    }
+//
+//    fun isDeviceConnected(): Boolean {
+//        return isMassStorageReady.value
+////        return deviceState.value.device?.deviceName != null
+//    }
 
-    fun isDeviceConnected(): Boolean {
-        return isMassStorageReady.value
-//        return deviceState.value.device?.deviceName != null
-    }
+//    private fun setTalkingBookDevice(tb: Usb.TalkingBook?) {
+//        if (tb == null) {
+//            TODO("Display error to user that TB is not connected")
+//        }
+//
+//
+//    }
 
-    fun setTalkingBookDevice(tb: Usb.TalkingBook?) {
-        if (tb == null) {
-            TODO("Display error to user that TB is not connected")
-        }
-
-        talkingBookDevice.value = tb
-        talkingBookDeviceInfo.value = TbDeviceInfo.getDeviceInfoFor(
-            tb.root,
-            tb.deviceLabel,
-            TBLoaderConstants.NEW_TB_SRN_PREFIX,
-            TbDeviceInfo.DEVICE_VERSION.TBv2
-        )
-    }
-
-    fun setDevice(device: UsbDevice?) {
+    fun setDevice(device: UsbDevice?, talkingBook: Usb.TalkingBook?) {
         Log.d(LOG_TAG, "Device has been set $device");
 
         _deviceState.updateAndGet { state ->
@@ -134,7 +128,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 
         // Start device discovery
         viewModelScope.launch {
-            discoverMassStorageDevice()
+            discoverMassStorageDevice(talkingBook)
         }
     }
 
@@ -153,15 +147,27 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
      * talking book to be ready for mass storage.
      * This does the trick, FileObserver is **very unreliable
      */
-    private suspend fun discoverMassStorageDevice(waitTime: Long = 100) {
+    private suspend fun discoverMassStorageDevice(talkingBook: Usb.TalkingBook?) {
         withContext(Dispatchers.IO) {
             val f = File(Usb.MASS_STORAGE_PATH)
             while (!isMassStorageReady.value) {
                 if (f.exists()) {
+                    if (talkingBook == null) {
+                        TODO("Display error to user that TB is not connected")
+                    }
+
                     isMassStorageReady.value = true
+                    talkingBookDevice.value = talkingBook
+
+                    talkingBookDeviceInfo.value = TbDeviceInfo.getDeviceInfoFor(
+                        talkingBook.root,
+                        talkingBook.deviceLabel,
+                        TBLoaderConstants.NEW_TB_SRN_PREFIX,
+                        TbDeviceInfo.DEVICE_VERSION.TBv2
+                    )
                     break
                 }
-                delay(waitTime) // sleep for half a second
+                delay(100) // sleep for half a second
             }
         }
     }
