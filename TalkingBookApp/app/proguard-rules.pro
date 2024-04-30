@@ -14,11 +14,13 @@
 
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+-keepattributes SourceFile,LineNumberTable
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
+-dontwarn com.google.errorprone.annotations.Immutable
+
 # AWS -> https://stackoverflow.com/questions/61217946/cant-upload-s3-bucket-from-android-using-cognito
--keep class com.amazonaws.mobileconnectors.s3.transferutility.TransferNetworkConnectionType {*;}
+#-keep class com.amazonaws.mobileconnectors.s3.transferutility.TransferNetworkConnectionType {*;}

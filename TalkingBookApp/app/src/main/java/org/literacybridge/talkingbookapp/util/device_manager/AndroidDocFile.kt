@@ -146,17 +146,7 @@ class AndroidDocFile : TbFile {
         if (!file!!.parentFile?.exists()!!) {
             file!!.parentFile?.mkdirs()
         }
-//        if(!file!!.exists()){
-//            file!!.createNewFile()
-//        }
 
-
-        // TODO: implement write append
-//        file!!.outputStream().use { output ->
-//            ObjectOutputStream(output).use { objOut ->
-//                objOut.writeObject(user)
-//            }
-//        }
         FileOutputStream(file!!, appendToExisting).use { outputStream ->
             content.copyTo(outputStream)  // More efficient for byte arrays
             outputStream.flush()
