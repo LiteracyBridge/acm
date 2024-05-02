@@ -33,7 +33,8 @@ import static org.literacybridge.core.tbloader.ProgressListener.Steps.relabellin
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateCommunity;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateContent;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateSystem;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR_OLD;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR_V1;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.OPERATIONAL_DATA;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.SYS_DATA_TXT;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LANGUAGES_PATH;
@@ -85,13 +86,26 @@ class TBLoaderCoreV1 extends TBLoaderCore {
         return projectCollectedData;
     }
 
+    TbFile imagesDir;
     TbFile tempTbDataDir;
     TbFile tempTbDataZip;
     TbFile collectedOpDataDir;
     TbFile collectedTbDataDir;
     TbFile collectedTbDataZip;
     TbFile collectedUfDataDir;
-    
+
+    @Override
+    protected synchronized TbFile getImagesDir() {
+        if (this.imagesDir == null) {
+            TbFile imagesDir = mDeploymentDirectory.open(IMAGES_SUBDIR_V1);
+            if (!imagesDir.isDirectory()) {
+                imagesDir = mDeploymentDirectory.open(IMAGES_SUBDIR_OLD);
+            }
+            this.imagesDir = imagesDir;
+        }
+        return this.imagesDir;
+    }
+
     @Override
     protected synchronized TbFile getTempTbDataDir() {
         if (tempTbDataDir == null) {
@@ -592,7 +606,7 @@ class TBLoaderCoreV1 extends TBLoaderCore {
         // Iterate over the images to be copied.
         for (String imageName : mNewDeploymentInfo.getPackageNames()) {
             // Where files are copied from.
-            TbFile imagePath = mDeploymentDirectory.open(IMAGES_SUBDIR).open(imageName);
+            TbFile imagePath = getImagesDir().open(imageName);
 
             // Directories in which to look for zero-byte marker files.
             TbFile audioShadowedDir = imagePath.open("messages").open("audio");
@@ -650,7 +664,7 @@ class TBLoaderCoreV1 extends TBLoaderCore {
         for (String imageName : mNewDeploymentInfo.getPackageNames()) {
             String profileName = Integer.toString(currentListIndex);
             // Where files are copied from.
-            TbFile imagePath = mDeploymentDirectory.open(IMAGES_SUBDIR).open(imageName);
+            TbFile imagePath = getImagesDir().open(imageName);
 
             TbFile listsSource = imagePath.open("messages").open("lists").open("1");
             TbFile listsTarget = mTalkingBookRoot.open("messages").open("lists").open(profileName);

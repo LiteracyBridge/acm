@@ -36,7 +36,9 @@ public class TBLoaderConstants {
   public static final String CONTENT_SUBDIR = "content";
   public static final String CONTENT_BASIC_SUBDIR = "basic";
   public static final RelativePath COMMUNITIES_SUBDIR = RelativePath.parse("communities");
-  public static final RelativePath IMAGES_SUBDIR = RelativePath.parse("images");
+    public static final RelativePath IMAGES_SUBDIR_OLD = RelativePath.parse("images");
+    public static final RelativePath IMAGES_SUBDIR_V1 = RelativePath.parse("images.v1");
+    public static final RelativePath IMAGES_SUBDIR_V2 = RelativePath.parse("images.v2");
   //public static final String SCRIPT_SUBDIR = SW_SUBDIR + "scripts/";
   public static final String NEED_SERIAL_NUMBER = "-- to be assigned --";
   public static final String MISSING_PACKAGE = "ERROR!  MISSING CONTENT IMAGE!";

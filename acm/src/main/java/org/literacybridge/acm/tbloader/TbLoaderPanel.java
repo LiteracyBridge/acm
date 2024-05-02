@@ -118,8 +118,8 @@ public class TbLoaderPanel extends JPanel {
     private final Builder builder;
 
     private final ProgramSpec programSpec;
-    private final String[] packagesInDeployment;
-    private final Map<String, String> packageNameMap;
+    private String[] packagesInDeployment;
+    private Map<String, String> packageNameMap;
 
     private JTextPane greetingAndUploadPane;
     private TbHistoryPanel historyPanel;
@@ -323,6 +323,11 @@ public class TbLoaderPanel extends JPanel {
     private void showNewPackage() {
         // Shows wither a package chooser or a package name.
         newPackageLayout.show(newPackageContainer, allowPackageChoice ? "CHOICE" : "NOCHOICE");
+    }
+
+    public void setAvailablePackages(String[] packagesInDeployment, Map<String,String> packageNameMap) {
+        this.packagesInDeployment = packagesInDeployment;
+        this.packageNameMap = packageNameMap;
     }
 
     public void setDefaultPackage(String defaultPackage) {

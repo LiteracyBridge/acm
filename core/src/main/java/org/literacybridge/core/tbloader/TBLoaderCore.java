@@ -425,6 +425,7 @@ public abstract class TBLoaderCore {
 
     }
 
+    protected abstract TbFile getImagesDir();
     protected abstract TbFile getTempTbDataDir();
     protected abstract TbFile getTempTbDataZip();
     protected abstract TbFile getCollectedOpDataDir();

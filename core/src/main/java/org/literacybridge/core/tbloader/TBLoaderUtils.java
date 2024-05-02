@@ -1,6 +1,6 @@
 package org.literacybridge.core.tbloader;
 
-import org.literacybridge.core.fs.TbFile;
+import org.literacybridge.core.tbdevice.TbDeviceInfo;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,7 +17,9 @@ import java.util.regex.Pattern;
 
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEFAULT_GROUP_LABEL;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR_OLD;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR_V1;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR_V2;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENTID_PROPERTY;
 
 public class TBLoaderUtils {
@@ -74,26 +76,68 @@ public class TBLoaderUtils {
         return srn == null || !UPDATED_SRN_PATTERN.matcher(srn).matches() || !srn.toLowerCase().startsWith(series.toLowerCase());
     }
 
+    private static File findImagesDir(File deploymentDirectory, TbDeviceInfo.DEVICE_VERSION device_version) {
+        if (device_version == TbDeviceInfo.DEVICE_VERSION.TBv2) {
+            return new File(deploymentDirectory, IMAGES_SUBDIR_V2.asString());
+        }
+        // Not v2, so assume v1.
+        File imagesDir = new File(deploymentDirectory, IMAGES_SUBDIR_V1.asString());
+        if (!imagesDir.isDirectory()) {
+            imagesDir = new File(deploymentDirectory, IMAGES_SUBDIR_OLD.toString());
+        }
+        return imagesDir;
+    }
+
+    /**
+     * Helper to find an images directory. This is only useful for callers that are not concerned
+     * with differences between TBv1 and TBv2, such as finding the names of the packages.
+     *
+     * This assumes that the same packages exist in both TBv1 and TBv2 deployments.
+     *
+     * @param deploymentDirectory The directory with the whole deployment.
+     * @return A File object for images.v2, images.v1, or images.
+     */
+    private static File findImagesDir(File deploymentDirectory) {
+        File imagesDir = new File(deploymentDirectory, IMAGES_SUBDIR_V2.asString());
+        if (!imagesDir.isDirectory()) {
+            imagesDir = new File(deploymentDirectory, IMAGES_SUBDIR_V1.toString());
+            if (!imagesDir.isDirectory()) {
+                imagesDir = new File(deploymentDirectory, IMAGES_SUBDIR_OLD.toString());
+            }
+        }
+        return imagesDir;
+    }
+
     /**
      * Gets the list of packages in a Deployment.
      * @param deploymentDirectory with the deployment.
      * @return a String[] of the packages in the deployment. Empty array if no packages found.
      */
     public static String[] getPackagesInDeployment(File deploymentDirectory) {
-        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/images
-        File imagesDir = new File(deploymentDirectory, IMAGES_SUBDIR.asString());
+        // ~/Amplio/TB-Loaders/{project}/content/{deployment}/images
+        File imagesDir = findImagesDir(deploymentDirectory);
         String[] packages = imagesDir.list( (dir, name) -> new File(dir, name).isDirectory() );
         if (packages == null) {
             packages = new String[0];
         }
         return packages;
     }
+    public static String[] getPackagesInDeployment(File deploymentDirectory, TbDeviceInfo.DEVICE_VERSION device_version) {
+        // ~/Amplio/TB-Loaders/{project}/content/{deployment}/images
+        File imagesDir = findImagesDir(deploymentDirectory, device_version);
+        String[] packages = imagesDir.list( (dir, name) -> new File(dir, name).isDirectory() );
+        if (packages == null) {
+            packages = new String[0];
+        }
+        return packages;
+    }
+
     /**
      * Given a Deployment directory with one or more images (packages), and a community, find
      * the package that matches the community.
      *
      * @param deploymentDirectory The Deployment directory, with one or more images, like
-     *                            ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}
+     *                            ~/Amplio/TB-Loaders/{project}/content/{deployment}
      * @param community           The community name for which the image name is desired. Like "vingving - jirapa"
      * @return The name of the image that matches, like "demo-2017-3-dga".
      */
@@ -110,8 +154,8 @@ public class TBLoaderUtils {
         String groupName;
         File[] images;
 
-        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/images
-        File imagesDir = new File(deploymentDirectory, IMAGES_SUBDIR.asString());
+        // ~/Amplio/TB-Loaders/{project}/content/{deployment}/images
+        File imagesDir = findImagesDir(deploymentDirectory);
         images = imagesDir.listFiles(File::isDirectory);
         if (images != null && images.length == 1) {
             // Take the only image package
@@ -133,9 +177,9 @@ public class TBLoaderUtils {
                     // look for a match in each of images's group listing
                     groupName = group.substring(0, group.length() - 4);
                     for (File image : images) {
-                        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/images/{image}/system
+                        // ~/Amplio/TB-Loaders/{project}/content/{deployment}/images/{image}/system
                         File systemDir = new File(image, "system");
-                        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/images/{image}/system/*.grp
+                        // ~/Amplio/TB-Loaders/{project}/content/{deployment}/images/{image}/system/*.grp
                         String[] imageGroups = systemDir.list((dir, name) -> {
                             String lowercase = name.toLowerCase();
                             return lowercase.endsWith(GROUP_FILE_EXTENSION);
@@ -156,14 +200,14 @@ public class TBLoaderUtils {
                     }
                 }
             }
-            if (imageName.length() == 0) {
+            if (imageName.isEmpty()) {
                 // no match of groups between community and multiple packages
                 // Only hope is that there is a default package. If there were multiples,
                 // we'll pick one at random (last one wins).
                 imageName = defaultImageName;
             }
         }
-        if (imageName.length() == 0) {
+        if (imageName.isEmpty()) {
             imageName = TBLoaderConstants.MISSING_PACKAGE;
         }
         return imageName;
@@ -206,7 +250,7 @@ public class TBLoaderUtils {
      * @return The recipient id, if it can be determined, otherwise null.
      */
     public static String getRecipientIdForCommunity(File deploymentDirectory, String communityName) {
-        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/communities/{communitydir}
+        // ~/Amplio/TB-Loaders/{project}/content/{deployment}/communities/{communitydir}
         File communitiesDir = new File(deploymentDirectory, "communities");
         File communityDir = new File(communitiesDir, communityName);
 

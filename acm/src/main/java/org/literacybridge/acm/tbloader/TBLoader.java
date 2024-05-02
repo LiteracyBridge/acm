@@ -491,10 +491,6 @@ public class TBLoader extends JFrame {
 
     private void initializeGui() {
         setTitle(String.format("TB-Loader %s", newProject));
-        // If we were able to open the ACM database, we can use it to get friendlier names for languages.
-        // Otherwise, we'll have to use the languae code.
-        DBConfiguration dbConfig = ACMConfiguration.getInstance().getDbConfiguration(newProject);
-        Function<String,String> labeler = dbConfig != null ? dbConfig::getLanguageLabel : x->null;
 
         String[] packagesInDeployment;
         Properties deploymentProperties = getProgramSpec().getDeploymentProperties();
@@ -503,20 +499,8 @@ public class TBLoader extends JFrame {
         tbLoaderConfig.allowPackageChoice |= deploymentProperties.isEmpty();
         packagesInDeployment = getPackagesInDeployment(deploymentDir);
         List<String> packagesList = Arrays.asList(packagesInDeployment);
-        Map<String,String> packageNameMap = deploymentProperties.stringPropertyNames().stream()
-            .filter(k->packagesList.contains(deploymentProperties.get(k).toString()))
-            .collect(Collectors.toMap(k->deploymentProperties.get(k).toString(), k->{
-                String[] parts = k.split(",");
-                String label = labeler.apply(parts[0]);
-                String languageName = label==null ? parts[0] : (label + " (" + parts[0] + ')');
-                if (parts.length > 1) {
-                    languageName += ", Variant: " + parts[1];
-                }
-                return languageName;
-            }));
-        packagesList.stream()
-            .filter(p -> !packageNameMap.containsKey(p))
-            .forEach(p -> packageNameMap.put(p, p));
+        // Get a more readable version of the package names.
+        Map<String,String> packageNameMap = buildPackageNamesMap(packagesList);
 
         /*tbLoaderPanel.refresh();*/
         TbLoaderPanel.Builder builder = new TbLoaderPanel.Builder()
@@ -553,6 +537,37 @@ public class TBLoader extends JFrame {
         fillFirmwareVersion();
 
         setVisible(true);
+    }
+
+    private Map<String, String> buildPackageNamesMap(List<String> packagesList) {
+        // If we were able to open the ACM database, we can use it to get friendlier names for languages.
+        // Otherwise, we'll have to use the languae code.
+        DBConfiguration dbConfig = ACMConfiguration.getInstance().getDbConfiguration(newProject);
+        Function<String,String> labeler = dbConfig != null ? dbConfig::getLanguageLabel : x->null;
+        Properties deploymentProperties = getProgramSpec().getDeploymentProperties();
+
+        // Converts properties like
+        //  sil=LBG-COVID19-6-sil
+        //  sil,f=LBG-COVID196silf
+        // to a map like
+        // { "LBG-COVID19-6-sil" : "Tumu Sissali (sil)", "LBG-COVID196silf" : "Tumu Sissali (sil), Variant: f", ...}
+        // That is, a more readable version of the package name.
+        Map<String,String> packageNameMap = deploymentProperties.stringPropertyNames().stream()
+            .filter(k->packagesList.contains(deploymentProperties.get(k).toString()))
+            .collect(Collectors.toMap(k->deploymentProperties.get(k).toString(), k->{
+                String[] parts = k.split(",");
+                String label = labeler.apply(parts[0]);
+                String languageName = label==null ? parts[0] : (label + " (" + parts[0] + ')');
+                if (parts.length > 1) {
+                    languageName += ", Variant: " + parts[1];
+                }
+                return languageName;
+            }));
+        // Ensure every package is in map of { name: friendly-label }.
+        packagesList.stream()
+            .filter(p -> !packageNameMap.containsKey(p))
+            .forEach(p -> packageNameMap.put(p, p));
+        return packageNameMap;
     }
 
     private void refreshTbHistory() {
@@ -1101,6 +1116,11 @@ public class TBLoader extends JFrame {
     private void populatePreviousValuesFromCurrentDrive() {
         if (!isOldVsNewOk()) return;
 
+        String[] packagesInDeployment = getPackagesInDeployment(deploymentDir, tbLoaderPanel.getDeviceVersion());
+        List<String> packagesList = Arrays.asList(packagesInDeployment);
+        Map<String,String> packageNameMap = buildPackageNamesMap(packagesList);
+        tbLoaderPanel.setAvailablePackages(packagesInDeployment, packageNameMap);
+
         fillFirmwareVersion();
 
         String driveLabel = currentTbDevice.getLabelWithoutDriveLetter();
@@ -1187,7 +1207,10 @@ public class TBLoader extends JFrame {
     }
 
     private void onDeviceVersionSelected(TbDeviceInfo.DEVICE_VERSION device_version) {
-//        fsRootMonitor.refresh();
+//        String[] packagesInDeployment = getPackagesInDeployment(deploymentDir, device_version);
+//        List<String> packagesList = Arrays.asList(packagesInDeployment);
+//        Map<String,String> packageNameMap = buildPackageNamesMap(packagesList);
+//        tbLoaderPanel.setAvailablePackages(packagesInDeployment, packageNameMap);
     }
 
     /**
