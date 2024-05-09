@@ -50,12 +50,7 @@ fun HomeScreen(
     viewModel: TalkingBookViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
 ) {
-    // Retrieve data from next screen
-//    val msg =
-//        navController.currentBackStackEntry?.savedStateHandle?.get<String>("msg")
-
     val uiState by viewModel.deviceState.collectAsStateWithLifecycle()
-
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()

@@ -11,6 +11,7 @@ import org.literacybridge.talkingbookapp.ui.ProgramSelectionScreen
 import org.literacybridge.talkingbookapp.ui.talkingbook_update.ContentUpdateScreen
 import org.literacybridge.talkingbookapp.ui.talkingbook_update.ContentVerificationScreen
 import org.literacybridge.talkingbookapp.ui.talkingbook_update.RecipientScreen
+import org.literacybridge.talkingbookapp.ui.upload_status.UploadStatusScreen
 
 @Composable
 fun AppNavHost(
@@ -82,6 +83,13 @@ fun AppNavHost(
                 LocalViewModelStoreOwner provides viewModelStoreOwner
             ) {
                 ContentUpdateScreen(navController)
+            }
+        }
+        composable(NavigationItem.UploadStatus.route) {
+            CompositionLocalProvider(
+                LocalViewModelStoreOwner provides viewModelStoreOwner
+            ) {
+                UploadStatusScreen(navController)
             }
         }
     }

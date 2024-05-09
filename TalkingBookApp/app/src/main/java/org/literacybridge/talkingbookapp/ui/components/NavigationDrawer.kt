@@ -4,7 +4,6 @@ import Screen
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.List
@@ -19,6 +18,8 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -34,9 +35,20 @@ fun NavigationDrawer(
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier.fillMaxWidth(0.8f),
-                ) {
+            ) {
                 Text("Account Info Here!", modifier = Modifier.padding(16.dp))
                 Divider()
+                NavigationDrawerItem(
+                    label = { Text(text = "Home") },
+                    icon = {
+                        Icon(
+                            Icons.Outlined.List,
+                            contentDescription = "Manage program audio content"
+                        )
+                    },
+                    selected = false,
+                    onClick = { navController.navigate(Screen.HOME.name) }
+                )
                 NavigationDrawerItem(
                     label = { Text(text = "Manage Program Content") },
                     icon = {
@@ -68,7 +80,7 @@ fun NavigationDrawer(
                         )
                     },
                     selected = false,
-                    onClick = { /*TODO*/ }
+                    onClick = { navController.navigate(Screen.UPLOAD_STATUS.name) }
                 )
                 Divider()
                 NavigationDrawerItem(

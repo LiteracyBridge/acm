@@ -113,8 +113,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 //        if (tb == null) {
 //            TODO("Display error to user that TB is not connected")
 //        }
-//
-//
 //    }
 
     fun setDevice(device: UsbDevice?, talkingBook: Usb.TalkingBook?) {
