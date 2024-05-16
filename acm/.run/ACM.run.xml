@@ -2,13 +2,10 @@
   <configuration default="false" name="ACM" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="ACM" />
     <module name="acm.main" />
-<<<<<<< HEAD
     <option name="PROGRAM_PARAMETERS" value="survey-demo --go -s" />
     <option name="VM_PARAMETERS" value="-cp acm.jar:lib/* " />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/dist" />
-=======
     <option name="PROGRAM_PARAMETERS" value="LBG-COVID-19" />
->>>>>>> 68663a3e (Fix: When updating a TBv1, prefer 'images.v1' over 'images'.)
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
