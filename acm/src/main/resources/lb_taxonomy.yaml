@@ -85,9 +85,12 @@ taxonomy:
             '0-6-16' :
               name: Update 16
               order: 16
-    '0-7':
-      name: Response to Feedback
-      order: 800
+        '0-7':
+          name: Response to Feedback
+          order: 800
+        '0-8' :
+          name: Survey
+          order: 40
     '1' :
       name: Agriculture
       order: 20

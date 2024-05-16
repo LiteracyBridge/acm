@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -117,6 +118,7 @@ public class PackagesData implements Serializable {
             private AudioData shortPrompt;
             private AudioData longPrompt;
             private final List<AudioData> messages = new ArrayList<>();
+            private String scriptName;
 
             public PlaylistData(String name) {
                 this.name = name;
@@ -139,6 +141,11 @@ public class PackagesData implements Serializable {
 
             public PlaylistData withLongPrompt(String title, Path path) {
                 this.longPrompt = new AudioData(title, path);
+                return this;
+            }
+
+            public PlaylistData withScript(String scriptName) {
+                this.scriptName = scriptName;
                 return this;
             }
 
@@ -245,6 +252,9 @@ public class PackagesData implements Serializable {
                 exportAudio(2, pl.shortPrompt.path, "playlist announcement");
                 exportAudio(2, pl.longPrompt.path, "playlist invitation");
 
+                if (!StringUtils.isBlank(pl.scriptName)) {
+                    print(2, "script: " + pl.scriptName, "custom playlist script");
+                }
                 // Messages
                 print(2, pl.messages.size(), "number of messages");
                 pl.messages.forEach(msg -> exportAudio(3, msg.path, msg.name));
@@ -362,8 +372,7 @@ public class PackagesData implements Serializable {
         }
 
         private void parsePlaylist(PackageData packageData) throws IOException {
-            Pattern scriptPattern = Pattern.compile("\\s*script\\s*[=:]\\s*(\\w*)");
-            Pattern noNavPattern = Pattern.compile("(?i)\\s*noNav");
+            Pattern scriptPattern = Pattern.compile("\\s*script\\s*[=:]\\s*([\\w.]*)");
             Pattern numberPattern = Pattern.compile("(\\d*)");
 
             String playlistName = nextLine();
@@ -374,9 +383,13 @@ public class PackagesData implements Serializable {
             playlistData.withLongPrompt("playlist invitation", invitation);
             String line = nextLine();
             Integer numMessages = null;
+            Matcher m;
             while (numMessages == null) {
                 if (numberPattern.matcher(line).matches()) {
                     numMessages = Integer.parseInt(line);
+                } else if ((m=scriptPattern.matcher(line)).matches()) {
+                    playlistData.withScript(m.group(1));
+                    line = nextLine();
                 } else {
                     line = nextLine();
                 }

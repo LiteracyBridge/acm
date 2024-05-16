@@ -641,7 +641,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         File firmwareOverride = new File(tbOptions, "firmware.v2");
         validateLocalOverrideDirectory(firmwareOverride, CreateForV2::isValidFirmwareSource, "V2 firmware");
         File csmOverride = new File(tbOptions, "system.v2");
-        validateLocalOverrideDirectory(csmOverride, CreateForV2::isValidCSMSource, "CSM files");
+        validateLocalOverrideDirectory(csmOverride, CreateForV2::isValidSystemSource, "CSM files");
     }
 
     private void validateLocalOverrideDirectory(File directory, Predicate<File> isValid, String label) {

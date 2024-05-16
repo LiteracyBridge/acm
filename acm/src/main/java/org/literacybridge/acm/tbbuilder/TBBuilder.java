@@ -114,7 +114,7 @@ public class TBBuilder {
 
             PathsProvider pathsProvider = dbConfig.getPathProvider();
             this.sourceHomeDir = pathsProvider.getProgramHomeDir();
-            // Like ~/Dropbox/ACM-UWR/TB-Loaders or ~/Amplio/acm-dbs/UWR/TB-Loaders
+            // Like ~/Amplio/acm-dbs/UWR/TB-Loaders
             this.sourceTbLoadersDir = pathsProvider.getProgramTbLoadersDir();
             this.sourceTbOptionsDir = new File(this.sourceTbLoadersDir, "TB_Options");
 

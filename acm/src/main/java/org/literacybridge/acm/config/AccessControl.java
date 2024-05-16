@@ -78,7 +78,7 @@ public class AccessControl {
     }
 
     /**
-     * Given a dbNN.zip file name (from Dropbox), determine the NN+1 filename, and store both
+     * Given a dbNN.zip file name (from s3), determine the NN+1 filename, and store both
      * for later use. If the NN can't be parsed, or there is no filename (ie, null), then
      * store (null,null) for the file names.
      * Due to a quirk of the php checkout processor, if there is no known .zip file name, as with
@@ -380,7 +380,7 @@ public class AccessControl {
         }
 
         if (findNewestModifiedZipFile() == null) {
-            // No zip file at all -- Dropbox problems? Hard error.
+            // No zip file at all -- s3 problems? Hard error.
             return AccessStatus.noDbError;
         }
         if (!haveLatestDB()) {
@@ -461,9 +461,7 @@ public class AccessControl {
 
     /**
      * Checks the server to see if the given db is available to check out.
-     * @param db the name of the database, "ACM-LBG-COVID-19" or "UNICEF-GH_CHPS". Has an ACM- prefix if the
-     *           program directory has an ACM- prefix. (Or, has an ACM- prefix if the database is in Dropbox,
-     *           and not if the database is in S3.)
+     * @param db the name of the database, UNICEF-GH_CHPS".
      * @return True if the database is available, false otherwise.
      * @throws IOException if there is a network error.
      */
@@ -473,9 +471,7 @@ public class AccessControl {
 
     /**
      * Attempts to check out the given database.
-     * @param db the name of the database, "ACM-LBG-COVID-19" or "UNICEF-GH_CHPS". Has an ACM- prefix if the
-     *           program directory has an ACM- prefix. (Or, has an ACM- prefix if the database is in Dropbox,
-     *           and not if the database is in S3.)
+     * @param db the name of the database, "LBG-COVID-19".
      * @return True if the database was successfully checked out, false otherwise.
      * @throws IOException if there is a network error.
      */
@@ -491,8 +487,7 @@ public class AccessControl {
         boolean nodb = false;
         String currentZipFilename = null, checkoutKey = null;
 
-        // Code for testing. This is 'true' when dropbox is overridden by environment variable,
-        // that is, not a real ACM in dropbox.
+        // Code for testing.
         if (ACMConfiguration.getInstance().isNoDbCheckout()) {
             if (!setNewestModifiedZipFileAsCurrent()) {
                 setZipFilenames(DB_DOES_NOT_EXIST);
@@ -614,9 +609,7 @@ public class AccessControl {
 
     /**
      * Discards a checkout. The checkout record is released on the server.
-     * @param acmName the name of the database, "ACM-LBG-COVID-19" or "UNICEF-GH_CHPS". Has an ACM- prefix if the
-     *           program directory has an ACM- prefix. (Or, has an ACM- prefix if the database is in Dropbox,
-     *           and not if the database is in S3.)
+     * @param acmName the name of the database, "LBG-COVID-19".
      * @return True if the checkin was released OK, false otherwise.
      * @throws IOException if the server can't be reached.
      */

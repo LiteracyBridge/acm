@@ -389,42 +389,12 @@ public abstract class TBLoaderCore {
         mDeploymentDirectory = builder.mDeploymentDirectory;
         mProgressListener = builder.mProgressListener;
 
-        // "tbData"
-//        mLogDirectory = mCollectedDataDirectory         // like /Users/alice/Dropbox/tbcd000c
-//            .open(mOldDeploymentInfo.getProjectName())  // {tbloaderConfig.project}
-//            .open(OPERATIONAL_DATA)                     // "OperationalData"
-//            .open(mTbLoaderConfig.getTbLoaderId())      // {tbloaderConfig.tbLoaderId}
-//            .open("tbData");
-//        mLogDirectory = getCollectedOpDataDir();
-
         // 2017Y09M28D22H31M52S
         mLegacyFormatUpdateTimestamp = TBLoaderUtils.getDateTime(now);
 
-//        // Like 2016y12m25d01h23m45s-000c. Also known as the "synch" directory.
-//        String mCollectionTempName = mLegacyFormatUpdateTimestamp + "-" + builder.mTbLoaderConfig.getTbLoaderId();
-//
-//        // This is the path name for the "TalkingBookData" from this TB. In particular, this is the path
-//        // name for the directory that will contain the collected data, and then the .zip file of that data.
-//        // like TalkingBookData/{Deployment name}/{tbloader id}/{community name}/{tb serial no}
-//        RelativePath talkingBookDataParentPath = new RelativePath(
-//            TBLoaderConstants.TALKING_BOOK_DATA,           // "TalkingBookData"
-//            mOldDeploymentInfo.getDeploymentName(),   // like "DEMO-2016-1"
-//            builder.mTbLoaderConfig.getTbLoaderId(),   // like "000c"
-//            mOldDeploymentInfo.getCommunity(),        // like "demo-seattle"
-//            mBuilder.mTbDeviceInfo.getSerialNumber());  // like "B-000C1234"
-//
-//
-//        // like TalkingBookData/{Deployment name}/{tbloader id}/{community name}/{tb serial no}/{timestamp}-{tbloader id}
-//        // like "2016y12m25d01h23m45s-000c"
-//        mTalkingBookDataDirectoryPath = new RelativePath(
-//            talkingBookDataParentPath, mCollectionTempName);
-//        // like "2016y12m25d01h23m45s-000c"
-//        mTalkingBookDataZipPath = new RelativePath(
-//            talkingBookDataParentPath,
-//            mCollectionTempName + ".zip");
-
     }
 
+    protected abstract TbFile getImagesDir();
     protected abstract TbFile getTempTbDataDir();
     protected abstract TbFile getTempTbDataZip();
     protected abstract TbFile getCollectedOpDataDir();
@@ -525,7 +495,6 @@ public abstract class TBLoaderCore {
 
         boolean gotStatistics = false;
         try {
-            // Like {dropbox path} / tbcd1234/collected-data/XYZ
             if (!isTalkingBookStorageGood()) {
                 return new Result();
             }

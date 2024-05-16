@@ -1,40 +1,21 @@
 package org.literacybridge.acm.config;
 
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.utils.DropboxFinder;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedList;
-import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
     File structure.
-        ~/Dropbox (Amplio)      (or ~/Amplio/acm-dbs
-            ACM-PROG-NAME               # various config files for the program
-                TB-Loaders              # bat files to run TB-Loader
-                    TB_Options
-                        activeLists
-                        basic
-                        config_files
-                        firmware
-                        languages
-                        system_menus
-                    communities
-                    metadata            # Partial metadata snapshot (This is incomplete)
-                    packages            # "Packages" are exported here. These could be cleaned up immediately.
-                    published           # The published deployments go here
-                content                 # Deeply nested directory
-                programspec             # Currently active program spec is cached here
-
         ~/Amplio
+            acm_config.properties       # Recording counter, "device id", contact info
+            programs.info               # Information about the programs to which this user has access
+            credentials.info            # email, user name, lightly obfuscated password, cognito claims
+            tbsrnstore.info             # SRN allocation info for users who have logged on to TB-Loader
             acm-dbs                     # Per program directory of content database
+            TB-History                  # Cached global, and not-yet-uploaded local deployment & collection history
             TB-Loaders                  # Per program directory of current deployment data
             ACM
                 acm.jar                 # Main file for acm
@@ -46,32 +27,10 @@ import java.util.logging.Logger;
             temp                        # Intended for things not to be written
             collectiondir               # Statistics and UF is collected here
             uploadqueue                 # When ready to be uploaded to S3, files are moved here.
-            updater                     # Installers are downloaded and kept up-to-date here
+            sandbox                     # Changes to the program data is staged here, until the user commits it
+            updates                     # Installers are downloaded and kept up-to-date here
 
-        ~/LiteracyBridge
-            acm_config.properties       # Recording counter, "device id", Dropbox path, contact info
-            credentials.info            # email, user name, lightly obfuscated password, cognito claims
-            tbsrnstore.info             # SRN allocation info for users who have logged on to TB-Loader
-            ACM
-                r1234.rev               # Version marker file
-                ACM.bat                 # runs the ACM
-                cache                   # Audio files we want to keep, but not sync
-                software
-                    build.properties    # timestamp, counter for the installed build
-                    acm.jar
-                    lib/*
-                    converters/ *
-                    icons/ *
-                    RemoveDrive.exe
-                    splash-acm.jpg
-                    N .bat files         # invoke ../ACM.bat with program id as argument
-                temp
-            collected-data
-            collectiondir
-            logs
-            status
-            TB-Loaders
-            uploadqueue
+
  */
 public class AmplioHome {
     private static final Logger LOG = Logger.getLogger(AmplioHome.class.getName());
@@ -238,12 +197,8 @@ public class AmplioHome {
 
 
 
-    // If any code ever queries the Dropbox directory, this will be populated.
-    static File dropboxDir = null;
-    static boolean dropboxOverride = false;
-
     /**
-     * Non-dropbox ACM databases go here.
+     * ACM databases go here.
      *
      * @return ~/Amplio/acm-dbs
      */
@@ -321,7 +276,7 @@ public class AmplioHome {
 
     /**
      * The ~/Amplio/acm_config.properties or ~/LiteracyBridge/acm_config.properties file.
-     * Per computer information (dropbox path).
+     * Per computer information.
      *
      * @return it.
      */
@@ -342,82 +297,4 @@ public class AmplioHome {
         return new File(getDirectory(), Constants.TBLoadersHistoryDir);
     }
 
-
-    /**
-     * Helper function to find the Dropbox directory if it is needed.
-     *
-     * Note: this function may read and may write the per-user config file.
-     *
-     * @return path to Dropbox, if it can be determined.
-     */
-    synchronized static File getDropboxDir() {
-        if (dropboxDir != null) return dropboxDir;
-
-        Properties userConfig = new Properties();
-        File userConfigFile = getUserConfigFile();
-        boolean dirUpdated = false;
-        // If there is an environment override for 'dropbox', use that for the
-        // global directory.
-        String override = System.getenv("dropbox");
-        if (override != null && override.length() > 0) {
-            dropboxDir = new File(override);
-            dropboxOverride = true;
-            LOG.info(String.format("Using override for Dropbox directory: %s", override));
-        }
-        else {
-            if (userConfigFile.exists()) {
-                try {FileInputStream fis = new FileInputStream(userConfigFile);
-                    BufferedInputStream in = new BufferedInputStream(fis);
-                    userConfig.load(in);
-                } catch (IOException ignored) {
-                    System.out.printf("Exception reading configuration file %s\n", userConfigFile.getAbsolutePath());
-                }
-            } else {
-                System.out.printf("No configuration file %s\n", userConfigFile.getAbsolutePath());
-            }
-            String dropboxPath = userConfig.getProperty(Constants.GLOBAL_SHARE_PATH);
-            if (dropboxPath != null) {
-                dropboxDir = new File(dropboxPath);
-                if (dropboxDir.isDirectory()) {
-                    System.out.printf("Found Dropbox through config: %s\n", dropboxPath);
-                }
-            }
-            // If we didn't find the global directory, try to get it from Dropbox
-            // directly.
-            if (dropboxPath == null || !dropboxDir.exists()) {
-                dropboxPath = DropboxFinder.getDropboxPath();
-                dropboxDir = new File(dropboxPath);
-                dirUpdated = true;
-                LOG.info(String.format("Using Dropbox configuration for shared global directory: %s",
-                        dropboxPath));
-                System.out.printf("Using Dropbox configuration for shared global directory: %s", dropboxPath);
-            }
-        }
-        // Still didn't find Dropbox. Try "Dropbox" in user's home directory.
-        if (dropboxDir == null || !dropboxDir.isDirectory()) {
-            dropboxDir = new File(USER_HOME_DIR, "Dropbox");
-            dirUpdated = true;
-            System.out.printf("Trying to find Dropbox in user's home directory: %s\n", dropboxDir.getAbsolutePath());
-        }
-        // We sill didn't find the global directory, so we must not use it on this machine.
-        if (dropboxDir == null || !dropboxDir.exists() || !dropboxDir.isDirectory()) {
-            dropboxDir = null;
-            dirUpdated = false; // Don't try to write null.
-            System.out.println("Can't find Dropbox directory on this computer.");
-        }
-        if (dirUpdated) {
-            userConfig.setProperty(Constants.GLOBAL_SHARE_PATH, dropboxDir.getAbsolutePath());
-            try {
-                FileOutputStream fos = new FileOutputStream(userConfigFile);
-                BufferedOutputStream bos = new BufferedOutputStream(fos);
-                userConfig.store(bos, null);
-            } catch (IOException ignored) {
-            }
-        }
-        return dropboxDir;
-    }
-
-    static boolean isDropboxOverride() {
-        return dropboxOverride;
-    }
 }

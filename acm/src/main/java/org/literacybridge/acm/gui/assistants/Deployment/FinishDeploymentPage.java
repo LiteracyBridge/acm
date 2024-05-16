@@ -272,7 +272,6 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         assert(newPkgs.equals(pkgs));
 
         try {
-            // May or may not have "ACM-" prefix, depending on Dropbox vs S3 hosted ACM database.
             TBBuilder tbBuilder = new TBBuilder(ACMConfiguration.getInstance().getCurrentDB(), context.deploymentNo, deploymentName(), this::reportState, this::logException);
 
             // Create.
