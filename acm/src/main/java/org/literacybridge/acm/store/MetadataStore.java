@@ -18,6 +18,8 @@ public abstract class MetadataStore {
 
   public abstract AudioItem newAudioItem(String uid);
 
+  public abstract void newAudioItem(AudioItem audioItem);
+
   public abstract AudioItem getAudioItem(String uid);
 
   public abstract void deleteAudioItem(String uid);
@@ -29,6 +31,8 @@ public abstract class MetadataStore {
   public abstract Playlist getPlaylist(String uid);
 
   public abstract Playlist findPlaylistByName(String name);
+
+  public abstract Playlist findPlaylistById(String id);
 
   public abstract void deletePlaylist(String uid);
 

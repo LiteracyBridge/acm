@@ -16,7 +16,7 @@ public class PromptImportAssistant {
 //        if (ACMConfiguration.isTestData()) {
 //        }
 
-        context.promptsInfo = new PromptsInfo();
+        context.promptsInfo = PromptsInfo.getInstance();
         //context.promptDefinitions.forEach((k,v)->context.promptHasRecording.put(k,false));
 
         @SuppressWarnings("UnnecessaryLocalVariable")

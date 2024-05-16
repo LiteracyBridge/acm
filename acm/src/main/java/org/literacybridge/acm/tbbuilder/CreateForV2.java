@@ -29,11 +29,21 @@ import org.literacybridge.core.tbloader.PackagesData.PackageData.PlaylistData;
 
 import java.io.*;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
+import static org.literacybridge.acm.Constants.BELL_SOUND_V2;
+import static org.literacybridge.acm.Constants.CUSTOM_GREETING_V1;
+import static org.literacybridge.acm.Constants.SILENCE_V2;
 
 /*
  * Builds a TBv1 deployment.
@@ -336,7 +346,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         if (sourceLanguageDir.exists() && sourceLanguageDir.isDirectory() && Objects.requireNonNull(sourceLanguageDir.listFiles()).length > 0) {
             targetLanguageDir.mkdirs();
             targetSystemDir.mkdirs();
-            String targetFilename = FilenameUtils.removeExtension(CUSTOM_GREETING) + '.' + getAudioFormat().getFileExtension();
+            String targetFilename = FilenameUtils.removeExtension(CUSTOM_GREETING_V1) + '.' + getAudioFormat().getFileExtension();
             File targetFile = new File(targetLanguageDir, targetFilename);
             repository.exportGreetingWithFormat(sourceLanguageDir, targetFile, audioFormat);
             File groupFile = new File(targetSystemDir, recipient.languagecode + ".grp");
@@ -659,6 +669,10 @@ class CreateForV2 extends CreateFromDeploymentInfo {
                     }
                 }
             }
+            // Copy the boilerplate files, $0-1.txt (tutorial list), 0.a18 (cha-ching), 7.a18 (silence)
+            addBoilerplateFile(determineShadowFile(promptsDir, BELL_SOUND_V2, shadowPromptsDir));
+            addBoilerplateFile(determineShadowFile(promptsDir, SILENCE_V2, shadowPromptsDir));
+
         }
 
         private void addSystemDirFilesToImage() throws IOException {

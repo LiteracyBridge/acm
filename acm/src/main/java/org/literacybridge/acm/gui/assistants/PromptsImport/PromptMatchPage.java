@@ -106,7 +106,7 @@ public class PromptMatchPage extends
             List<PromptTarget> prompts = context.promptsInfo.getPrompts().stream()
                 .map(promptInfo -> {
                     PromptTarget target = new PromptTarget(promptInfo);
-                    target.setHasPrompt(context.promptHasRecording.get(promptInfo.getId()));
+                    target.setHasPrompt(context.promptHasRecording.get(promptInfo.getPromptId()));
                     return target;
                 })
                 .collect(Collectors.toList());
@@ -136,10 +136,10 @@ public class PromptMatchPage extends
         String filterText = this.filterText.getText().toLowerCase();
         boolean onlyMissing = this.showOnlyMissing.isSelected();
 
-        if (!onlyMissing && filterText.length()==0) {
+        if (!onlyMissing && filterText.isEmpty()) {
             promptMatchFilter.setPredicate(null);
             this.showOnlyMissing.setEnabled(true);
-        } else if (filterText.length()!=0) {
+        } else if (!filterText.isEmpty()) {
             promptMatchFilter.setPredicate(item -> item.containsText(filterText));
             this.showOnlyMissing.setEnabled(false);
         } else {

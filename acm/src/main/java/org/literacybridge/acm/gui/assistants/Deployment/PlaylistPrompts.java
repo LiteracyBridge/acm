@@ -82,9 +82,9 @@ public class PlaylistPrompts {
         this.longPromptItem = longPromptItem;
     }
 
-    public void findPrompts() {
+    public boolean findPrompts() {
         findPromptsInLanguageFiles();
-        findPromptsInAcmContent();
+        return findPromptsInAcmContent();
     }
 
     public String getTitle() {
@@ -158,7 +158,7 @@ public class PlaylistPrompts {
             // in the "control.txt", and is played right after "Welcome to the Talking Book!".
             this.categoryId = categoryIds.get(0);
 
-        } else if (categoryIds.size() > 0) {
+        } else if (!categoryIds.isEmpty()) {
             // Where to look for category prompts.
             File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
             String languagesPath =
@@ -244,8 +244,10 @@ public class PlaylistPrompts {
     /**
      * Look in the content for audio items with a title that matches the playlist
      * title, and for one that matches the playlist title + " : description".
+     *
+     * @return true if playlist prompt exists in store
      */
-    private void findPromptsInAcmContent() {
+    private boolean findPromptsInAcmContent() {
         // Get any audio items in "TB Categories", given language, that textually match the playlist title.
         List<Category> categoryList = Collections.singletonList(store.getTaxonomy()
             .getCategory(CATEGORY_TB_CATEGORIES));
@@ -279,6 +281,8 @@ public class PlaylistPrompts {
         if (longPromptItem == null || shortPromptItem == null) {
             searchIgnoringUnderscores(categoryList, localeList);
         }
+
+        return longPromptItem != null || shortPromptItem != null;
     }
 
     /**

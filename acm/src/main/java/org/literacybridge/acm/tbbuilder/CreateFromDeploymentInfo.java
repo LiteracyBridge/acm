@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -280,5 +281,23 @@ public abstract class CreateFromDeploymentInfo {
         }
     }
 
+    /**
+     * Files that don't depend on program or language, the bell, and the .txt file for the tutorial.
+     * @param destFile The file to be written to.
+     */
+    protected void addBoilerplateFile(File destFile) {
+        if (!destFile.exists()) {
+            String name = destFile.getName();
+            InputStream srcStream = CreateFromDeploymentInfo.class.getClassLoader().getResourceAsStream(name);
+            try {
+                // srcStream may be null, in which case we'll catch and report the exception.
+                //noinspection ConstantConditions
+                FileUtils.copyInputStreamToFile(srcStream, destFile);
+            } catch (Exception ex) {
+                // Keep going after failing to export a prompt.
+                builderContext.logException(ex);
+            }
+        }
+    }
 
 }
