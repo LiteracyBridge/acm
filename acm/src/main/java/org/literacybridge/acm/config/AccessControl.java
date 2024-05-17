@@ -169,7 +169,7 @@ public class AccessControl {
         boolean result = false;
         try {
 //            long startTime = System.nanoTime();
-            URLConnection connection = new URL("http://dashboard.amplio.org").openConnection();
+            URLConnection connection = new URL("https://dashboard.amplio.org").openConnection();
             connection.connect();
 //            long validatedTime = System.nanoTime();
 //            System.out.printf("Online test in %.2f msec\n", (validatedTime-startTime)/1000000.0);
