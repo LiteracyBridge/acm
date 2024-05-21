@@ -265,7 +265,9 @@ class PlaylistPopupMenu extends JPopupMenu {
      * Exports a playlist, by creating a file with a list of the message ids in the playlist.
      * <p>
      * The file is created as:
-     * ~/Dropbox/ACM-NAME/TB-Loaders/packages/PACKAGE_NAME/messages/lists/1/PLAYLIST_CATEGORY_NAME.txt
+     * ~/Amplio/acm-dbs/${PROGRAM}/TB-Loaders/packages/PACKAGE_NAME/messages/lists/1/PLAYLIST_CATEGORY_NAME.txt
+     *
+     * Note that this is completely deprecated by the program specification driven deployment assistant.
      *
      * @param playlist to be exported.
      * @param category The category code that is being used as the Playlist name. Note that this
@@ -295,7 +297,7 @@ class PlaylistPopupMenu extends JPopupMenu {
      * the user is prompted. If only one file, it is returned directly.
      *
      * The templates are the files in
-     * ~/Dropbox/ACM-NAME/TB-Loaders/TB_Options/activeLists
+     * ~/Amplio/acm-dbs/${PROGRAM}/TB-Loaders/TB_Options/activeLists
      *
      * @return the _activeLists.txt template file.
      */

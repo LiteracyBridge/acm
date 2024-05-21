@@ -11,7 +11,7 @@ public interface AccessControlResolver {
         processError(true),                    // Can't lock, don't know why
         previouslyCheckedOutError(true),       // Already open this user, can't open with sandbox
         noNetworkNoDbError(true),              // Can't get to server, and have no local database
-        noDbError(true),                       // No local database. Dropbox problem?
+        noDbError(true),                       // No local database. S3 problem?
         checkedOut,                                 // Already checked out. Just open it.
         newDatabase,                                // New database (on server). Just open it.
         noServer(false, true),   // Can open, with sandbox

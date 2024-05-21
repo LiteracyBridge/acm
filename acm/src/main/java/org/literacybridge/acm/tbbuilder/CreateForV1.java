@@ -22,7 +22,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
+import static org.literacybridge.acm.Constants.BELL_SOUND_V1;
+import static org.literacybridge.acm.Constants.CUSTOM_GREETING_V1;
+import static org.literacybridge.acm.Constants.SILENCE_V1;
+import static org.literacybridge.acm.Constants.TUTORIAL_LIST;
 
 /*
  * Builds a TBv1 deployment.
@@ -276,6 +279,7 @@ class CreateForV1 extends CreateFromDeploymentInfo {
         }
     }
 
+
     private void addPackagePromptsToImage(DeploymentInfo.PackageInfo packageInfo, File imageDir) throws IOException {
         File languageDir = new File(imageDir, "languages" + File.separator + packageInfo.getLanguageCode());
         File shadowLanguageDir = new File(builderContext.stagedShadowDir, "languages"+File.separator + packageInfo.getLanguageCode());
@@ -296,6 +300,11 @@ class CreateForV1 extends CreateFromDeploymentInfo {
                 }
             }
         }
+        // Copy the boilerplate files, $0-1.txt (tutorial list), 0.a18 (cha-ching), 7.a18 (silence)
+        addBoilerplateFile(determineShadowFile(languageDir, TUTORIAL_LIST, shadowLanguageDir));
+        addBoilerplateFile(determineShadowFile(languageDir, BELL_SOUND_V1, shadowLanguageDir));
+        addBoilerplateFile(determineShadowFile(languageDir, SILENCE_V1, shadowLanguageDir));
+
         // Copy the prompt files from TB_Options.
         File shadowCatDir = new File(shadowLanguageDir, "cat");
         File catDir = new File(languageDir, "cat");
@@ -482,7 +491,7 @@ class CreateForV1 extends CreateFromDeploymentInfo {
         if (sourceLanguageDir.exists() && sourceLanguageDir.isDirectory() && Objects.requireNonNull(sourceLanguageDir.listFiles()).length > 0) {
             targetLanguageDir.mkdirs();
             targetSystemDir.mkdirs();
-            File targetFile = new File(targetLanguageDir, CUSTOM_GREETING);
+            File targetFile = new File(targetLanguageDir, CUSTOM_GREETING_V1);
             repository.exportGreetingWithFormat(sourceLanguageDir, targetFile, audioFormat);
             File groupFile = new File(targetSystemDir, recipient.languagecode + ".grp");
             groupFile.createNewFile();

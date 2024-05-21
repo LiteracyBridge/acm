@@ -70,6 +70,10 @@ public class AudioItem extends Committable {
     return categories.containsKey(category.getId());
   }
 
+  public final boolean hasCategory(String categoryId) {
+    return categories.containsKey(categoryId);
+  }
+
   public final void removeCategory(Category category) {
     categories.remove(category.getId());
     while (removeOrphanedNonLeafCategories())

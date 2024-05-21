@@ -33,8 +33,9 @@ public class TBBuilder {
     static final String CATEGORIES_IN_PACKAGES_CSV_FILE_NAME = "categoriesinpackages.csv";
     static final String PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME = "packagesindeployment.csv";
 
+    // Note that "0" and "7" are required, but are provided as resources in the TB-Loader.
     public final static List<String> REQUIRED_SYSTEM_MESSAGES = Arrays.asList(
-        "0", "1", "2", "3", "4", "5", "6", "7", "9", "10", "11",
+        "1", "2", "3", "4", "5", "6", "9", "10", "11",
         "16", "17", "19", "20", "21", "22", "23", "24", "25", "26", "28", "29",
         "33", "37", "38", "41", "53", "54", "61", "62", "63", "65", "80"
     );
@@ -113,7 +114,7 @@ public class TBBuilder {
 
             PathsProvider pathsProvider = dbConfig.getPathProvider();
             this.sourceHomeDir = pathsProvider.getProgramHomeDir();
-            // Like ~/Dropbox/ACM-UWR/TB-Loaders or ~/Amplio/acm-dbs/UWR/TB-Loaders
+            // Like ~/Amplio/acm-dbs/UWR/TB-Loaders
             this.sourceTbLoadersDir = pathsProvider.getProgramTbLoadersDir();
             this.sourceTbOptionsDir = new File(this.sourceTbLoadersDir, "TB_Options");
 

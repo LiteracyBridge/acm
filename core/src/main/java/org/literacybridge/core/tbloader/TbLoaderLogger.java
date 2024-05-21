@@ -108,7 +108,7 @@ class TbLoaderLogger {
 
         BufferedWriter bw;
 
-        // like /Users/alice/Dropbox/tbcd000c/{PROJECT}/OperationalData/{TBCDID}/tbdata-v03-{YYYYyMMmDDd}-{TBCDID}.csv
+        // like /Users/alice/Amplio/collectiondir/{PROJECT}/OperationalData/{TBCDID}/tbdata-v03-{YYYYyMMmDDd}-{TBCDID}.csv
         TbFile csvFile = tbLoaderCore.getCollectedOpDataDir().open(tbLoaderCore.getOpCsvFilename());
 
         try {

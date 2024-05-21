@@ -273,8 +273,8 @@ public class GuiAccessControl extends AccessControl {
             }
             case zipError: {
                 Object[] options = { "Keep Your Changes", "Throw Away Your Latest Changes" };
-                msg = "There is a problem getting your changes into Dropbox.  Do you want to keep your changes and try to get this problem fixed or throw away your latest changes?";
-                title = "Problem creating zip file on Dropbox";
+                msg = "There is a problem getting your changes into a zip file.  Do you want to keep your changes and try to get this problem fixed or throw away your latest changes?";
+                title = "Problem creating zip file.";
                 buttonIx = JOptionPane.showOptionDialog(parent, msg, title,
                                                         JOptionPane.YES_NO_CANCEL_OPTION,
                                                         JOptionPane.WARNING_MESSAGE, null, options,
@@ -294,7 +294,7 @@ public class GuiAccessControl extends AccessControl {
             msg = null;
         } else if (checkinOk) {
             if (saveWork) {
-                msg = "Your changes have been checked in.\n\nPlease stay online for a few minutes so your changes\ncan be uploaded (until Dropbox is 'Up to date').";
+                msg = "Your changes have been checked in.\n\nPlease stay online for a few minutes so your changes\ncan be uploaded.";
             } else {
                 msg = null; // "Your changes have been discarded.";
             }

@@ -1,3 +1,0 @@
-rem RELABEL
-rem Updating Drive Label with Serial Number
-label ${device_drive} ${new_srn} 

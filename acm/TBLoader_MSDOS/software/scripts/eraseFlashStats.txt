@@ -1,2 +1,0 @@
-rem deleting stats that were just collected
-echo .>${device_drive}\sysdata.txt

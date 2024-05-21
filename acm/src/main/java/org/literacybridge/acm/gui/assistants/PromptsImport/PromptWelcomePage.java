@@ -5,7 +5,6 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
-import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -19,9 +18,7 @@ import java.io.File;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
     private final PromptFilter promptFilter;
@@ -180,7 +177,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         List<SizingParams> ps = Collections.singletonList(new SizingParams(0, Short.MIN_VALUE, 10, 40));
         sizeColumns(promptTable, ps);
 
-        boolean visible = context.promptHasRecording.size() > 0;
+        boolean visible = !context.promptHasRecording.isEmpty();
         previewMessage.setVisible(visible);
         previewScrollPane.setVisible(visible);
     }
@@ -263,9 +260,9 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
             case 0:
                 return id;
             case 1:
-                return context.promptsInfo.getPrompt(id).getFilename();
+                return context.promptsInfo.getPrompt(id).getPromptTitle();
             case 2:
-                return context.promptsInfo.getPrompt(id).getText();
+                return context.promptsInfo.getPrompt(id).getPromptText();
             }
             return null;
         }
