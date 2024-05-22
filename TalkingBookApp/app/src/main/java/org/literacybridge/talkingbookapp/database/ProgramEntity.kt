@@ -26,15 +26,12 @@ data class ProgramContentEntity(
 @Dao
 interface ProgramContentDao {
     enum class ProgramEntityStatus {
-        SYNCNED,
+        SYNCED,
         OUTDATED
     }
 
     @Query("SELECT * FROM program_content")
     fun getAll(): List<ProgramContentEntity>
-
-//    @Query("SELECT * FROM program_content WHERE id IN (:userIds)")
-//    fun loadAllByProgramIds(userIds: IntArray): List<ProgramContentEntity>
 
     @Query("SELECT * FROM program_content WHERE program_id = :programId")
     fun findByProgramId(programId: String): List<ProgramContentEntity>

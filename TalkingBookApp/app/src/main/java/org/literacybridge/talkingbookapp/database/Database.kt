@@ -1,17 +1,16 @@
 package org.literacybridge.talkingbookapp.database
 
-import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import org.literacybridge.talkingbookapp.App
 
-@Database(entities = [ProgramContentEntity::class], version = 1)
+@Database(entities = [ProgramContentEntity::class, S3SyncEntity::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun programContentDao(): ProgramContentDao
-
+    abstract fun s3SyncDoa(): S3SyncEntityDao
 
     companion object {
         // Singleton prevents multiple instances of database opening at the

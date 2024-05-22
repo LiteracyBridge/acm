@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.options.StorageUploadFileOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.sentry.Sentry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,8 @@ import org.literacybridge.core.tbloader.TBLoaderConstants
 import org.literacybridge.core.tbloader.TBLoaderCore
 import org.literacybridge.core.tbloader.TBLoaderUtils
 import org.literacybridge.talkingbookapp.App
+import org.literacybridge.talkingbookapp.database.S3SyncEntity
+import org.literacybridge.talkingbookapp.database.S3SyncEntityDao
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.UserModel
 import org.literacybridge.talkingbookapp.util.Constants
@@ -47,6 +50,7 @@ import java.io.File
 import java.io.IOException
 import java.text.DateFormat
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
 import java.util.Date
 import java.util.Locale
 import java.util.Properties
@@ -364,6 +368,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                 isOperationInProgress.value = false
             } catch (e: IOException) {
                 e.printStackTrace()
+                Sentry.captureException(e)
                 throw e
 //                mProgressListener.log(getStackTrace(e))
 //                mProgressListener.log("Exception zipping stats")
@@ -450,26 +455,43 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         return imageName
     }
 
-    private fun uploadCollectedData(file: File, s3Key: String) {
-        val options = StorageUploadFileOptions.defaultInstance()
+    private suspend fun uploadCollectedData(file: File, s3Key: String) {
+        withContext(Dispatchers.IO) {
+            val _s3Key = "$COLLECTED_DATA_DIR_NAME/$s3Key"
+            val options = StorageUploadFileOptions.defaultInstance()
 
-        val transfer = Amplify.Storage.uploadFile("$COLLECTED_DATA_DIR_NAME/$s3Key", file,
-            options,
-            { progress ->
-//                result.
-                Log.i("MyAmplifyApp", "Successfully uploaded: ${progress.fractionCompleted}")
-            },
-            { result ->
-                totalFilesPendingUpload.intValue = totalFilesPendingUpload.intValue - 1
-                totalFilesUploaded.intValue = totalFilesUploaded.intValue + 1
+            val transfer = Amplify.Storage.uploadFile(_s3Key, file,
+                options,
+                { },
+                { e -> Sentry.captureException(e) }
+            )
 
-//                result.
-                Log.i("MyAmplifyApp", "Successfully uploaded: ${result.key}")
-            },
+            val sync = S3SyncEntity(
+                programId = deployment!!.program_id,
+                awsTransferId = transfer.transferId,
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now(),
+                deletedAt = null,
+                s3Key = _s3Key,
+                path = file.absolutePath,
+                status = S3SyncEntityDao.S3SyncStatus.Uploading,
+                size = file.length()
+            )
+            App().db.s3SyncDoa().insert(sync)
 
-            { Log.e("MyAmplifyApp", "Upload failed", it) }
-
-        )
+            // Set event listeners
+            transfer.setOnSuccess {
+                App().db.s3SyncDoa().uploadCompleted(transfer.transferId)
+            }
+            transfer.setOnProgress {
+                App().db.s3SyncDoa().updateProgress(transfer.transferId, it.currentBytes)
+            }
+            transfer.setOnError {
+                App().db.s3SyncDoa()
+                    .updateStatus(transfer.transferId, S3SyncEntityDao.S3SyncStatus.Failed)
+                Sentry.captureException(it)
+            }
+        }
     }
 
     /**

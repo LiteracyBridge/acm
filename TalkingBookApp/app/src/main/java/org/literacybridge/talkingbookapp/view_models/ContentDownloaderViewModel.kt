@@ -225,7 +225,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                             deploymentName = deployment.deploymentname,
                             latestRevision = latestDeploymentRevision!!,
                             localPath = dest.path,
-                            status = ProgramContentDao.ProgramEntityStatus.SYNCNED,
+                            status = ProgramContentDao.ProgramEntityStatus.SYNCED,
                             lastSync = LocalDateTime.now(),
                             s3Path = s3key
                         )
