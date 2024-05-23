@@ -690,6 +690,36 @@ class CreateForV2 extends CreateFromDeploymentInfo {
                     dos.write(publicKey);
                 }
             }
+
+            //
+            Integer volumeThreshold = ACMConfiguration.getInstance().getCurrentDB().getVolumeThreshold();
+            System.out.print("system dir : ");
+            System.out.println(targetSystemDir.toString());
+
+            if (volumeThreshold != null) {
+                // Get directory containing config files
+                File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
+                String configPathString = "TB_Options" + File.separator + "config_files" + File.separator + "config.txt";
+                File configPath = new File(tbLoadersDir, configPathString);
+
+                String text = "VOLUME_THRESHOLD:" + volumeThreshold.toString();
+
+                // Write volume threshold value to config file
+                BufferedWriter out = null;
+                try {
+                    FileWriter fstream = new FileWriter(configPath, true); // true tells to append data.
+                    out = new BufferedWriter(fstream);
+                    out.write(text);
+                }
+                catch (IOException e) {
+                    //
+                }
+                finally {
+                    if (out != null) {
+                        out.close();
+                    }
+                }
+            }
         }
 
         private void addUfToImage(PackageData packageData)

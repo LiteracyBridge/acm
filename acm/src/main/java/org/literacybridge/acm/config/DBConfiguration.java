@@ -546,6 +546,24 @@ public class DBConfiguration {
         getDbProperties().setProperty(Constants.FUZZY_THRESHOLD, Integer.toString(threshold));
     }
 
+    public Integer getVolumeThreshold() {
+        Integer result = null;
+        String value = getDbProperties().getProperty(Constants.VOLUME_THRESHOLD);
+        try{
+            result = new Integer(value);
+        }
+        catch (Exception ignored) {
+            //
+        }
+        return result;
+    }
+
+    public void setVolumeThreshold(int threshold) {
+        threshold = Math.min(threshold, Constants.VOLUME_THRESHOLD_MAXIMUM);
+        threshold = Math.max(threshold, Constants.VOLUME_THRESHOLD_MINIMUM);
+        getDbProperties().setProperty(Constants.VOLUME_THRESHOLD, Integer.toString(threshold));
+    }
+
     public boolean isPackageChoice() {
         String valStr = getDbProperties().getProperty(ALLOW_PACKAGE_CHOICE, "FALSE");
         return Boolean.parseBoolean(valStr);
