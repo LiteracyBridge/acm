@@ -546,6 +546,30 @@ public class DBConfiguration {
         getDbProperties().setProperty(Constants.FUZZY_THRESHOLD, Integer.toString(threshold));
     }
 
+    /**
+     * The configured value of the fuzzy match threshold, for content matching. If
+     * no
+     * value in the config file, returns null.
+     *
+     * @return The value, or null if none is specified or is not parseable.
+     */
+    public Integer getMaximumVolumeStep() {
+        Integer result = Constants.MAXIMUM_VOLUME_STEP_DEFAULT;
+        String value = getDbProperties().getProperty(Constants.MAXIMUM_VOLUME_STEP);
+        try {
+            result = new Integer(value);
+        } catch (Exception ignored) {
+            // ignore and return default.
+        }
+        return result;
+    }
+
+    public void setMaximumVolumeStep(int threshold) {
+        threshold = Math.min(threshold, Constants.MAXIMUM_VOLUME_STEP_MAX);
+        threshold = Math.max(threshold, Constants.MAXIMUM_VOLUME_STEP_MIN);
+        getDbProperties().setProperty(Constants.MAXIMUM_VOLUME_STEP, Integer.toString(threshold));
+    }
+
     public boolean isPackageChoice() {
         String valStr = getDbProperties().getProperty(ALLOW_PACKAGE_CHOICE, "FALSE");
         return Boolean.parseBoolean(valStr);

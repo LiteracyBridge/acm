@@ -35,11 +35,12 @@ import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.Constants.BELL_SOUND_V2;
 import static org.literacybridge.acm.Constants.CUSTOM_GREETING_V1;
+import static org.literacybridge.acm.Constants.MAXIMUM_VOLUME_STEP_DEFAULT;
 import static org.literacybridge.acm.Constants.SILENCE_V2;
 
 /*
  * Builds a TBv1 deployment.
- * 
+ *
 
 * Given a program 'DEMO', a deployment 'DEMO-21-1', and a package 'DEMO-1-en-c'
 *
@@ -688,6 +689,16 @@ class CreateForV2 extends CreateFromDeploymentInfo {
                 try (FileOutputStream fos = new FileOutputStream(derFile);
                      DataOutputStream dos = new DataOutputStream(fos)){
                     dos.write(publicKey);
+                }
+            }
+
+            // Add maximum volume step to system/config.txt
+            Integer step = ACMConfiguration.getInstance().getCurrentDB().getMaximumVolumeStep();
+            if(step != 0 && step > MAXIMUM_VOLUME_STEP_DEFAULT){
+                File derFile = new File(targetSystemDir, "config.txt");
+                try (FileOutputStream fos = new FileOutputStream(derFile);
+                    DataOutputStream dos = new DataOutputStream(fos)){
+                    dos.writeUTF("maxVolumeStep="+step.toString());
                 }
             }
         }

@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "acm"
+		},
+		{
+			"path": "../S3Sync"
+		},
+		{
+			"path": "core"
+		}
+	],
+	"settings": {
+		"window.zoomLevel": -1,
+		"java.server.launchMode": "Standard"
+	}
+}
