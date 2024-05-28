@@ -13,11 +13,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-
-import static org.literacybridge.acm.Constants.MAXIMUM_VOLUME_STEP_DEFAULT;
-import static org.literacybridge.acm.Constants.MAXIMUM_VOLUME_STEP_MAX;
-import static org.literacybridge.acm.Constants.MAXIMUM_VOLUME_STEP_MIN;
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -36,13 +31,10 @@ import java.util.stream.Collectors;
 public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     private final PlaceholderTextArea email;
     private final JTextField fuzzyThreshold;
-    private final JTextField volumeStepTextField;
     private final String emailAddresses;
     private final int threshold;
-    private final int volumeStep;
     private final boolean warnForMissingGreetings;
     private final JLabel fuzzyThresholdError;
-    private final JLabel maximumVolumeStepError;
     private final JCheckBox greetingWarningsCB;
     private final JCheckBox forceWavConversionCB;
     private final boolean isForceWavConversion;
@@ -62,7 +54,6 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         // Get values from the global configuration.
         threshold = ACMConfiguration.getInstance().getCurrentDB().getFuzzyThreshold();
-        volumeStep = ACMConfiguration.getInstance().getCurrentDB().getMaximumVolumeStep();
         emailAddresses = String.join(", ",
                 ACMConfiguration.getInstance().getCurrentDB().getNotifyList());
         warnForMissingGreetings = ACMConfiguration.getInstance().getCurrentDB().getWarnForMissingGreetings();
@@ -126,22 +117,6 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         Insets insets = gbcRight.insets;
         // Add a little padding on the bottom, so the email box doesn't sit right on top of the fuzzy edit box.
         gridPanel.add(email, gbcRight.withInsets(new Insets(insets.top, insets.left, 8, insets.right)));
-
-        // Setting: Maximum volume step
-        gridPanel.add(new JLabel("Maximum Volume Step"), gbcLeft);
-        Box _vbox = Box.createVerticalBox();
-        volumeStepTextField = new JTextField("0");
-        volumeStepTextField.setInputVerifier(maximumVolumeStepVerifier);
-        volumeStepTextField.getDocument().addDocumentListener(volumeStepDocumentListener);
-        volumeStepTextField.setToolTipText(
-            "A number between 2 and 11, to control the maximum volume level of the Talking Book");
-        _vbox.add(volumeStepTextField);
-        maximumVolumeStepError = new JLabel("Threshold must be an integer between 2 and 11.");
-        maximumVolumeStepError.setFont(new Font("Sans Serif", Font.ITALIC, 10));
-        maximumVolumeStepError.setForeground(Color.RED);
-        maximumVolumeStepError.setVisible(false);
-        _vbox.add(maximumVolumeStepError);
-        gridPanel.add(_vbox, gbcRight.setFill(GridBagConstraints.NONE));
 
         // Setting: fuzzy matching threshold.
         gridPanel.add(new JLabel("Fuzzy threshold:"), gbcLeft);
@@ -224,7 +199,6 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         email.setText(emailAddresses);
         fuzzyThreshold.setText(String.format("%d", threshold));
-        volumeStepTextField.setText(String.format("%d", volumeStep));
     }
 
     private static final Map<String, String> themeClasses;
@@ -272,11 +246,6 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         if (getThreshold() != threshold) {
             ACMConfiguration.getInstance().getCurrentDB().setFuzzyThreshold(getThreshold());
-            haveChanges = true;
-        }
-
-        if (getVolumeStep() != volumeStep) {
-            ACMConfiguration.getInstance().getCurrentDB().setMaximumVolumeStep(getVolumeStep());
             haveChanges = true;
         }
 
@@ -329,15 +298,6 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     }
 
     /**
-     * Reads the value of the volume step threshold from its edit control.
-     * @return the value, as an integer.
-     */
-    private int getVolumeStep() {
-        String str = volumeStepTextField.getText();
-        return Integer.parseInt(str);
-    }
-
-    /**
      * Listen to changes to the fuzzy match threshold, and validate whenever it changes.
      */
     @SuppressWarnings("FieldCanBeLocal")
@@ -358,23 +318,6 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         }
     };
 
-    private final DocumentListener volumeStepDocumentListener = new DocumentListener() {
-        @Override
-        public void insertUpdate(DocumentEvent e) {
-            maximumVolumeStepVerifier.verify(volumeStepTextField);
-        }
-
-        @Override
-        public void removeUpdate(DocumentEvent e) {
-            maximumVolumeStepVerifier.verify(volumeStepTextField);
-        }
-
-        @Override
-        public void changedUpdate(DocumentEvent e) {
-            maximumVolumeStepVerifier.verify(volumeStepTextField);
-        }
-    };
-
     /**
      * Validator for the fuzzy match threshold field.
      */
@@ -390,23 +333,6 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
             }
             fuzzyThresholdError.setVisible(!ok);
-            helper.setValid(ok);
-            return ok;
-        }
-    };
-
-    private final InputVerifier maximumVolumeStepVerifier = new InputVerifier() {
-        @Override
-        public boolean verify(JComponent input) {
-            String newVal = volumeStepTextField.getText();
-            boolean ok = false;
-            try {
-                int val = Integer.parseInt(newVal);
-                ok = val >= MAXIMUM_VOLUME_STEP_MIN && val <= MAXIMUM_VOLUME_STEP_MAX;
-            } catch (Exception ignored) {
-
-            }
-            maximumVolumeStepError.setVisible(!ok);
             helper.setValid(ok);
             return ok;
         }

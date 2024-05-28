@@ -53,7 +53,6 @@ public class Constants {
   public final static String BATCH_RECORD = "record.log";
   public final static String S3_BUCKET = "acm-logging";
   public final static String FUZZY_THRESHOLD = "FUZZY_THRESHOLD";
-  public final static String MAXIMUM_VOLUME_STEP = "MAXIMUM_VOLUME_STEP";
   public final static String WARN_FOR_MISSING_GREETINGS = "WARN_FOR_MISSING_GREETINGS";
   public final static String FORCE_WAV_CONVERSION = "FORCE_WAV_CONVERSION";
     public final static String HAS_TBV2_DEVICES = "HAS_TBV2_DEVICES";
@@ -89,10 +88,6 @@ public class Constants {
   public static final int FUZZY_THRESHOLD_MAXIMUM = 100;
   public static final int FUZZY_THRESHOLD_DEFAULT = 80;
   public static final int FUZZY_THRESHOLD_MINIMUM = 60;
-
-  public static final int MAXIMUM_VOLUME_STEP_DEFAULT = -1;
-  public static final int MAXIMUM_VOLUME_STEP_MIN = 2;
-  public static final int MAXIMUM_VOLUME_STEP_MAX = 11;
 
   // Maximum length of a package name. This is a TB firmware restriction.
   public static final int MAX_PACKAGE_NAME_LENGTH = 17;
