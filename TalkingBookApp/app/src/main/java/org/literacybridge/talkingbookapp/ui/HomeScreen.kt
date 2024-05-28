@@ -119,7 +119,17 @@ fun HomeScreen(
                         )
 
                     }
+
+                    Button(
+                        onClick = {
+                            // TODO: check if device needs firmware updates, navigate to firmware update screen
+                            navController.navigate(Screen.FIRMWARE_REFRESH.name)
+                        }) {
+                        Text("Refresh tb")
+                    }
                 }
+
+
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -138,8 +148,7 @@ fun HomeScreen(
                             Text("Collect Statistics")
                         }
                         Button(
-                            enabled = true,
-//                            enabled = viewModel.isDeviceConnected(),
+                            enabled = viewModel.isMassStorageReady.value,
                             onClick = {
                                 // TODO: check if device needs firmware updates, navigate to firmware update screen
                                 navController.navigate(Screen.RECIPIENT.name)

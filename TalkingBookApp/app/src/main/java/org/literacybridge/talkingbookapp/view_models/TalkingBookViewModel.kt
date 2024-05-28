@@ -101,6 +101,9 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState.asStateFlow()
 
+    private val _usb = MutableStateFlow(Usb())
+    val usbState: StateFlow<Usb> = _usb.asStateFlow()
+
     val app = App.getInstance()
     private var deployment: Deployment? = null
 
@@ -118,6 +121,10 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 //            TODO("Display error to user that TB is not connected")
 //        }
 //    }
+
+    fun setUsb(usb: Usb){
+        _usb.value = usb
+    }
 
     fun setDevice(device: UsbDevice?, talkingBook: Usb.TalkingBook?) {
         Log.d(LOG_TAG, "Device has been set $device");

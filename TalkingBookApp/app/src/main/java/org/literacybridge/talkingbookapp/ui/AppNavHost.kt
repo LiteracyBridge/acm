@@ -92,5 +92,12 @@ fun AppNavHost(
                 UploadStatusScreen(navController)
             }
         }
+        composable(NavigationItem.FirmwareUpdate.route) {
+            CompositionLocalProvider(
+                LocalViewModelStoreOwner provides viewModelStoreOwner
+            ) {
+                FirmwareUpdateScreen(navController)
+            }
+        }
     }
 }

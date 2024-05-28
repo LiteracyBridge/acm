@@ -18,11 +18,14 @@ package org.literacybridge.talkingbookapp.util.device_manager
 import android.nfc.FormatException
 import android.os.Environment
 import android.util.Log
+import org.literacybridge.talkingbookapp.App
+import org.literacybridge.talkingbookapp.R
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
@@ -37,9 +40,10 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
     }
 
     private fun onStatusMsg(msg: String) {
-        for (listener in listeners) {
-            listener.onStatusMsg(msg)
-        }
+        Log.d(LOG_TAG, msg)
+//        for (listener in listeners) {
+//            listener.onStatusMsg(msg)
+//        }
     }
 
     fun setListener(listener: DfuListener?) {
@@ -66,7 +70,7 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
 
         openFile(filePath)
         verifyFile()
-        checkCompatibility()
+//        checkCompatibility()
 
         if (isDeviceProtected) {
             Log.i(TAG, "Device is protected")
@@ -194,27 +198,46 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
     }
 
     fun program() {
+        val MAX_ALLOWED_RETRIES = 5
         if (!isUsbConnected) return
-        try {
-            if (isDeviceProtected) {
-                onStatusMsg("Device is Read-Protected...First Mass Erase")
-                return
+
+        openFile()
+        verifyFile()
+        checkCompatibility()
+
+        if (isDeviceProtected) {
+            Log.i(LOG_TAG, "Device is protected")
+            Log.i(LOG_TAG, "Removing Read Protection")
+            removeReadProtection()
+            Log.i(LOG_TAG, "Device is resetting")
+            return  // device will reset
+        }
+
+//        for (i in MAX_ALLOWED_RETRIES + 1 downTo 1) {
+//            if (isDeviceBlank) break
+//            if (i == 1) {
+//                throw Exception("Cannot Mass Erase, REPLACE UNIT!")
+//            }
+//            Log.i(LOG_TAG, "Device not blank, erasing")
+//            massErase()
+//        }
+
+        writeImage()
+
+        for (i in MAX_ALLOWED_RETRIES + 1 downTo 1) {
+            if (isWrittenImageOk) {
+                Log.i(TAG, "Writing Option Bytes, will self-reset")
+                val selectOptions =
+                    OPT_RDP_OFF or OPT_WDG_SW or OPT_nRST_STOP or OPT_nRST_STDBY or OPT_BOR_1 // todo in production, OPT_RDP_1 must be set instead of OPT_RDP_OFF
+                writeOptionBytes(selectOptions) // will reset device
+                break
             }
-            openFile()
-            verifyFile()
-            checkCompatibility()
-            onStatusMsg("File Path: " + dfuFile.filePath + "\n")
-            onStatusMsg("File Size: " + dfuFile.file.size + " Bytes \n")
-            onStatusMsg("ElementAddress: 0x" + Integer.toHexString(dfuFile.elementStartAddress))
-            onStatusMsg("\tElementSize: " + dfuFile.elementLength + " Bytes\n")
-            onStatusMsg("Start writing file in blocks of " + dfuFile.maxBlockSize + " Bytes \n")
-            val startTime = System.currentTimeMillis()
+            if (i == 1) {
+                throw Exception("Cannot Write successfully, REPLACE UNIT!")
+            }
+            Log.i(TAG, "Verification failed, retry")
+            massErase()
             writeImage()
-            //            TODO: exit
-            onStatusMsg("Programming completed in " + (System.currentTimeMillis() - startTime) + " ms\n")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            onStatusMsg(e.toString())
         }
     }
 
@@ -225,7 +248,7 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
                 onStatusMsg("Device is Read-Protected...First Mass Erase")
                 return
             }
-            if (dfuFile.filePath == null) {
+            if (dfuFile.file.isNotEmpty()) {
                 openFile()
                 verifyFile()
                 checkCompatibility()
@@ -255,7 +278,7 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
 
     private val isUsbConnected: Boolean
         // check if usb device is active
-        private get() {
+        get() {
             if (usb != null && usb!!.isConnected) {
                 return true
             }
@@ -406,8 +429,9 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
         val extDownload: File
         var myFilePath: String? = null
         var myFileName: String? = null
-        val fileInputStream: FileInputStream
         val myFile: File
+
+        // TODO: read from program spec first. Then fallback to included dfu image
         if (Environment.getExternalStorageState() != null) // todo not sure if this works
         {
             extDownload = File(Environment.getExternalStorageDirectory().toString() + "/Download/")
@@ -426,13 +450,14 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
             }
         }
         if (myFileName == null) throw Exception("No .dfu file found in Download Folder")
-        myFile = File("$myFilePath/$myFileName")
-        dfuFile.filePath = myFile.toString()
-        dfuFile.file = ByteArray(myFile.length().toInt())
+
+        val fileInputStream: InputStream = App.context.resources.openRawResource(R.raw.firmware_image)
+//        dfuFile.filePath = myFile.toString()
+        dfuFile.file = fileInputStream.readBytes()
 
         //convert file into byte array
-        fileInputStream = FileInputStream(myFile)
-        fileInputStream.read(dfuFile.file)
+//        fileInputStream = FileInputStream(myFile)
+//        fileInputStream.read(dfuFile.file)
         fileInputStream.close()
     }
 

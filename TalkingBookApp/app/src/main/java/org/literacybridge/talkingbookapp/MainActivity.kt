@@ -222,6 +222,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 
     override fun onUsbConnected() {
         talkingBookViewModel.setDevice(usb.usbDevice, usb.talkingBookDevice)
+        talkingBookViewModel.setUsb(usb)
 
         val deviceInfo = usb.getDeviceInfo(usb.usbDevice)
 
