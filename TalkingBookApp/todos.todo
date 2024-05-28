@@ -1,2 +1,8 @@
+Improvements:
+    * cache user info; fallback to cache when no network/timeout
+
+Features:
+    * Changing program
+
 Configuration:
     * create new aws user pool app id

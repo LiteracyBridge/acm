@@ -66,7 +66,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     enum class TalkingBookOperation {
         UPDATE_DEVICE,
         COLLECT_STATS_ONLY,
-        COLLECT_STATS_AND_REFRESH_FIRMWARE
+        COLLECT_STATS_AND_REFRSH_FIRMWARE
     }
 
     enum class OperationResult {
@@ -456,42 +456,50 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     }
 
     private suspend fun uploadCollectedData(file: File, s3Key: String) {
-        withContext(Dispatchers.IO) {
-            val _s3Key = "$COLLECTED_DATA_DIR_NAME/$s3Key"
-            val options = StorageUploadFileOptions.defaultInstance()
+//        withContext(Dispatchers.IO) {
+        val _s3Key = "$COLLECTED_DATA_DIR_NAME/$s3Key"
+        val options = StorageUploadFileOptions.defaultInstance()
 
-            val transfer = Amplify.Storage.uploadFile(_s3Key, file,
-                options,
-                { },
-                { e -> Sentry.captureException(e) }
-            )
+        val transfer = Amplify.Storage.uploadFile(_s3Key, file,
+            options,
+            { },
+            { e -> Sentry.captureException(e) }
+        )
 
-            val sync = S3SyncEntity(
-                programId = deployment!!.program_id,
-                awsTransferId = transfer.transferId,
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now(),
-                deletedAt = null,
-                s3Key = _s3Key,
-                path = file.absolutePath,
-                status = S3SyncEntityDao.S3SyncStatus.Uploading,
-                size = file.length()
-            )
-            App().db.s3SyncDoa().insert(sync)
+        val sync = S3SyncEntity(
+            programId = deployment!!.program_id,
+            awsTransferId = transfer.transferId,
+            createdAt = LocalDateTime.now(),
+            updatedAt = LocalDateTime.now(),
+            deletedAt = null,
+            s3Key = _s3Key,
+            path = file.absolutePath,
+            status = S3SyncEntityDao.S3SyncStatus.Uploading,
+            size = file.length(),
+            fileName = file.name
+        )
+        App().db.s3SyncDoa().insert(sync)
 
-            // Set event listeners
-            transfer.setOnSuccess {
+        // Set event listeners
+        transfer.setOnSuccess {
+            viewModelScope.launch { // coroutine on Main
                 App().db.s3SyncDoa().uploadCompleted(transfer.transferId)
             }
-            transfer.setOnProgress {
+        }
+
+        transfer.setOnProgress {
+            viewModelScope.launch { // coroutine on Main
                 App().db.s3SyncDoa().updateProgress(transfer.transferId, it.currentBytes)
             }
-            transfer.setOnError {
+        }
+        transfer.setOnError {
+            viewModelScope.launch { // coroutine on Main
                 App().db.s3SyncDoa()
                     .updateStatus(transfer.transferId, S3SyncEntityDao.S3SyncStatus.Failed)
                 Sentry.captureException(it)
             }
         }
+//        }
     }
 
     /**

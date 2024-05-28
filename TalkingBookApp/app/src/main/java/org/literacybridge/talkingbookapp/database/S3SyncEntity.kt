@@ -24,10 +24,11 @@ data class S3SyncEntity(
     @ColumnInfo(name = "aws_transfer_id") val awsTransferId: String,
     @ColumnInfo(name = "s3_key") val s3Key: String,
     @ColumnInfo(name = "file_path") val path: String,
+    @ColumnInfo(name = "file_name") val fileName: String,
     @ColumnInfo(name = "size") val size: Long,
     @ColumnInfo(name = "uploaded") val uploaded: Long = 0,
     @ColumnInfo(name = "created_at") val createdAt: LocalDateTime?,
-    @ColumnInfo(name = "updated_at") val updatedAt: LocalDateTime?,
+    @ColumnInfo(name = "updated_at") val updatedAt: LocalDateTime,
     @ColumnInfo(name = "deleted_at") val deletedAt: LocalDateTime?,
     @ColumnInfo(name = "status") val status: S3SyncEntityDao.S3SyncStatus?,
 )
@@ -43,34 +44,36 @@ interface S3SyncEntityDao {
     }
 
     @Query("SELECT * FROM s3_sync")
-    fun getAll(): List<S3SyncEntity>
+    suspend fun getAll(): List<S3SyncEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(vararg content: S3SyncEntity)
+   suspend fun insert(vararg content: S3SyncEntity)
 
     @Query(
         "UPDATE s3_sync SET status = :status WHERE aws_transfer_id = :transferId"
     )
-    fun updateStatus(transferId: String, status: S3SyncStatus)
+    suspend fun updateStatus(transferId: String, status: S3SyncStatus)
 
     @Query(
-        "UPDATE s3_sync SET status = :status, uploaded = size WHERE aws_transfer_id = :transferId"
+        "UPDATE s3_sync SET status = :status, uploaded = size, updated_at = :time WHERE aws_transfer_id = :transferId"
     )
-    fun uploadCompleted(
+    suspend fun uploadCompleted(
         transferId: String,
-        status: S3SyncStatus = S3SyncStatus.Completed
+        status: S3SyncStatus = S3SyncStatus.Completed,
+        time: LocalDateTime = LocalDateTime.now()
     )
 
     @Query(
-        "UPDATE s3_sync SET uploaded = :uploaded WHERE aws_transfer_id = :transferId"
+        "UPDATE s3_sync SET uploaded = :uploaded, updated_at = :time WHERE aws_transfer_id = :transferId"
     )
-    fun updateProgress(
+    suspend fun updateProgress(
         transferId: String,
-        uploaded: Long
+        uploaded: Long,
+        time: LocalDateTime = LocalDateTime.now()
     )
 
 
     @Delete
-    fun delete(user: S3SyncEntity)
+    suspend fun delete(user: S3SyncEntity)
 }
 

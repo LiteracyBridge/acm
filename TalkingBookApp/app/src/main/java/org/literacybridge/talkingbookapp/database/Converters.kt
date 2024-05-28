@@ -10,6 +10,8 @@ import java.time.ZoneOffset
 class Converters {
     @TypeConverter
     fun fromTimestamp(value: Long?): LocalDateTime? {
+        if (value == null) return null
+
         return LocalDateTime.ofInstant(
             value?.let { Instant.ofEpochMilli(it) },
             ZoneId.systemDefault()
