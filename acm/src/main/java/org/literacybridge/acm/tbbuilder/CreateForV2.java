@@ -1,5 +1,6 @@
 package org.literacybridge.acm.tbbuilder;
 
+import org.amplio.csm.CsmData;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.Constants;
@@ -14,6 +15,10 @@ import org.literacybridge.acm.deployment.DeploymentInfo.PromptInfo;
 import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.RFC3066LanguageCode;
+import org.literacybridge.acm.store.SearchResult;
+import org.literacybridge.acm.tbbuilder.survey.Survey;
 import org.literacybridge.acm.utils.ExternalCommandRunner;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.spec.Recipient;
@@ -22,16 +27,15 @@ import org.literacybridge.core.tbloader.PackagesData;
 import org.literacybridge.core.tbloader.PackagesData.PackageData;
 import org.literacybridge.core.tbloader.PackagesData.PackageData.PlaylistData;
 
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
+import static org.literacybridge.acm.Constants.BELL_SOUND_V2;
+import static org.literacybridge.acm.Constants.CUSTOM_GREETING_V1;
+import static org.literacybridge.acm.Constants.SILENCE_V2;
 
 /*
  * Builds a TBv1 deployment.
@@ -129,7 +133,6 @@ class CreateForV2 extends CreateFromDeploymentInfo {
     private final File imagesDir;
 
     public static final List<String> requiredFirmwareFiles = Arrays.asList("TBookRev2b.hex", "firmware_built.txt");
-    public static final List<String> requiredCSMFiles = Collections.singletonList("control_def.csm");
 
     public final static List<String> TUTORIAL_V2_MESSAGES = Arrays.asList(
             // 22 and 23 are speed control, not implemented in v2
@@ -137,7 +140,13 @@ class CreateForV2 extends CreateFromDeploymentInfo {
             "17", "16", "28", "26", "20", "21", /*"22", "23",*/ "19", "25", "54"
     );
 
-
+    /**
+     * A directory is a valid source of firmware if it contains both the firmware itself and the
+     * file that provides the label (the firmware writes its label to the system directory at
+     * every startup, so we can tell what firmware most recently booted).
+     * @param maybeFirmware A directory that might, or might not be a firmware directory.
+     * @return True if is (appears to be) a valid firmware directory.
+     */
     public static boolean isValidFirmwareSource(File maybeFirmware) {
         if (maybeFirmware == null || !maybeFirmware.isDirectory()) return false;
         Set<String> foundFiles = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
@@ -145,11 +154,15 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         return foundFiles.containsAll(requiredFirmwareFiles);
     }
 
-    public static boolean isValidCSMSource(File maybeCSM) {
-        if (maybeCSM == null || !maybeCSM.isDirectory()) return false;
-        Set<String> foundFiles = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        foundFiles.addAll(Arrays.asList(Objects.requireNonNull(maybeCSM.list())));
-        return foundFiles.containsAll(requiredCSMFiles);
+    /**
+     * A directory is a valid source of system files if it is a directory and contains files.
+     * @param maybeSystem A directory that might, or might not, be a source of system files.
+     * @return True if it is (appears to be) a valid source of system files.
+     */
+    public static boolean isValidSystemSource(File maybeSystem) {
+        if (maybeSystem == null || !maybeSystem.isDirectory()) return false;
+        String[] files = maybeSystem.list();
+        return files != null && files.length != 0;
     }
 
     CreateForV2(TBBuilder tbBuilder, TBBuilder.BuilderContext builderContext, DeploymentInfo deploymentInfo) {
@@ -200,11 +213,11 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         }
         Deque<File> directoriesToSearch = new LinkedList<>();
         directoriesToSearch.add(builderContext.stagedDeploymentDir);
-        while (directoriesToSearch.size() > 0) {
+        while (!directoriesToSearch.isEmpty()) {
             File dir = directoriesToSearch.remove();
             File[] ofInterest = dir.listFiles(contained -> contained.isDirectory() || contained.getName().toLowerCase().endsWith(".mp3"));
             if (ofInterest != null) {
-                // Add the sub-directories to the list to be searched.
+                // Add the subdirectories to the list to be searched.
                 Arrays.stream(ofInterest).filter(File::isDirectory).forEach(directoriesToSearch::add);
                 // Create .m3t files for any audio files.
                 createMp3FrameOffsetsForDirectory(dir, Arrays.stream(ofInterest).filter(File::isFile).collect(Collectors.toList()));
@@ -223,7 +236,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
                 toConvert.add(file);
             }
         }
-        if (toConvert.size() > 0) {
+        if (!toConvert.isEmpty()) {
             new Mp3FrameWrapper(directory, toConvert).go();
         }
     }
@@ -325,7 +338,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         if (sourceLanguageDir.exists() && sourceLanguageDir.isDirectory() && Objects.requireNonNull(sourceLanguageDir.listFiles()).length > 0) {
             targetLanguageDir.mkdirs();
             targetSystemDir.mkdirs();
-            String targetFilename = FilenameUtils.removeExtension(CUSTOM_GREETING) + '.' + getAudioFormat().getFileExtension();
+            String targetFilename = FilenameUtils.removeExtension(CUSTOM_GREETING_V1) + '.' + getAudioFormat().getFileExtension();
             File targetFile = new File(targetLanguageDir, targetFilename);
             repository.exportGreetingWithFormat(sourceLanguageDir, targetFile, audioFormat);
             File groupFile = new File(targetSystemDir, recipient.languagecode + ".grp");
@@ -435,6 +448,10 @@ class CreateForV2 extends CreateFromDeploymentInfo {
                 PlaylistData playlistData = packageData.addPlaylist(playlistInfo.getTitle());
                 addPlaylistContentToImage(playlistInfo, playlistData);
                 addPlaylistPromptsToImage(playlistInfo, playlistData);
+                // If there is a survey for this playlist, add it.
+                if (playlistInfo.isSurvey()) {
+                    addPlaylistSurveyToImage(playlistInfo, playlistData);
+                }
             }
 
             // Export the intro, if there is one.
@@ -541,6 +558,92 @@ class CreateForV2 extends CreateFromDeploymentInfo {
 
         }
 
+        /**
+         * If this playlist is a survey, look for a ".survey" file from which to create the custom
+         * survey script. These are language (and variant) specific, so they go into the content/prompts/${language}
+         * directory in the deployment.
+         * @param playlistInfo Information about the playlist from the program spec.
+         * @param playlistData More information about the playlist, from the content database.
+         */
+        @SuppressWarnings("ReassignedVariable")
+        private void addPlaylistSurveyToImage(PlaylistInfo playlistInfo, PlaylistData playlistData) {
+            // Look for a ${playlist}.survey in the program spec directory.
+            String fname = playlistInfo.getTitle() + ".survey";
+            File surveyFile = new File(builderContext.sourceProgramspecDir, fname);
+            if (!surveyFile.isFile()) {
+                fname = fname.replace(' ', '_');
+                surveyFile = new File(builderContext.sourceProgramspecDir, fname);
+            }
+            if (!surveyFile.isFile()) return; // no survey definition
+
+            Survey survey;
+            try {
+                survey = Survey.loadDefinition(surveyFile);
+                Collection<String> prompts = survey.getPromptList();
+                Map<String,String> promptsToItemIds = getPromptMap(prompts);
+                survey.setPromptMap(promptsToItemIds);
+            } catch (IOException e) {
+                // Log the exception, to fail the deployment, and keep going.
+                builderContext.logException(e);
+                return;
+            }
+            CsmData csmData = survey.generateCsm();
+            List<String> errors = new ArrayList<>();
+            csmData.fillErrors(errors);
+
+            // Create the survey's script.
+            String csmFname = FilenameUtils.removeExtension(fname.replace(' ', '_')) + ".csm";
+            File csmFile = new File(promptsDir, csmFname);
+            try (FileOutputStream fos = new FileOutputStream(csmFile)) {
+                // Here we write the binary CSM data.
+                csmData.emit(fos);
+                // This tells the TBv2 to execute the survey script when the "playlist" is entered.
+                playlistData.withScript(csmFname);
+            } catch (IOException e) {
+                // Log the exception, to fail the deployment, and keep going.
+                builderContext.logException(e);
+            }
+            // Create a .yaml source that corresponds to the survey's script.
+            File yamlFile = new File(promptsDir, FilenameUtils.removeExtension(csmFname)+".yaml");
+            try (FileOutputStream fos = new FileOutputStream(yamlFile);
+                 PrintStream ps = new PrintStream(fos, true)) {
+                ps.println(csmData);
+            } catch (IOException e) {
+                // Log the exception, to fail the deployment, and keep going.
+                builderContext.logException(e);
+            }
+
+        }
+
+        /**
+         * Given the list of prompts from a survey (the prolog, questions, and epilog), find the message IDs for
+         * the language (and variant) specific content.
+         * @param prompts A list of strings that are the prompts.
+         * @return a map of {prompt:messageId}
+         */
+        private Map<String, String> getPromptMap(Collection<String> prompts) {
+            Map<String, String> result = new HashMap<>();
+            MetadataStore store = builderContext.dbConfig.getMetadataStore();
+            List<Locale> localeList = Collections.singletonList(new RFC3066LanguageCode(packageInfo.getLanguageCode()).getLocale());
+            for (String prompt : prompts) {
+                SearchResult searchResult = store.search(prompt, null, localeList);
+                List<AudioItem> items = searchResult.getAudioItems()
+                        .stream()
+                        .map(store::getAudioItem)
+                        .collect(Collectors.toList());
+                // Hopefully there is one and no more than one. If more, take first one, randomly.
+                if (!items.isEmpty()) {
+                    result.put(prompt, items.get(0).getId());
+                    if (items.size() > 1) {
+                        System.out.printf("Multiple items found for '%s': %s\n", prompt, items.stream().map(AudioItem::getId).collect(Collectors.toList()));
+                    }
+                } else {
+                    System.out.printf("Could not find audio item for survey item '%s'\n", prompt);
+                }
+            }
+            return result;
+        }
+
         private void addSystemPromptsToImage() throws IOException {
             // Copy the system prompt files from TB_Options. (0, 1, 2, ...)
             for (String prompt : TBBuilder.getRequiredSystemMessages(packageInfo.hasTutorial())) {
@@ -558,31 +661,26 @@ class CreateForV2 extends CreateFromDeploymentInfo {
                     }
                 }
             }
+            // Copy the boilerplate files, $0-1.txt (tutorial list), 0.a18 (cha-ching), 7.a18 (silence)
+            addBoilerplateFile(determineShadowFile(promptsDir, BELL_SOUND_V2, shadowPromptsDir));
+            addBoilerplateFile(determineShadowFile(promptsDir, SILENCE_V2, shadowPromptsDir));
+
         }
 
         private void addSystemDirFilesToImage() throws IOException {
+            File targetSystemDir = new File(imageDir, "system");
             // Look for an override in the program's TB_Options directory.
             File sourceSystemDir = new File(builderContext.sourceTbOptionsDir, "system.v2");
-            if (!isValidCSMSource(sourceSystemDir)) {
+            if (!isValidSystemSource(sourceSystemDir)) {
                 // Fall back to the system default, ~/Amplio/ACM/system.v2
                 sourceSystemDir = new File(AmplioHome.getAppSoftwareDir(), "system.v2");
             }
-
-            File targetSystemDir = new File(imageDir, "system");
-
-            // The control_def.csm file. Control file for the TB, if not using the built-in one.
-            File csmData = new File(sourceSystemDir, "control_def.csm");
-            if (csmData.exists()) {
-                FileUtils.copyFileToDirectory(csmData, targetSystemDir);
+            if (isValidSystemSource(sourceSystemDir)) {
+                // Copy whatever is in the source dir to the target.
+                FileUtils.copyDirectory(sourceSystemDir, targetSystemDir);
             }
 
-            // Optionally, the yaml source for control_def.csm file.
-            File controlDefFile = new File(sourceSystemDir, "control_def.yaml");
-            if (controlDefFile.exists()) {
-                FileUtils.copyFileToDirectory(controlDefFile, targetSystemDir);
-            }
-
-            // If UF is hidden in the deployment, copy the appropriate 'uf.der' file to 'system/'
+            // If UF is hidden in the deployment, obtain and copy the appropriate 'uf.der' file to 'system/'
             if (deploymentInfo.isUfHidden()) {
                 UfKeyHelper ufKeyHelper = new UfKeyHelper(builderContext.project);
                 byte[] publicKey = ufKeyHelper.getPublicKeyFor(builderContext.deploymentNo);

@@ -10,7 +10,7 @@ cp -av ../acm/dist/splash-acm.jpg ./ACM/
 cp -av ../acm/dist/splash-tbl.png ./ACM/
 cp -av ../acm/dist/lib ./ACM/
 cp -av ./bats/*.bat ./ACM/
-s
+
 # Default v2 firmware, CSM
 cp -av ./firmware.v2 ./ACM/
 cp -av ./system.v2 ./ACM/

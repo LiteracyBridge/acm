@@ -16,11 +16,31 @@ import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
-import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
-import static org.literacybridge.acm.tbbuilder.TBBuilder.*;
+import static org.literacybridge.acm.Constants.BELL_SOUND_V1;
+import static org.literacybridge.acm.Constants.CUSTOM_GREETING_V1;
+import static org.literacybridge.acm.Constants.SILENCE_V1;
+import static org.literacybridge.acm.Constants.TUTORIAL_LIST;
+import static org.literacybridge.acm.tbbuilder.TBBuilder.CATEGORIES_IN_PACKAGES_CSV_FILE_NAME;
+import static org.literacybridge.acm.tbbuilder.TBBuilder.CONTENT_IN_PACKAGES_CSV_FILE_NAME;
+import static org.literacybridge.acm.tbbuilder.TBBuilder.CSV_COLUMNS_CATEGORIES_IN_PACKAGE;
+import static org.literacybridge.acm.tbbuilder.TBBuilder.CSV_COLUMNS_CONTENT_IN_PACKAGE;
+import static org.literacybridge.acm.tbbuilder.TBBuilder.CSV_COLUMNS_PACKAGES_IN_DEPLOYMENT;
+import static org.literacybridge.acm.tbbuilder.TBBuilder.PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME;
 
 @SuppressWarnings({"ResultOfMethodCallIgnored", "JavadocReference"})
 class Create {
@@ -61,7 +81,7 @@ class Create {
     private void createDeployment() throws Exception {
         File stagedMetadataDir = new File(builderContext.stagingDir, "metadata" + File.separator + builderContext.deploymentName);
         String revFileName = String.format(TBLoaderConstants.UNPUBLISHED_REVISION_FORMAT, builderContext.buildTimestamp, builderContext.deploymentName);
-        // use LB Home Dir to create folder, then zip to Dropbox and delete the
+        // use Amplio Home Dir to create folder, then zip to acm-dbs/${PROGRAM}/TB-Loaders/published/ and delete the
         // folder
         IOUtils.deleteRecursive(builderContext.stagedDeploymentDir);
         builderContext.stagedDeploymentDir.mkdirs();
@@ -377,7 +397,7 @@ class Create {
         if (sourceLanguageDir.exists() && sourceLanguageDir.isDirectory() && Objects.requireNonNull(sourceLanguageDir.listFiles()).length > 0) {
             targetLanguageDir.mkdirs();
             targetSystemDir.mkdirs();
-            File targetFile = new File(targetLanguageDir, CUSTOM_GREETING);
+            File targetFile = new File(targetLanguageDir, CUSTOM_GREETING_V1);
             repository.exportGreetingWithFormat(sourceLanguageDir, targetFile, audioFormat);
             File groupFile = new File(targetSystemDir, recipient.languagecode + ".grp");
             groupFile.createNewFile();
@@ -395,6 +415,26 @@ class Create {
         File sourceTutorialTxt = new File(sourceLanguageDir, Constants.CATEGORY_TUTORIAL + ".txt");
         File stagedTutorialTxt = new File(stagedLanguageDir, sourceTutorialTxt.getName());
         IOUtils.copy(sourceTutorialTxt, stagedTutorialTxt);
+    }
+    
+    /**
+     * Files that don't depend on program or language, the bell, and the .txt file for the tutorial.
+     * @param name of the boilerplate file.
+     * @param destFile The file to be written to.
+     */
+    void addBoilerplateFile(File destFile) {
+        if (!destFile.exists()) {
+            String name = destFile.getName();
+            InputStream srcStream = Create.class.getClassLoader().getResourceAsStream(name);
+            try {
+                // srcStream may be null, in which case we'll catch and report the exception.
+                //noinspection ConstantConditions
+                FileUtils.copyInputStreamToFile(srcStream, destFile);
+            } catch (Exception ex) {
+                // Keep going after failing to export a prompt.
+                builderContext.logException(ex);
+            }
+        }
     }
 
     /**
@@ -432,6 +472,11 @@ class Create {
                 }
             }
         }
+
+        // Boilerplate files distributed with the TB-Loader.
+        addBoilerplateFile(new File(stagedLanguageDir, TUTORIAL_LIST));
+        addBoilerplateFile(new File(stagedLanguageDir, BELL_SOUND_V1));
+        addBoilerplateFile(new File(stagedLanguageDir, SILENCE_V1));
     }
 
     /**

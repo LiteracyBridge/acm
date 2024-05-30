@@ -64,10 +64,6 @@ public class DBConfiguration {
 
     public DBConfiguration(PathsProvider pathsProvider) {
         this.pathsProvider = pathsProvider;
-        if (!pathsProvider.isDropboxDb()) {
-            System.out.printf("Program %s uses %s for storage.\n", this.pathsProvider.getProgramId(),
-                    this.pathsProvider.isDropboxDb() ? "Dropbox" : "S3");
-        }
     }
 
     public boolean isSandboxed() {
@@ -138,8 +134,8 @@ public class DBConfiguration {
     }
 
     /**
-     * Gets a File representing global (ie, Dropbox) ACM directory.
-     * Like ~/Dropbox/ACM-${programId} or ~/Amplio/acm-dbs/${programId}
+     * Gets a File representing global ACM directory.
+     * Like ~/Amplio/acm-dbs/${programId}
      *
      * @return The global File for this content database.
      */
@@ -179,7 +175,7 @@ public class DBConfiguration {
 
     /**
      * Gets a File representing the location of the content repository, like
-     * ~/Dropbox/${programDbDir}/content or ~/Amplio/acm-dbs/${programDbDir}/content
+     * ~/Amplio/acm-dbs/${programDbDir}/content
      *
      * @return The File object for the content directory.
      */
@@ -311,12 +307,10 @@ public class DBConfiguration {
             getSandbox().discard();
         }
         deleteChangeMarkerFile();
-        if (!pathsProvider.isDropboxDb()) {
-            try {
-                CloudSync.requestSync(getProgramId());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            CloudSync.requestSync(getProgramId());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
     }
@@ -670,8 +664,7 @@ public class DBConfiguration {
                 LOG.log(Level.SEVERE, "ACM database " + getProgramHomeDirName() + " not found. Aborting.");
             } else {
                 JOptionPane.showMessageDialog(null, "ACM database " + getProgramHomeDirName()
-                        + " is not found within Dropbox.\n\nBe sure that you have accepted the Dropbox invitation\nto share the folder"
-                        + " by logging into your account at\nhttp://dropbox.com and click on the 'Sharing' link.\n\nShutting down.");
+                        + " is not found on your computer.\n\nShutting down.");
             }
             System.exit(1);
         }
@@ -856,7 +849,7 @@ public class DBConfiguration {
      */
     private Properties getDbProperties() {
         if (dbProperties == null) {
-            // like ~/Dropbox/ACM-UWR/config.properties
+            // like ~/Amplio/acm-dbs/DEMO/config.properties
             File propertiesFile = getSandbox().inputFile(pathsProvider.getProgramConfigFile().toPath());
             if (propertiesFile.exists()) {
                 try {

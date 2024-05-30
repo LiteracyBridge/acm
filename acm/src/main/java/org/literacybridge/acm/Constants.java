@@ -3,7 +3,7 @@ package org.literacybridge.acm;
 import java.io.File;
 
 public class Constants {
-  public final static String ACM_VERSION = "r2311221"; // yy mm dd n
+  public final static String ACM_VERSION = "r2405301"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String AmplioHomeDirName = "Amplio";
   public final static String ACM_DIR_NAME = "ACM";
@@ -29,6 +29,7 @@ public class Constants {
 
   public final static String USER_NAME = "USER_NAME";
   public final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";
+  @Deprecated
   public final static String GLOBAL_SHARE_PATH = "GLOBAL_SHARE_PATH";
   public final static String RECORDING_COUNTER_PROP = "RECORDING_COUNTER";
   public final static String DEVICE_ID_PROP = "DEVICE_ID";
@@ -62,8 +63,11 @@ public class Constants {
                                 /*"USER_NAME", "USER_CONTACT_INFO"*/};
 
   public final static String CATEGORY_GENERAL_OTHER = "0-0";
+  public final static String CATGEORY_GENERAL_AGRICULTURE = "1-0";
+  public final static String CATEGORY_TB = "0-4";
   public final static String CATEGORY_TB_SYSTEM = "0-4-1";
   public final static String CATEGORY_TB_CATEGORIES = "0-4-2";
+  public final static String CATEGORY_SURVEY = "0-8";
   public final static String CATEGORY_INTRO_MESSAGE = "0-5";
   public final static String CATEGORY_UNCATEGORIZED_FEEDBACK = "9-0";
   public static final String CATEGORY_TOO_SHORT_FEEDBACK = "92-2";
@@ -75,9 +79,11 @@ public class Constants {
 
   public static final String TUTORIAL_LIST = CATEGORY_TUTORIAL + ".txt";
 
-  public static final String BELL_SOUND = "0.a18";
-  public static final String SILENCE = "7.a18";
-  public static final String CUSTOM_GREETING = "10.a18";
+  public static final String BELL_SOUND_V1 = "0.a18";
+  public static final String BELL_SOUND_V2 = "0.mp3";
+  public static final String SILENCE_V1 = "7.a18";
+  public static final String SILENCE_V2 = "7.mp3";
+  public static final String CUSTOM_GREETING_V1 = "10.a18";
 
   public static final int FUZZY_THRESHOLD_MAXIMUM = 100;
   public static final int FUZZY_THRESHOLD_DEFAULT = 80;

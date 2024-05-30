@@ -24,11 +24,6 @@ public class TBLoaderTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
-    // These are created fresh for every test. Populate as needed.
-    private File homeDir;  // Like ~/Literacybridge
-    private File dbxDir;   // Like ~/Dropbox
-    private File tbcdDir;  // Like ~/Dropbox/tbcd0123
-
     private final static String deviceId = "000c";
 
     private final static String binaryFn = deviceId + TBLoaderConstants.DEVICE_FILE_EXTENSION;
@@ -36,9 +31,13 @@ public class TBLoaderTest {
     private final static String textFn = deviceId + ".txt";
 
     private void configureDirectories() throws IOException {
-        homeDir = folder.newFolder("home");
-        dbxDir = folder.newFolder("dbx");
-        tbcdDir = new File(dbxDir, TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
+        // These are created fresh for every test. Populate as needed.
+        // Like ~/Amplio
+        File homeDir = folder.newFolder("home");
+        // Like ~/Amplio
+        File dbxDir = folder.newFolder("dbx");
+        // Like ~/Amplio/tbcd0123
+        File tbcdDir = new File(dbxDir, TBLoaderConstants.COLLECTED_DATA_TBLOADERID_PREFIX + deviceId);
         tbcdDir.mkdirs();
     }
 

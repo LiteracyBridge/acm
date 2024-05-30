@@ -157,7 +157,7 @@ class DeploymentsManager {
         // Get content/* directories. Expect at most one.
         File[] contentDirs = new File(localProjectDir, "content").listFiles(File::isDirectory);
         if (revFiles==null || revFiles.length==0 || contentDirs==null || contentDirs.length==0) {
-            // No local content; need to get from Dropbox.
+            // No local content; need to get from S3.
             return new LocalDeployment();
         }
         if (revFiles.length==1) { // ) && (contentDirs != null && contentDirs.length==1)) {
@@ -277,7 +277,7 @@ class DeploymentsManager {
     enum State {
         Unset,
         Bad_Local,      // Needs to be fixed. Easiest is delete all, re-copy.
-        Missing_Latest, // Something is wrong with the Dropbox state.
+        Missing_Latest, // Something is wrong with the S3 state.
         No_Deployment,  // No deployment, simply copy latest.
         OK_Unpublished, // Unpublished deployment.
         OK_Latest,      // Local is latest, seems OK.
@@ -355,8 +355,7 @@ class DeploymentsManager {
     }
 
     /**
-     * Finds any published deployments that are local the user's computer. May be in !/Dropbox
-     * or in ~/Amplio/acm-dbs.
+     * Finds any published deployments that are local the user's computer, in ~/Amplio/acm-dbs.
      * @param programid for which local deployments are desired.
      * @return a map {string, file} of the local published deployments to the directory with the latest
      *      revision of that deployment.

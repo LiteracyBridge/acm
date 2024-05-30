@@ -247,7 +247,7 @@ public class AudioItemContextMenuDialog extends JDialog {
                 // db is committed. So, let them accumulate.
 
                 // it's okay to delete from DB but cannot delete the .a18 file
-                // since that's in the shared (dropbox) repository
+                // since that's in the shared repository
               } catch (Exception e) {
                 // TODO: fix all of these silently ignored exceptions
                 LOG.log(Level.WARNING, "Unable to delete audioitem id=" + item.getId(), e);

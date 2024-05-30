@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 
 import static org.literacybridge.core.fs.TbFile.Flags.contentRecursive;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.*;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR_V2;
 
 @SuppressWarnings("RedundantThrows")
 class TBLoaderCoreV2 extends TBLoaderCore {
@@ -34,12 +35,21 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         super(builder);
     }
 
+    TbFile imagesDir;
     TbFile tempTbDataDir;
     TbFile tempTbDataZip;
     TbFile collectedOpDataDir;
     TbFile collectedTbDataDir;
     TbFile collectedTbDataZip;
     TbFile collectedUfDataDir;
+
+    @Override
+    protected synchronized TbFile getImagesDir() {
+        if (this.imagesDir == null) {
+            this.imagesDir = mDeploymentDirectory.open(IMAGES_SUBDIR_V2);
+        }
+        return this.imagesDir;
+    }
 
     @Override
     protected synchronized TbFile getTempTbDataDir() {
@@ -402,7 +412,7 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         // Iterate over the images to be copied.
         for (String imageName : mNewDeploymentInfo.getPackageNames()) {
             // Where files are copied from.
-            TbFile imagePath = mDeploymentDirectory.open("images.v2").open(imageName);
+            TbFile imagePath = getImagesDir().open(imageName);
 
             // Directories in which to look for zero-byte marker files.
             TbFile shadowedDir = imagePath.open("content");
@@ -446,7 +456,7 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     private void copyPackageData() throws IOException {
         PackagesData packagesData = new PackagesData(mNewDeploymentInfo.getDeploymentName());
         for (String imageName : mNewDeploymentInfo.getPackageNames()) {
-            TbFile imagePath = mDeploymentDirectory.open("images.v2").open(imageName).open("content").open(PackagesData.PACKAGES_DATA_TXT);
+            TbFile imagePath = getImagesDir().open(imageName).open("content").open(PackagesData.PACKAGES_DATA_TXT);
             try (InputStream packageDataStream = imagePath.openFileInputStream()) {
                 PackagesData.PackagesDataImporter pdi = new PackagesData.PackagesDataImporter(packageDataStream);
                 PackagesData imageData = pdi.do_import();

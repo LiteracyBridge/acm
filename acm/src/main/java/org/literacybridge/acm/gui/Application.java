@@ -32,17 +32,15 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.CHOOSE_PROGRAM;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.INCLUDE_FB_ACMS;
-import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.INCLUDE_FOUND_DBX_ACMS;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.INCLUDE_FOUND_ACMS;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.LOCAL_DATA_ONLY;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.LOCAL_OR_S3;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.NOP;
@@ -151,16 +149,12 @@ public class Application extends JXFrame {
         }
         String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
                                 "  --  CHANGES WILL *NOT* BE SAVED!" : "";
-        String cloudIndicator = ACMConfiguration.getInstance().getCurrentDB().getPathProvider().isDropboxDb()
-                                ? (OsUtils.WINDOWS ? "dbx" : "∅")
-                                : (OsUtils.WINDOWS ? "s3" : "✓");
         String layoutIndicator = AmplioHome.isOldStyleHomeDirectory()
                                  ? (OsUtils.WINDOWS ? "v1" : "∅")
                                  : (OsUtils.WINDOWS ? "v2" : "✓");
 
         String dbVersion = "v" +
-            ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion() +
-            cloudIndicator;
+            ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion();
         String programTitle = String.format(LabelProvider.getLabel("APPLICATION_TITLE_FORMAT"),
             LabelProvider.getLabel("ACM_PROGRAM_NAME"));
         String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
@@ -367,27 +361,19 @@ public class Application extends JXFrame {
    */
   private static void openAcmDb(String sharedACM) {
       boolean syncOk = true;
-      // Migration from Dropbox to S3 required?
       PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);
       // Uncomment lines to debug opening from S3.
 //      System.out.printf("Opening database '%s' in %s\n", sharedACM,
-//          (Authenticator.getInstance().isProgramS3(sharedACM))?"s3":"dropbox");
       if (Authenticator.getInstance().isProgramS3(sharedACM)) {
           splashScreen.setProgressLabel("Synchronizing content database...");
-          if (pathsProvider == null) {
+          if (pathsProvider == null || !pathsProvider.getProgramHomeDir().exists() || pathsProvider.getProgramHomeDir().listFiles().length == 0) {
 //              System.out.println("pathsProvider is null");
-              // The database doesn't exist locally, but it does exist in S3. ".DOWNLOAD" will set up
-              // synchronization with Dropbox.
-              syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.DOWNLOAD, false);
-          } else if (pathsProvider.isDropboxDb()) {
-//              System.out.println("pathsProvider thinks this is a Dropbox db");
-              // The database is configured to sync with S3, but locally it is still syncing with Dropbox
-              // TOOD: Move from Dropbox to S3, to save the download. (Download works, but wastes time).
-              syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.DOWNLOAD, true);
+              // The database doesn't exist locally, but it does exist in S3.
+              syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.DOWNLOAD);
           } else {
 //              System.out.println("Syncing...");
               // Mere sync required.
-              syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.SYNC, false);
+              syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.SYNC);
           }
       }
 
@@ -412,12 +398,10 @@ public class Application extends JXFrame {
    * Sync the given program with S3.
    * @param program The program to be synchronized.
    * @param syncStyle DOWNLOAD or SYNC
-   * @param haveDropboxCopy is unused
    * @return true if the sync completed successfully.
    */
   private static boolean syncFromS3(String program,
-          S3SyncDialog.SYNC_STYLE syncStyle,
-          boolean haveDropboxCopy) {
+          S3SyncDialog.SYNC_STYLE syncStyle) {
       S3SyncDialog dialog = new S3SyncDialog(null, program, syncStyle);
       dialog.setIconImage(iconImage);
       dialog.go();
@@ -432,8 +416,7 @@ public class Application extends JXFrame {
   private static void authenticateAndChooseProgram(CommandLineParams params) {
       splashScreen.setProgressLabel("Logging in...");
       Authenticator authInstance = Authenticator.getInstance();
-      authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs(),
-              ACMConfiguration.getInstance().getLocalDbxDbs());
+      authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs());
       Authenticator.LoginOptions okRepoOption = AmplioHome.isOldStyleHomeDirectory()||params.noS3Dbs?LOCAL_DATA_ONLY:LOCAL_OR_S3;
       Authenticator.LoginResult result = authInstance.authenticateAndChooseProgram(null,
               LabelProvider.getLabel("ACM_PROGRAM_NAME"),
@@ -441,7 +424,7 @@ public class Application extends JXFrame {
               OFFLINE_EMAIL_CHOICE,
               CHOOSE_PROGRAM,
               okRepoOption,
-              params.noFoundDbs ? NOP : INCLUDE_FOUND_DBX_ACMS,
+              params.noFoundDbs ? NOP : INCLUDE_FOUND_ACMS,
               params.sandbox ? SUGGEST_DEMO_MODE : OFFER_DEMO_MODE, // vs no demo mode at all
               INCLUDE_FB_ACMS,
               params.go ? NO_WAIT : NOP);

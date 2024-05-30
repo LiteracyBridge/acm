@@ -63,7 +63,7 @@ class DeploymentChooser {
     }
 
     /**
-     * Determines the most recent deployment in ~/LiteracyBridge.
+     * Determines the most recent deployment in ~/Amplio.
      */
     void select() {
         DeploymentsManager dm = new DeploymentsManager(program);
@@ -74,7 +74,7 @@ class DeploymentChooser {
 
         switch (state) {
         case Missing_Latest:
-            // Problem with Dropbox, can't continue.
+            // Problem with S3, can't continue.
             message = "TB-Loader can not determine the latest Deployment, and can not continue.\n"
                 + "(There is no .rev file in the 'published' directory.)";
             JOptionPane.showMessageDialog(tbLoader,
@@ -186,7 +186,7 @@ class DeploymentChooser {
             }
             desiredRevision = dm.getAvailableDeployments().getRevIdForDeployment(desiredDeployment);
 
-            // If we don't have what we want, get it from Dropbox / S3.
+            // If we don't have what we want, get it from S3.
             if (!desiredDeployment.equals(localDeployment.localDeployment)
                 || !desiredRevision.equals(localDeployment.localRevision)) {
 

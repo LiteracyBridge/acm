@@ -23,22 +23,4 @@ public class Version {
             // Ignore
         }
     }
-
-    public static Boolean isUpToDate() {
-        Properties props = new Properties();
-        Boolean isUpToDate = null;
-        File dbx = new File(DropboxFinder.getDropboxPath());
-        String fn = "LB-software/ACM-install/ACM/software/build.properties".replace('/', File.separatorChar);
-        File file = new File(dbx, fn);
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            props.load(fis);
-            String latestTimestamp = props.getProperty("BUILD_TIMESTAMP");
-            isUpToDate = new Boolean(latestTimestamp.equals(buildTimestamp));
-        } catch (Exception ignored) {
-            // ignore
-        }
-        return isUpToDate;
-    }
-
 }

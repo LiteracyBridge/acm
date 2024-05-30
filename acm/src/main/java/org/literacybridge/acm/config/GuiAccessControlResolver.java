@@ -206,8 +206,8 @@ public class GuiAccessControlResolver implements AccessControlResolver {
                 break;
             case zipError:
                 Object[] options = { "Keep Your Changes", "Throw Away Your Latest Changes" };
-                msg = "There is a problem getting your changes into Dropbox.  Do you want to keep your changes and try to get this problem fixed or throw away your latest changes?";
-                title = "Problem creating zip file on Dropbox";
+                msg = "There is a problem getting your changes into a zip file.  Do you want to keep your changes and try to get this problem fixed or throw away your latest changes?";
+                title = "Problem creating zip file";
                 int buttonIx = JOptionPane.showOptionDialog(parent, msg, title,
                     JOptionPane.YES_NO_CANCEL_OPTION,
                     JOptionPane.WARNING_MESSAGE, null, options,

@@ -35,9 +35,9 @@ class FileSystemRepository implements FileRepositoryInterface {
 
     /**
      * Creates a path under which to store a file, in the baseDir directory. The baseDir may be like
-     * ~/Dropbox/ACM-FOO/content/ (globalSharedRepository)
-     * ~/LiteracyBridge/ACM/cache/ACM-FOO/ (localCacheRepository)
-     * ~/LiteracyBridge/ACM/temp/ACM-FOO/content/ (sandboxRepository
+     * ~/Amplio/acm-dbs/FOO/content/ (globalSharedRepository)
+     * ~/Amplio/cache/ACM-FOO/ (localCacheRepository)
+     * ~/Amplio/temp/ACM-FOO/content/ (sandboxRepository
      * <p>
      * The path will be like
      * org/literacybridge/{file-id}

@@ -47,7 +47,7 @@ public class DeploymentsManagerTest {
         localContentDir = new File(localProjectDir, "content");
         localContentDir.mkdirs();
 
-        // Like ~/Dropbox/ACM-{proj}/TB-Loaders/published
+        // Like ~/Amplio/acm-dbs/{program}/TB-Loaders/published
         File dbx = folder.newFolder("dbx");
         File acmDir = new File(dbx, ACM_NAME);
         File tbLoaderDir = new File(acmDir, "TB-Loaders");

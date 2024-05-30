@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../S3Sync"
+		}
+	],
+	"settings": {}
+}

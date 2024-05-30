@@ -27,7 +27,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
+import static org.literacybridge.acm.Constants.CUSTOM_GREETING_V1;
 
 /**
  * This repository manages all audio files associated with the audio items that
@@ -527,7 +527,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
 //                    FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
         }
 
-        File sourceFileWithFormat = new File(sourceDir, FilenameUtils.removeExtension(CUSTOM_GREETING) + "." + defaultExtension);
+        File sourceFileWithFormat = new File(sourceDir, FilenameUtils.removeExtension(CUSTOM_GREETING_V1) + "." + defaultExtension);
 
         if (sourceFileWithFormat.exists() && !forceConversion(sourceFileWithFormat, targetFormat)) {
             IOUtils.copy(sourceFileWithFormat, targetFile);

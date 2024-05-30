@@ -1,2 +1,0 @@
-rem CHECK CONNECTION
-!dir ${device_drive}
