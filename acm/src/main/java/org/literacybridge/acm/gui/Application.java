@@ -32,10 +32,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -368,7 +366,7 @@ public class Application extends JXFrame {
 //      System.out.printf("Opening database '%s' in %s\n", sharedACM,
       if (Authenticator.getInstance().isProgramS3(sharedACM)) {
           splashScreen.setProgressLabel("Synchronizing content database...");
-          if (pathsProvider == null) {
+          if (pathsProvider == null || !pathsProvider.getProgramHomeDir().exists() || pathsProvider.getProgramHomeDir().listFiles().length == 0) {
 //              System.out.println("pathsProvider is null");
               // The database doesn't exist locally, but it does exist in S3.
               syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.DOWNLOAD);
