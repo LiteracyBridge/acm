@@ -3,6 +3,8 @@ package org.literacybridge.acm.audioconverter.converters;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.AmplioHome;
 import org.literacybridge.acm.config.PathsProvider;
+import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 
@@ -36,6 +38,13 @@ public class FFMpegConverter extends BaseAudioConverter {
      */
     public void normalizeVolume(AudioItem audioItem, String volumeLevel)
             throws ConversionException, IOException, AudioItemRepository.UnsupportedFormatException {
+
+        // To prevent "file is already in use" errors, stop the player before starting the .
+        // We assume the currenlty playing file is the one we are going to convert,
+        // since there's no way (not implemented?) to know which audio file is playing
+        SimpleSoundPlayer player = Application.getApplication().getSoundPlayer();
+        player.stop();
+
         File sourceFile = null;
 
         // If in sandbox mode, use the cached file, otherwise use the uncached file
