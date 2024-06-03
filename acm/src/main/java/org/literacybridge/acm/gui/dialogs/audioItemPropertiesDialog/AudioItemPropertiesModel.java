@@ -118,34 +118,15 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
                     try {
                         FFMpegConverter converter = new FFMpegConverter();
                         converter.normalizeVolume(audioItem, newValue.toString());
+
                         // Update volume field if conversion completed successfully
                         audioItem.getMetadata().putMetadataField(
                                 LB_VOLUME, new MetadataValue<>(newValue.toString()));
                     } catch (Exception e) {
-                        //  The conversion fails if the file is still being played by the user during/right before conversion
                         // TODO: show a dialog of some sort.
                         e.printStackTrace();
                     }
                 }).start();
-
-//                try {
-//                    Toast t = new Toast("Adjusting messaging volume, please wait...", 150, 400);
-//                    t.showToast();
-//
-//
-//                    FFMpegConverter converter = new FFMpegConverter();
-//                    converter.normalizeVolume(audioItem, newValue.toString());
-//                    // Update volume field if conversion completed successfully
-//                    audioItem.getMetadata().putMetadataField(
-//                            LB_VOLUME, new MetadataValue<>(newValue.toString()));
-//
-//                    t = new Toast("Volume adjusted successfully", 50, 50);
-//                    t.showToast();
-//                } catch (Exception e) {
-//                    //  The conversion fails if the file is still being played by the user during/right before conversion
-//                    // TODO: show a dialog of some sort.
-//                    e.printStackTrace();
-//                }
             }
         });
 

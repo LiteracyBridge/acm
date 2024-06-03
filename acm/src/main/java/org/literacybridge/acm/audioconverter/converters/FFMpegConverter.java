@@ -2,6 +2,7 @@ package org.literacybridge.acm.audioconverter.converters;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.AmplioHome;
+import org.literacybridge.acm.config.PathsProvider;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 
@@ -46,6 +47,7 @@ public class FFMpegConverter extends BaseAudioConverter {
 
         // Create a temp file to write the output to, then replace the source file with the temp file
         String tempFilePath = AmplioHome.getTempsDir() + File.separator + sourceFile.getName();
+        File lock = PathsProvider.getLocalLockFile(audioItem.getId(), true); // Lock the audio item to prevent concurrent access
 
         double lufsValue = convertVolumeToLUFS(Double.parseDouble(volumeLevel));
         String cmd = getConverterEXEPath() // ffmpeg.exe
@@ -78,6 +80,7 @@ public class FFMpegConverter extends BaseAudioConverter {
         }
         System.out.printf("Conversion to 'wav' result: %s\n%n", result.response);
 
+        lock.delete(); // No need to keep the lock file after the conversion is done
     }
 
     /**
