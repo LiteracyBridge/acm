@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.audioconverter.converters.FFMpegConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.gui.util.Toast;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository;
@@ -58,7 +59,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
     static final int EDIT_COL = 2;
 
     private AudioItem audioItem = null;
-    private List<AudioItemProperty> audioItemPropertiesObject = new ArrayList<AudioItemProperty>();
+    private List<AudioItemProperty> audioItemPropertiesObject = new ArrayList<>();
 
     public AudioItemPropertiesModel(AudioItem audioItem) {
         this.audioItem = audioItem;
@@ -113,17 +114,38 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
             @Override
             public void setValue(AudioItem audioItem, Object newValue) {
-                try {
-                    FFMpegConverter converter = new FFMpegConverter();
-                    converter.normalizeVolume(audioItem,  newValue.toString());
-                    // Update volume field if conversion completed successfully
-                    audioItem.getMetadata().putMetadataField(
-                            LB_VOLUME, new MetadataValue<>(newValue.toString()));
-                } catch (Exception e) {
-                    //  The conversion fails if the file is still being played by the user during/right before conversion
-                    // TODO: show a dialog of some sort.
-                    e.printStackTrace();
-                }
+                new Thread(() -> {
+                    try {
+                        FFMpegConverter converter = new FFMpegConverter();
+                        converter.normalizeVolume(audioItem, newValue.toString());
+                        // Update volume field if conversion completed successfully
+                        audioItem.getMetadata().putMetadataField(
+                                LB_VOLUME, new MetadataValue<>(newValue.toString()));
+                    } catch (Exception e) {
+                        //  The conversion fails if the file is still being played by the user during/right before conversion
+                        // TODO: show a dialog of some sort.
+                        e.printStackTrace();
+                    }
+                }).start();
+
+//                try {
+//                    Toast t = new Toast("Adjusting messaging volume, please wait...", 150, 400);
+//                    t.showToast();
+//
+//
+//                    FFMpegConverter converter = new FFMpegConverter();
+//                    converter.normalizeVolume(audioItem, newValue.toString());
+//                    // Update volume field if conversion completed successfully
+//                    audioItem.getMetadata().putMetadataField(
+//                            LB_VOLUME, new MetadataValue<>(newValue.toString()));
+//
+//                    t = new Toast("Volume adjusted successfully", 50, 50);
+//                    t.showToast();
+//                } catch (Exception e) {
+//                    //  The conversion fails if the file is still being played by the user during/right before conversion
+//                    // TODO: show a dialog of some sort.
+//                    e.printStackTrace();
+//                }
             }
         });
 
