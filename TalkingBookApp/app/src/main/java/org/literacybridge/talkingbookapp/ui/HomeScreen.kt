@@ -105,7 +105,7 @@ fun HomeScreen(
                             Text("Collect Statistics")
                         }
                         Button(
-                            enabled = true,
+                            enabled = viewModel.isMassStorageReady.value,
 //                            enabled = viewModel.isDeviceConnected(),
                             onClick = {
                                 // TODO: check if device needs firmware updates, navigate to firmware update screen
@@ -133,28 +133,15 @@ fun HomeScreen(
                 )
                 BuildInstructions()
 
-                Text("${deviceState.device?.deviceName}")
+//                Text("${deviceState.device?.deviceName}")
 //                Image(
 //                    painter = painterResource(R.drawable.tb_table_image),
 //                    contentDescription = "Tree"
 ////                contentDescription = stringResource(id = R.string.bus_content_description)
 //                )
 
-                BuildDeviceInfo(device = deviceState.device)
-
-                Box(
-                    modifier = Modifier
-                        .border(width = 1.5.dp, color = Color.Black)
-                        .align(Alignment.CenterHorizontally)
-                        .fillMaxWidth(0.9f)
-                ) {
-                    Text(
-                        "[Display TB info once connected]\n" +
-                                "TB ID\n" +
-                                "Current recipient\n" +
-                                "Current content deployment\n"
-                    )
-
+                Box(modifier =             Modifier.padding(top = 50.dp)) {
+                    BuildDeviceInfo(device = deviceState.device)
                 }
 
             }
@@ -169,7 +156,6 @@ fun BuildDeviceInfo(device: UsbDevice?) {
         return Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 50.dp)
         ) {
             CircularProgressIndicator()
             Text("Please connect the Talking Book!")
@@ -178,19 +164,30 @@ fun BuildDeviceInfo(device: UsbDevice?) {
 
     Box(
         modifier = Modifier
-            .border(width = 1.5.dp, color = Color.Black)
-//            .align(Alignment.CenterHorizontally)
-            .fillMaxWidth(0.9f)
+            .border(width = 1.dp, color = Color.Black)
+            .fillMaxWidth(0.95f)
     ) {
-        Text(
-            "[Display TB info once connected]\n" +
-                    "TB ID\n" +
-                    "Current recipient\n" +
-                    "Current content deployment\n"
-        )
-
+        Text(buildAnnotatedString {
+            withStyle(
+                SpanStyle(fontWeight = FontWeight.Bold)
+            ) {
+                append("Device ID: ")
+            }
+            append("tbaxxx\n")
+            withStyle(
+                SpanStyle(fontWeight = FontWeight.Bold)
+            ) {
+                append("Current recipient: ")
+            }
+            append("Jane Doe\n")
+            withStyle(
+                SpanStyle(fontWeight = FontWeight.Bold)
+            ) {
+                append("Current content deployment: ")
+            }
+            append("DPL-3322993")
+        }, modifier = Modifier.padding(horizontal = 5.dp))
     }
-
 }
 
 @Composable
