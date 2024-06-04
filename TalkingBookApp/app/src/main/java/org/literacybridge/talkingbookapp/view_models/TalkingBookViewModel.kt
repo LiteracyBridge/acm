@@ -94,29 +94,14 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     val usbDevice = MutableStateFlow<UsbDevice?>(null)
 //    val usbDevice: StateFlow<UsbDevice?> = _usbDevice.asStateFlow()
 
-    private val _usb = MutableStateFlow(Usb())
-    val usbState: StateFlow<Usb> = _usb.asStateFlow()
+    val usbState = MutableStateFlow(Usb())
+//    val usbState: StateFlow<Usb> = _usb.asStateFlow()
 
     val app = App.getInstance()
     private var deployment: Deployment? = null
 
-//    fun getDevice(): UsbDevice? {
-//        return deviceState.value.device
-//    }
-//
-//    fun isDeviceConnected(): Boolean {
-//        return isMassStorageReady.value
-////        return deviceState.value.device?.deviceName != null
-//    }
-
-//    private fun setTalkingBookDevice(tb: Usb.TalkingBook?) {
-//        if (tb == null) {
-//            TODO("Display error to user that TB is not connected")
-//        }
-//    }
-
     fun setUsb(usb: Usb){
-        _usb.value = usb
+        usbState.value = usb
     }
 
     fun setDevice(device: UsbDevice?, talkingBook: Usb.TalkingBook?) {
@@ -486,7 +471,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
                 Sentry.captureException(it)
             }
         }
-//        }
     }
 
     /**

@@ -44,7 +44,7 @@ fun ContentDownloaderScreen(
 
     // TODO: show error for no_content
     AppScaffold(
-        title = "Downloading Program Content",
+        title = "Downloading Program",
         navController = navController
     ) { innerPadding ->
         Column(

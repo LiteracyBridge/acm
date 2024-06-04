@@ -1,4 +1,3 @@
-import android.hardware.usb.UsbDevice
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,12 +10,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,6 +26,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -44,6 +48,8 @@ import kotlinx.coroutines.launch
 import org.literacybridge.core.tbdevice.TbDeviceInfo
 import org.literacybridge.talkingbookapp.ui.components.NavigationDrawer
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
+import org.literacybridge.talkingbookapp.util.device_manager.Dfu
+import org.literacybridge.talkingbookapp.util.device_manager.Usb
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
@@ -56,6 +62,7 @@ fun HomeScreen(
     userViewModel: UserViewModel = viewModel(),
 ) {
     val deviceState by viewModel.usbDevice.collectAsStateWithLifecycle()
+    val usbState by viewModel.usbState.collectAsStateWithLifecycle()
     val deviceInfo by viewModel.talkingBookDeviceInfo.collectAsStateWithLifecycle()
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -144,7 +151,7 @@ fun HomeScreen(
 //                )
 
                 Box(modifier = Modifier.padding(top = 50.dp)) {
-                    if (deviceState == null) {
+                    if (deviceState == null && deviceInfo == null) {
                         Column(
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -157,8 +164,10 @@ fun HomeScreen(
                                 fontWeight = FontWeight.Bold
                             )
                         }
-                    } else {
-                        deviceInfo?.let { BuildDeviceInfo(device = it) }
+                    } else if (deviceInfo != null) { // We're in mass storage mode
+                        BuildDeviceInfo(device = deviceInfo!!)
+                    } else { // In DFU mode
+                        UpdateFirmware(usb = usbState)
                     }
                 }
 
@@ -166,6 +175,47 @@ fun HomeScreen(
         }
     }
 
+}
+
+@Composable
+fun UpdateFirmware(usb: Usb) {
+    val showDialog = remember { mutableStateOf(false) }
+
+    Button(
+        onClick = {
+            // TODO: check if device needs firmware updates, navigate to firmware update screen
+            showDialog.value = true
+
+            val dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
+            dfu.setUsb(usb)
+            dfu.program()
+            // TODO: find a way to track if update is complete
+        }) {
+        Text("Update Firmware")
+    }
+
+    if (showDialog.value) {
+        AlertDialog(
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
+            title = { Text(text = "Updating Firmware") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                ) {
+                    LinearProgressIndicator()
+                    Text("please wait....", modifier = Modifier.padding(top = 8.dp))
+                }
+            },
+            onDismissRequest = {},
+            confirmButton = {},
+            dismissButton = {}
+        )
+    }
 }
 
 @Composable
