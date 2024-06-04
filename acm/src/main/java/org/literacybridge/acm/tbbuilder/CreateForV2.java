@@ -668,6 +668,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         }
 
         private void addSystemDirFilesToImage() throws IOException {
+
             File targetSystemDir = new File(imageDir, "system");
             // Look for an override in the program's TB_Options directory.
             File sourceSystemDir = new File(builderContext.sourceTbOptionsDir, "system.v2");
@@ -692,22 +693,15 @@ class CreateForV2 extends CreateFromDeploymentInfo {
             }
 
             //
-            Integer volumeThreshold = ACMConfiguration.getInstance().getCurrentDB().getVolumeThreshold();
-            System.out.print("system dir : ");
-            System.out.println(targetSystemDir.toString());
+            Integer volumeStep = ACMConfiguration.getInstance().getCurrentDB().getVolumeStep();
+            if (volumeStep != null) {
+                File targetConfigPath = new File(targetSystemDir, "config.txt");
+                String text = "VOLUME_STEP:" + volumeStep;
 
-            if (volumeThreshold != null) {
-                // Get directory containing config files
-                File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
-                String configPathString = "TB_Options" + File.separator + "config_files" + File.separator + "config.txt";
-                File configPath = new File(tbLoadersDir, configPathString);
-
-                String text = "VOLUME_THRESHOLD:" + volumeThreshold.toString();
-
-                // Write volume threshold value to config file
+                // Write volume step value to config file
                 BufferedWriter out = null;
                 try {
-                    FileWriter fstream = new FileWriter(configPath, true); // true tells to append data.
+                    FileWriter fstream = new FileWriter(targetConfigPath, true); // true tells to append data.
                     out = new BufferedWriter(fstream);
                     out.write(text);
                 }

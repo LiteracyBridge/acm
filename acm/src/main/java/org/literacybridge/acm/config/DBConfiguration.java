@@ -16,13 +16,7 @@ import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.JOptionPane;
 import java.awt.GraphicsEnvironment;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -546,10 +540,11 @@ public class DBConfiguration {
         getDbProperties().setProperty(Constants.FUZZY_THRESHOLD, Integer.toString(threshold));
     }
 
-    public Integer getVolumeThreshold() {
+    public Integer getVolumeStep() {
         Integer result = null;
-        String value = getDbProperties().getProperty(Constants.VOLUME_THRESHOLD);
         try{
+            result = Constants.VOLUME_STEP_DEFAULT;
+            String value = getDbProperties().getProperty(Constants.VOLUME_STEP);
             result = new Integer(value);
         }
         catch (Exception ignored) {
@@ -558,10 +553,8 @@ public class DBConfiguration {
         return result;
     }
 
-    public void setVolumeThreshold(int threshold) {
-        threshold = Math.min(threshold, Constants.VOLUME_THRESHOLD_MAXIMUM);
-        threshold = Math.max(threshold, Constants.VOLUME_THRESHOLD_MINIMUM);
-        getDbProperties().setProperty(Constants.VOLUME_THRESHOLD, Integer.toString(threshold));
+    public void setVolumeStep(int step) {
+        getDbProperties().setProperty(Constants.VOLUME_STEP, Integer.toString(step));
     }
 
     public boolean isPackageChoice() {

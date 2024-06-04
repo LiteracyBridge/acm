@@ -29,19 +29,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.Constants.VOLUME_THRESHOLD_MAXIMUM;
-import static org.literacybridge.acm.Constants.VOLUME_THRESHOLD_MINIMUM;
+import static org.literacybridge.acm.Constants.VOLUME_STEP_MAXIMUM;
+import static org.literacybridge.acm.Constants.VOLUME_STEP_MINIMUM;
 
 public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     private final PlaceholderTextArea email;
     private final JTextField fuzzyThreshold;
-    private final JTextField volumeThreshold;
+    private final JTextField volumeStepTextField;
     private final String emailAddresses;
     private final int threshold;
-    private final Integer intVolumeThreshold;
+    private final Integer intVolumeStep;
     private final boolean warnForMissingGreetings;
     private final JLabel fuzzyThresholdError;
-    private final JLabel volumeThresholdError;
+    private final JLabel volumeStepJLabel;
     private final JCheckBox greetingWarningsCB;
     private final JCheckBox forceWavConversionCB;
     private final boolean isForceWavConversion;
@@ -61,7 +61,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         // Get values from the global configuration.
         threshold = ACMConfiguration.getInstance().getCurrentDB().getFuzzyThreshold();
-        intVolumeThreshold = ACMConfiguration.getInstance().getCurrentDB().getVolumeThreshold();
+        intVolumeStep = ACMConfiguration.getInstance().getCurrentDB().getVolumeStep();
         emailAddresses = String.join(", ",
                 ACMConfiguration.getInstance().getCurrentDB().getNotifyList());
         warnForMissingGreetings = ACMConfiguration.getInstance().getCurrentDB().getWarnForMissingGreetings();
@@ -142,40 +142,20 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         vbox.add(fuzzyThresholdError);
         gridPanel.add(vbox, gbcRight.setFill(GridBagConstraints.NONE));
 
-        // Setting: volume threshold
-        gridPanel.add(new JLabel("Volume threshold:"), gbcLeft);
+        // Setting: volume step
+        gridPanel.add(new JLabel("Max volume step:"), gbcLeft);
         vbox = Box.createVerticalBox();
-        volumeThreshold = new JTextField(intVolumeThreshold != null ? intVolumeThreshold.toString() : "0");
-        volumeThreshold.setInputVerifier(volumeThresholdVerifier);
-        /**
-         * Listen to changes to the volume threshold, and validate whenever it changes.
-         */
-        DocumentListener volumeDocumentListener = new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                volumeThresholdVerifier.verify(volumeThreshold);
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                volumeThresholdVerifier.verify(volumeThreshold);
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                volumeThresholdVerifier.verify(volumeThreshold);
-            }
-        };
-        volumeThreshold.getDocument().addDocumentListener(volumeDocumentListener);
-        volumeThreshold.setToolTipText(
-                "A number between " + VOLUME_THRESHOLD_MINIMUM + " and " + VOLUME_THRESHOLD_MAXIMUM + " to control the volume of the TB device.");
-        volumeThreshold.setEditable(false);
-        vbox.add(volumeThreshold);
-        volumeThresholdError = new JLabel("Threshold must be an integer between " + Constants.VOLUME_THRESHOLD_MINIMUM + " and " + Constants.VOLUME_THRESHOLD_MAXIMUM);
-        volumeThresholdError.setFont(new Font("Sans Serif", Font.ITALIC, 10));
-        volumeThresholdError.setForeground(Color.RED);
-        volumeThresholdError.setVisible(false);
-        vbox.add(volumeThresholdError);
+        volumeStepTextField = new JTextField(intVolumeStep != null ? intVolumeStep.toString() : "0");
+        volumeStepTextField.setInputVerifier(volumeStepVerifier);
+        volumeStepTextField.getDocument().addDocumentListener(volumeStepDocumentListener);
+        volumeStepTextField.setToolTipText(
+                "A number between " + VOLUME_STEP_MINIMUM + " and " + VOLUME_STEP_MAXIMUM + " to control the maximum volume of the TB device.");
+        vbox.add(volumeStepTextField);
+        volumeStepJLabel = new JLabel("Threshold must be an integer between " + Constants.VOLUME_STEP_MINIMUM + " and " + Constants.VOLUME_STEP_MAXIMUM);
+        volumeStepJLabel.setFont(new Font("Sans Serif", Font.ITALIC, 10));
+        volumeStepJLabel.setForeground(Color.RED);
+        volumeStepJLabel.setVisible(false);
+        vbox.add(volumeStepJLabel);
         gridPanel.add(vbox, gbcRight.setFill(GridBagConstraints.NONE));
 
         // Setting: warn for missing custom greetings.
@@ -243,7 +223,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         email.setText(emailAddresses);
         fuzzyThreshold.setText(String.format("%d", threshold));
-        volumeThreshold.setText(String.format("%d", intVolumeThreshold));
+        volumeStepTextField.setText(String.format("%d", intVolumeStep));
     }
 
     private static final Map<String, String> themeClasses;
@@ -294,8 +274,8 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
             haveChanges = true;
         }
 
-        if (getVolumeThreshold().intValue() != intVolumeThreshold) {
-            ACMConfiguration.getInstance().getCurrentDB().setVolumeThreshold(getVolumeThreshold());
+        if (getVolumeStepTextField().intValue() != intVolumeStep) {
+            ACMConfiguration.getInstance().getCurrentDB().setVolumeStep(getVolumeStepTextField());
             haveChanges = true;
         }
 
@@ -347,8 +327,8 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         return Integer.parseInt(str);
     }
 
-    private Integer getVolumeThreshold() {
-        String str = volumeThreshold.getText();
+    private Integer getVolumeStepTextField() {
+        String str = volumeStepTextField.getText();
         return Integer.parseInt(str);
     }
 
@@ -374,6 +354,26 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     };
 
     /**
+     * Listen to changes to the volume step, and validate whenever it changes.
+     */
+    private final DocumentListener volumeStepDocumentListener = new DocumentListener() {
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            volumeStepVerifier.verify(volumeStepTextField);
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            volumeStepVerifier.verify(volumeStepTextField);
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            volumeStepVerifier.verify(volumeStepTextField);
+        }
+    };
+
+    /**
      * Validator for the fuzzy match threshold field.
      */
     private final InputVerifier thresholdVerifier = new InputVerifier() {
@@ -393,18 +393,18 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         }
     };
 
-    private final InputVerifier volumeThresholdVerifier = new InputVerifier() {
+    private final InputVerifier volumeStepVerifier = new InputVerifier() {
         @Override
         public boolean verify(JComponent input) {
-            String newVal = volumeThreshold.getText();
+            String newVal = volumeStepTextField.getText();
             boolean ok = false;
             try{
                 int val = Integer.parseInt(newVal);
-                ok = val >= VOLUME_THRESHOLD_MINIMUM && val <= Constants.VOLUME_THRESHOLD_MAXIMUM;
+                ok = val >= VOLUME_STEP_MINIMUM && val <= Constants.VOLUME_STEP_MAXIMUM;
             } catch (Exception ignored) {
 
             }
-            volumeThresholdError.setVisible(ok);
+            volumeStepJLabel.setVisible(!ok);
             helper.setValid(ok);
             return  ok;
         }
