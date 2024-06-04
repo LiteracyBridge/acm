@@ -2,7 +2,6 @@ package org.literacybridge.talkingbookapp.view_models
 
 import android.hardware.usb.UsbDevice
 import android.util.Log
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -14,10 +13,6 @@ import io.sentry.Sentry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.literacybridge.core.fs.FsFile
@@ -66,7 +61,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     enum class TalkingBookOperation {
         UPDATE_DEVICE,
         COLLECT_STATS_ONLY,
-        COLLECT_STATS_AND_REFRSH_FIRMWARE
+        COLLECT_STATS_AND_REFRESH_FIRMWARE
     }
 
     enum class OperationResult {
@@ -75,8 +70,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         InProgress,
     }
 
-    val totalFilesPendingUpload = mutableIntStateOf(0)
-    val totalFilesUploaded = mutableIntStateOf(0)
     val isOperationInProgress = mutableStateOf(false)
     val operationResult = mutableStateOf(OperationResult.InProgress)
 
@@ -94,12 +87,12 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     val selectedRecipient = mutableStateOf<Recipient?>(null)
 
     // Device info
-    val talkingBookDeviceInfo = mutableStateOf<TbDeviceInfo?>(null)
+    val talkingBookDeviceInfo = MutableStateFlow<TbDeviceInfo?>(null)
     private val talkingBookDevice = mutableStateOf<Usb.TalkingBook?>(null)
     val isMassStorageReady = mutableStateOf(false)
 
-    private val _deviceState = MutableStateFlow(DeviceState())
-    val deviceState: StateFlow<DeviceState> = _deviceState.asStateFlow()
+    val usbDevice = MutableStateFlow<UsbDevice?>(null)
+//    val usbDevice: StateFlow<UsbDevice?> = _usbDevice.asStateFlow()
 
     private val _usb = MutableStateFlow(Usb())
     val usbState: StateFlow<Usb> = _usb.asStateFlow()
@@ -127,15 +120,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     }
 
     fun setDevice(device: UsbDevice?, talkingBook: Usb.TalkingBook?) {
-        Log.d(LOG_TAG, "Device has been set $device");
-
-        _deviceState.updateAndGet { state ->
-            state.copy(
-                device = device
-            )
-        }
-
-        // Start device discovery
+        usbDevice.value = device
         viewModelScope.launch {
             discoverMassStorageDevice(talkingBook)
         }
@@ -143,11 +128,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
 
     fun disconnected() {
         isMassStorageReady.value = false
-
-        _deviceState.update { state ->
-            state.copy(device = null)
-        }
-
+        usbDevice.value = null;
     }
 
     /**
@@ -245,7 +226,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         if (tb == null) {
             TODO("Display error to user that TB is not connected")
         }
-
 
         operationType.value = TalkingBookOperation.UPDATE_DEVICE
         performOperation(

@@ -41,6 +41,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
+import org.literacybridge.core.tbdevice.TbDeviceInfo
 import org.literacybridge.talkingbookapp.ui.components.NavigationDrawer
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
@@ -54,7 +55,9 @@ fun HomeScreen(
     viewModel: TalkingBookViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
 ) {
-    val deviceState by viewModel.deviceState.collectAsStateWithLifecycle()
+    val deviceState by viewModel.usbDevice.collectAsStateWithLifecycle()
+    val deviceInfo by viewModel.talkingBookDeviceInfo.collectAsStateWithLifecycle()
+
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -140,8 +143,23 @@ fun HomeScreen(
 ////                contentDescription = stringResource(id = R.string.bus_content_description)
 //                )
 
-                Box(modifier =             Modifier.padding(top = 50.dp)) {
-                    BuildDeviceInfo(device = deviceState.device)
+                Box(modifier = Modifier.padding(top = 50.dp)) {
+                    if (deviceState == null) {
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            CircularProgressIndicator()
+                            Text(
+                                text = "Please connect the Talking Book!",
+                                modifier = Modifier.padding(top = 10.dp),
+                                fontStyle = FontStyle.Italic,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    } else {
+                        deviceInfo?.let { BuildDeviceInfo(device = it) }
+                    }
                 }
 
             }
@@ -151,17 +169,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun BuildDeviceInfo(device: UsbDevice?) {
-    if (device == null) {
-        return Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            CircularProgressIndicator()
-            Text("Please connect the Talking Book!")
-        }
-    }
-
+fun BuildDeviceInfo(device: TbDeviceInfo) {
     Box(
         modifier = Modifier
             .border(width = 1.dp, color = Color.Black)
@@ -171,21 +179,27 @@ fun BuildDeviceInfo(device: UsbDevice?) {
             withStyle(
                 SpanStyle(fontWeight = FontWeight.Bold)
             ) {
-                append("Device ID: ")
+                append("Serial No.: ")
             }
-            append("tbaxxx\n")
+            append("${device.serialNumber}\n")
+            withStyle(
+                SpanStyle(fontWeight = FontWeight.Bold)
+            ) {
+                append("Device Version: ")
+            }
+            append("${device.deviceVersion}\n")
+            withStyle(
+                SpanStyle(fontWeight = FontWeight.Bold)
+            ) {
+                append("Deployment: ")
+            }
+            append("${device.deploymentName}\n")
             withStyle(
                 SpanStyle(fontWeight = FontWeight.Bold)
             ) {
                 append("Current recipient: ")
             }
-            append("Jane Doe\n")
-            withStyle(
-                SpanStyle(fontWeight = FontWeight.Bold)
-            ) {
-                append("Current content deployment: ")
-            }
-            append("DPL-3322993")
+            append(device.communityName)
         }, modifier = Modifier.padding(horizontal = 5.dp))
     }
 }

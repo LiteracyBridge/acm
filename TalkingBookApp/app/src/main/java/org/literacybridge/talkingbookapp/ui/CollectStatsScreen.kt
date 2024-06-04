@@ -47,7 +47,7 @@ fun CollectStatisticsScreen(
     userViewModel: UserViewModel = viewModel(),
 ) {
     val showDialog = remember { mutableStateOf(false) }
-    val device by viewModel.deviceState.collectAsStateWithLifecycle()
+    val device by viewModel.usbDevice.collectAsStateWithLifecycle()
 
     // Initialize talking book data collection when the screen is open
     LaunchedEffect("init-data-collection") {
@@ -61,7 +61,7 @@ fun CollectStatisticsScreen(
 
     // If new device is detected while the dialog is open, we assume a different talking book has
     // been connected. Proceed to collect stats
-    if (showDialog.value && device.device?.deviceName != null) {
+    if (showDialog.value && device?.deviceName != null) {
         showDialog.value = false
         Toast.makeText(
             LocalContext.current,
