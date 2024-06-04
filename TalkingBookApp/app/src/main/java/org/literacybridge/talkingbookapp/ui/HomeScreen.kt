@@ -1,4 +1,4 @@
-import androidx.compose.foundation.Image
+import android.hardware.usb.UsbDevice
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,22 +24,25 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
-import org.literacybridge.talkingbookapp.R
 import org.literacybridge.talkingbookapp.ui.components.NavigationDrawer
+import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
@@ -50,8 +54,7 @@ fun HomeScreen(
     viewModel: TalkingBookViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
 ) {
-    val uiState by viewModel.deviceState.collectAsStateWithLifecycle()
-
+    val deviceState by viewModel.deviceState.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -78,65 +81,19 @@ fun HomeScreen(
                         userViewModel.program.value?.project?.name?.let { Text(it) }
                     })
             },
-        ) { contentPadding ->
-
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(contentPadding),
-//        Modifier.fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceBetween
-//        horizontalAlignment = Alignment.CenterHorizontally,
-//        verticalArrangement = Arrangement.Center
-            ) {
-                Column(
-                    modifier = Modifier
-                        .verticalScroll(rememberScrollState())
-                        .weight(1f, false)
-                ) {
-                    Text("Connect the Talking Book")
-                    Row {
-                        Text("Instructions", style = TextStyle(fontWeight = FontWeight.Bold))
-                        Text("Press 'tree', 'table' & “plus” buttons at the same time to connect")
-                    }
-                    Text("${uiState.device?.deviceName}")
-                    Image(
-                        painter = painterResource(R.drawable.tb_table_image),
-                        contentDescription = "Tree"
-//                contentDescription = stringResource(id = R.string.bus_content_description)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .border(width = 2.dp, color = Color.Blue)
-                            .align(Alignment.CenterHorizontally)
-                    ) {
-                        Text(
-                            "[Display TB info once connected]\n" +
-                                    "TB ID\n" +
-                                    "Current recipient\n" +
-                                    "Current content deployment\n"
-                        )
-
-                    }
-
-                    Button(
-                        onClick = {
-                            // TODO: check if device needs firmware updates, navigate to firmware update screen
-                            navController.navigate(Screen.FIRMWARE_REFRESH.name)
-                        }) {
-                        Text("Refresh tb")
-                    }
-                }
-
-
-
+            bottomBar = {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 20.dp)
                 ) {
-                    Text("What would you like to do?", modifier = Modifier.padding(vertical = 4.dp))
+                    Text(
+                        text = "What would you like to do?",
+                        modifier = Modifier.padding(bottom = 10.dp),
+                        fontSize = 20.sp, fontWeight = FontWeight.SemiBold
+                    )
                     Row(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         modifier = Modifier.fillMaxWidth(),
@@ -148,7 +105,8 @@ fun HomeScreen(
                             Text("Collect Statistics")
                         }
                         Button(
-                            enabled = viewModel.isMassStorageReady.value,
+                            enabled = true,
+//                            enabled = viewModel.isDeviceConnected(),
                             onClick = {
                                 // TODO: check if device needs firmware updates, navigate to firmware update screen
                                 navController.navigate(Screen.RECIPIENT.name)
@@ -158,8 +116,111 @@ fun HomeScreen(
                     }
                 }
             }
+        ) { contentPadding ->
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(contentPadding)
+                    .padding(SCREEN_MARGIN),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Connect the Talking Book",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp,
+                    modifier = Modifier.padding(vertical = 10.dp)
+                )
+                BuildInstructions()
+
+                Text("${deviceState.device?.deviceName}")
+//                Image(
+//                    painter = painterResource(R.drawable.tb_table_image),
+//                    contentDescription = "Tree"
+////                contentDescription = stringResource(id = R.string.bus_content_description)
+//                )
+
+                BuildDeviceInfo(device = deviceState.device)
+
+                Box(
+                    modifier = Modifier
+                        .border(width = 1.5.dp, color = Color.Black)
+                        .align(Alignment.CenterHorizontally)
+                        .fillMaxWidth(0.9f)
+                ) {
+                    Text(
+                        "[Display TB info once connected]\n" +
+                                "TB ID\n" +
+                                "Current recipient\n" +
+                                "Current content deployment\n"
+                    )
+
+                }
+
+            }
         }
     }
 
+}
 
+@Composable
+fun BuildDeviceInfo(device: UsbDevice?) {
+    if (device == null) {
+        return Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(top = 50.dp)
+        ) {
+            CircularProgressIndicator()
+            Text("Please connect the Talking Book!")
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .border(width = 1.5.dp, color = Color.Black)
+//            .align(Alignment.CenterHorizontally)
+            .fillMaxWidth(0.9f)
+    ) {
+        Text(
+            "[Display TB info once connected]\n" +
+                    "TB ID\n" +
+                    "Current recipient\n" +
+                    "Current content deployment\n"
+        )
+
+    }
+
+}
+
+@Composable
+fun BuildInstructions() {
+    return Row {
+        Text(
+            text = buildAnnotatedString {
+                append("Press ")
+                withStyle(
+                    SpanStyle(fontWeight = FontWeight.Bold)
+                ) {
+                    append("\"Tree\"")
+                }
+                append(", ")
+                withStyle(
+                    SpanStyle(fontWeight = FontWeight.Bold)
+                ) {
+                    append("\"Table\"")
+                }
+                append(" & ")
+                withStyle(
+                    SpanStyle(fontWeight = FontWeight.Bold)
+                ) {
+                    append("\"Plus\"")
+                }
+                append(" buttons at the same time to connect.")
+            },
+            textAlign = TextAlign.Left,
+            fontSize = 17.sp,
+            fontStyle = FontStyle.Italic
+        )
+    }
 }
