@@ -2,7 +2,7 @@
   <configuration default="false" name="ACM" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="ACM" />
     <module name="acm.main" />
-    <option name="PROGRAM_PARAMETERS" value="SURVEY-DEMO" />
+    <option name="PROGRAM_PARAMETERS" value="TEST" />
     <option name="VM_PARAMETERS" value="-cp acm.jar:lib/* " />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/dist" />
     <method v="2">

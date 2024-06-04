@@ -12,6 +12,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,6 +23,7 @@ import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.border.Border;
 
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
@@ -29,9 +31,11 @@ import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.LanguageComboBoxModel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.*;
 
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
+import org.literacybridge.acm.audioconverter.converters.FFMpegConverter;
 
 // TODO: deal with localized audio items when languages are fully implemented
 public class AudioItemContextMenuDialog extends JDialog {
@@ -68,6 +72,7 @@ public class AudioItemContextMenuDialog extends JDialog {
     FlatButton exportMetadataButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.EXPORT_DATA_TYPE.Metadata);
     FlatButton deleteButton = makeDeleteButton(selectedAudioItems, labelPostfix);
     FlatButton languageButton = makeLanguageButton(selectedAudioItems, labelPostfix);
+
 
     setLayout(grid);
     Border border = BorderFactory.createEmptyBorder(10, 10, 10, 10);
@@ -288,6 +293,7 @@ public class AudioItemContextMenuDialog extends JDialog {
     };
     return renameButton;
   }
+
 
   /**
    * Makes the button to handle editing one audio item

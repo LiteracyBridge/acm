@@ -93,6 +93,8 @@ public interface MetadataSpecification {
 
   public final static MetadataField<String> LB_DURATION = new MetadataStringField(
       "LB_DURATION");
+  public final static MetadataField<String> LB_VOLUME = new MetadataStringField(
+          "LB_VOLUME");
   public final static MetadataField<String> LB_MESSAGE_FORMAT = new MetadataStringField(
       "LB_MESSAGE_FORMAT");
   public final static MetadataField<String> LB_TARGET_AUDIENCE = new MetadataStringField(
@@ -120,6 +122,7 @@ public interface MetadataSpecification {
   public final static MetadataField<String> LB_SDG_TARGETS =
       new MetadataStringField("LB_SDG_TARGETS");
 
+
   // ============================================================================================================
 
   /** Convenience collection to iterate over all metadata fields */
@@ -146,5 +149,6 @@ public interface MetadataSpecification {
           .add(LB_STATUS)
           .add(LB_SDG_GOALS)
           .add(LB_SDG_TARGETS)
+          .add(LB_VOLUME)
           .build();
 }
