@@ -63,7 +63,7 @@ fun ProgramSelectionScreen(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
-            viewModel.getPrograms().forEach { it ->
+            viewModel.getPrograms().forEach {
                 ListItem(
                     headlineContent = {
                         // TODO: show a confirm dialog when program is selected
@@ -71,7 +71,7 @@ fun ProgramSelectionScreen(
                             selectedProgram.value = it
                             showDialog.value = true
                         },
-                            content = { Text(it.project!!.name) })
+                            content = { Text(it.project.name) })
                     },
                     leadingContent = {
                         Icon(

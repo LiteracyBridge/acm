@@ -44,14 +44,13 @@ import java.io.File
 const val TAG = "TalkingBook";
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListener,
-    Dfu.DfuListener {
+class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListener {
 
     private val PERMISSION_WRITE_STORAGE_CODE = 12
     private val PERMISSION_READ_AUDIO_CODE = 13
 
     private lateinit var usb: Usb
-    private lateinit var dfu: Dfu
+//    private lateinit var dfu: Dfu
     private val talkingBookViewModel: TalkingBookViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,8 +87,8 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         }
 
         // Setup dfu
-        dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
-        dfu.setListener(this)
+//        dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
+//        dfu.setListener(this)
 
         setContent {
             val navController = rememberNavController().withSentryObservableEffect(
@@ -197,7 +196,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         super.onStop()
 
         /* USB */
-        dfu.setUsb(null)
+//        dfu.setUsb(null)
         talkingBookViewModel.disconnected()
 
         usb.release()
@@ -206,14 +205,6 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         } catch (e: IllegalArgumentException) {
             /* Already unregistered */
         }
-    }
-
-
-    override fun onStatusMsg(msg: String?) {
-        // TODO since we are appending we should make the TextView scrollable like a log
-//        status.append(msg)
-        Log.d(TAG, "$msg")
-
     }
 
     override fun handleMessage(msg: Message): Boolean {
@@ -228,11 +219,11 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 
         Log.d(TAG, "$deviceInfo")
 //        status.setText(deviceInfo)
-        dfu.setUsb(usb)
+//        dfu.setUsb(usb)
     }
 
     override fun onUsbDisconnected() {
-        dfu.setUsb(null)
+//        dfu.setUsb(null)
 
         talkingBookViewModel.disconnected()
         usb.release()

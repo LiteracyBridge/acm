@@ -10,7 +10,6 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import org.literacybridge.core.spec.Recipient
 import org.literacybridge.talkingbookapp.models.Deployment
-import org.literacybridge.talkingbookapp.models.Message
 import org.literacybridge.talkingbookapp.models.Program
 import java.time.LocalDateTime
 
@@ -26,7 +25,7 @@ data class ProgramSpecEntity(
     @ColumnInfo(name = "recipients") val recipients: List<Recipient> = emptyList(),
     @ColumnInfo(name = "general") val general: Program,
     @ColumnInfo(name = "deployments") val deployments: List<Deployment> = emptyList(),
-    @ColumnInfo(name = "contents") val contents: List<Message> = emptyList(),
+//    @ColumnInfo(name = "contents") val contents: List<Message> = emptyList(),
     @ColumnInfo(name = "updated_at") val updatedAt: LocalDateTime?,
 )
 

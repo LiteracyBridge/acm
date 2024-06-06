@@ -48,8 +48,6 @@ import kotlinx.coroutines.launch
 import org.literacybridge.core.tbdevice.TbDeviceInfo
 import org.literacybridge.talkingbookapp.ui.components.NavigationDrawer
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
-import org.literacybridge.talkingbookapp.util.device_manager.Dfu
-import org.literacybridge.talkingbookapp.util.device_manager.Usb
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
@@ -66,6 +64,7 @@ fun HomeScreen(
     val deviceInfo by viewModel.talkingBookDeviceInfo.collectAsStateWithLifecycle()
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val showDialog = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     NavigationDrawer(drawerState, navController) {
@@ -150,6 +149,10 @@ fun HomeScreen(
 ////                contentDescription = stringResource(id = R.string.bus_content_description)
 //                )
 
+                if (showDialog.value) {
+                    UpdateFirmware(viewModel.firmwareUpdateStatus.value!!)
+                }
+
                 Box(modifier = Modifier.padding(top = 50.dp)) {
                     if (deviceState == null && deviceInfo == null) {
                         Column(
@@ -167,55 +170,56 @@ fun HomeScreen(
                     } else if (deviceInfo != null) { // We're in mass storage mode
                         BuildDeviceInfo(device = deviceInfo!!)
                     } else { // In DFU mode
-                        UpdateFirmware(usb = usbState)
+                        Button(
+                            onClick = {
+                                // TODO: check if device needs firmware updates, navigate to firmware update screen
+                                showDialog.value = true
+//                                viewModel.updateFirmware()
+                            }) {
+                            Text("Update Firmware")
+                        }
+
                     }
                 }
 
             }
         }
     }
-
 }
 
 @Composable
-fun UpdateFirmware(usb: Usb) {
-    val showDialog = remember { mutableStateOf(false) }
-
-    Button(
-        onClick = {
-            // TODO: check if device needs firmware updates, navigate to firmware update screen
-            showDialog.value = true
-
-            val dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
-            dfu.setUsb(usb)
-            dfu.program()
-            // TODO: find a way to track if update is complete
-        }) {
-        Text("Update Firmware")
-    }
-
-    if (showDialog.value) {
-        AlertDialog(
-            properties = DialogProperties(
-                dismissOnBackPress = false,
-                dismissOnClickOutside = false
-            ),
-            title = { Text(text = "Updating Firmware") },
-            text = {
-                Column(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth()
-                ) {
+fun UpdateFirmware(status: TalkingBookViewModel.OperationResult) {
+    AlertDialog(
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        ),
+        title = { Text(text = "Updating Firmware") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
+            ) {
+                if (status != TalkingBookViewModel.OperationResult.Success) {
                     LinearProgressIndicator()
-                    Text("please wait....", modifier = Modifier.padding(top = 8.dp))
+                    Text(
+                        "Update in progress, please wait....",
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                } else {
+                    LinearProgressIndicator(progress = 1f)
+                    Text(
+                        "Firmware updated successfully!",
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                 }
-            },
-            onDismissRequest = {},
-            confirmButton = {},
-            dismissButton = {}
-        )
-    }
+            }
+        },
+        onDismissRequest = {},
+        confirmButton = {},
+        dismissButton = {}
+    )
 }
 
 @Composable

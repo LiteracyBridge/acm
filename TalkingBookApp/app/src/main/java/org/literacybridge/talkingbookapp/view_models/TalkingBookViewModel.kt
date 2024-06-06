@@ -2,6 +2,7 @@ package org.literacybridge.talkingbookapp.view_models
 
 import android.hardware.usb.UsbDevice
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -40,6 +41,7 @@ import org.literacybridge.talkingbookapp.util.PathsProvider
 import org.literacybridge.talkingbookapp.util.PathsProvider.getLocalDeploymentDirectory
 import org.literacybridge.talkingbookapp.util.Util
 import org.literacybridge.talkingbookapp.util.dataStoreManager
+import org.literacybridge.talkingbookapp.util.device_manager.Dfu
 import org.literacybridge.talkingbookapp.util.device_manager.Usb
 import java.io.File
 import java.io.IOException
@@ -57,7 +59,7 @@ data class DeviceState(
 )
 
 @HiltViewModel
-class TalkingBookViewModel @Inject constructor() : ViewModel() {
+class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener {
     enum class TalkingBookOperation {
         UPDATE_DEVICE,
         COLLECT_STATS_ONLY,
@@ -92,15 +94,15 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
     val isMassStorageReady = mutableStateOf(false)
 
     val usbDevice = MutableStateFlow<UsbDevice?>(null)
-//    val usbDevice: StateFlow<UsbDevice?> = _usbDevice.asStateFlow()
+    val usbState = MutableStateFlow<Usb?>(null)
 
-    val usbState = MutableStateFlow(Usb())
-//    val usbState: StateFlow<Usb> = _usb.asStateFlow()
+    // Firmware update
+    val firmwareUpdateStatus = mutableStateOf<OperationResult?>(null)
 
     val app = App.getInstance()
     private var deployment: Deployment? = null
 
-    fun setUsb(usb: Usb){
+    fun setUsb(usb: Usb) {
         usbState.value = usb
     }
 
@@ -552,6 +554,36 @@ class TalkingBookViewModel @Inject constructor() : ViewModel() {
         override fun error(value: String) {
             throw Exception(value)
         }
+    }
+
+    fun updateFirmware() {
+        if (usbState.value == null) {
+            Toast.makeText(
+                App.context,
+                "No device found! Make sure the Talking Book is in firmware mode!",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                firmwareUpdateStatus.value = OperationResult.InProgress
+
+                val dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
+                dfu.setUsb(usbState.value)
+                dfu.program()
+            }
+        }
+    }
+
+    override fun onStatusMsg(msg: String?) {
+        Log.d(LOG_TAG, "$msg")
+//        TODO("Implement logging update messages")
+    }
+
+    override fun onProgramingCompleted() {
+        firmwareUpdateStatus.value = OperationResult.Success
     }
 
 }

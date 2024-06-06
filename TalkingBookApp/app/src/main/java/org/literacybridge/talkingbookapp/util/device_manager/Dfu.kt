@@ -37,13 +37,27 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
 
     interface DfuListener {
         fun onStatusMsg(msg: String?)
+
+        /**
+         * Called when programing is completed successfully
+         */
+        fun onProgramingCompleted()
+
     }
 
     private fun onStatusMsg(msg: String) {
-        Log.d(LOG_TAG, msg)
-//        for (listener in listeners) {
-//            listener.onStatusMsg(msg)
-//        }
+        for (listener in listeners) {
+            listener.onStatusMsg(msg)
+        }
+    }
+
+    /**
+     * Called when programing is completed successfully
+     */
+    private fun onProgramingCompleted() {
+        for (listener in listeners) {
+            listener.onProgramingCompleted()
+        }
     }
 
     fun setListener(listener: DfuListener?) {
@@ -230,6 +244,7 @@ class Dfu(private val deviceVid: Int, private val devicePid: Int) {
                 val selectOptions =
                     OPT_RDP_OFF or OPT_WDG_SW or OPT_nRST_STOP or OPT_nRST_STDBY or OPT_BOR_1 // todo in production, OPT_RDP_1 must be set instead of OPT_RDP_OFF
                 writeOptionBytes(selectOptions) // will reset device
+                onProgramingCompleted()
                 break
             }
             if (i == 1) {
