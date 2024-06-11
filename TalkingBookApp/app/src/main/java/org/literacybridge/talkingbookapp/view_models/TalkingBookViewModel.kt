@@ -3,7 +3,6 @@ package org.literacybridge.talkingbookapp.view_models
 import android.hardware.usb.UsbDevice
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -79,15 +78,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
     val operationStep = mutableStateOf("")
     val operationStepDetail = mutableStateOf("")
 
-    // These fields track the recipient of the talking book device. They are populated
-    // only when the user is performing Tb device update, ie. on the recipient screen
-    val recipients = mutableStateListOf<Recipient>()
-    val districts = mutableStateListOf<String>()
-    val selectedDistrict = mutableStateOf<String?>(null)
-    val selectedCommunity = mutableStateOf<String?>(null)
-    val selectedGroup = mutableStateOf<String?>(null)
-    val selectedRecipient = mutableStateOf<Recipient?>(null)
-
     // Device info
     val talkingBookDeviceInfo = MutableStateFlow<TbDeviceInfo?>(null)
     private val talkingBookDevice = mutableStateOf<Usb.TalkingBook?>(null)
@@ -149,45 +139,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         }
     }
 
-    /**
-     * Updates the value of selectedRecipient state based on the value of
-     * the selected district/community/group
-     * NB: This function called from the recipients screen
-     */
-    fun updateSelectedRecipient() {
-        selectedRecipient.value = if (!selectedGroup.value.isNullOrBlank()) {
-            recipients.find {
-                it.groupname.equals(
-                    selectedGroup.value,
-                    true
-                ) && it.communityname.equals(
-                    selectedCommunity.value,
-                    true
-                ) && it.district.equals(
-                    selectedDistrict.value,
-                    true
-                )
-            }
-        } else if (!selectedCommunity.value.isNullOrBlank()) {
-            recipients.find {
-                it.communityname.equals(
-                    selectedCommunity.value,
-                    true
-                ) && it.district.equals(selectedDistrict.value, true)
-            }
-        } else if (!selectedDistrict.value.isNullOrBlank()) {
-            recipients.find {
-                it.district.equals(
-                    selectedDistrict.value,
-                    true
-                )
-            }
-        } else {
-            null
-        }
-
-    }
-
     suspend fun collectUsageStatistics(
         user: UserModel,
         deployment: Deployment,
@@ -201,13 +152,15 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
             user = user,
             deployment = deployment,
             deviceSerialNumber = talkingBookDeviceInfo.value!!.serialNumber,
-            tbDeviceInfo = talkingBookDeviceInfo.value!!
+            tbDeviceInfo = talkingBookDeviceInfo.value!!,
+            recipient = null
         )
     }
 
     suspend fun updateDevice(
         user: UserModel,
         deployment: Deployment,
+        recipient: Recipient
     ) {
         val tb = talkingBookDevice.value
         if (tb == null) {
@@ -220,6 +173,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
             deployment = deployment,
             deviceSerialNumber = talkingBookDeviceInfo.value!!.serialNumber,
             tbDeviceInfo = talkingBookDeviceInfo.value!!,
+            recipient = recipient
         )
     }
 
@@ -228,6 +182,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         deviceSerialNumber: String,
         user: UserModel,
         deployment: Deployment,
+        recipient: Recipient?
     ) {
         this.deployment = deployment
         isOperationInProgress.value = true
@@ -296,6 +251,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
                         collectionTimestamp, todaysDate,
                         collectedDataDirectory,
                         deploymentDirectory,
+                        recipient!!
                     )
 
                     // Add in the update specific data, then go!
@@ -368,9 +324,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         todaysDate: String,
         collectedDataDirectory: File,
         deploymentDirectory: File,
+        recipient: Recipient
     ): DeploymentInfo {
-        val recipient = selectedRecipient.value!!
-
         // Get image for recipient; if not found, fall back to directory.
         var imageName: String = getPackageForRecipient(recipient)
         if (imageName.isEmpty()) {
@@ -556,7 +511,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         }
     }
 
-    fun updateFirmware() {
+    suspend fun updateFirmware() {
         if (usbState.value == null) {
             Toast.makeText(
                 App.context,
@@ -566,12 +521,14 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
             return
         }
 
+
+        val dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
+        dfu.setListener(this)
+        dfu.setUsb(usbState.value)
+
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 firmwareUpdateStatus.value = OperationResult.InProgress
-
-                val dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
-                dfu.setUsb(usbState.value)
                 dfu.program()
             }
         }

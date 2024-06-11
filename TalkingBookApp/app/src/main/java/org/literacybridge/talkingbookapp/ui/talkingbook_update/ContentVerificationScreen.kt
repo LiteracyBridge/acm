@@ -30,12 +30,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
+import org.literacybridge.talkingbookapp.view_models.RecipientViewModel
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 
 @Composable
 fun ContentVerificationScreen(
     navController: NavController,
     viewModel: TalkingBookViewModel = viewModel(),
+    recipientViewModel: RecipientViewModel = viewModel()
 ) {
     AppScaffold(title = "Verify Content", navController = navController, bottomBar = {
         Column(
@@ -53,7 +55,7 @@ fun ContentVerificationScreen(
             }
             Button(
                 modifier = Modifier.fillMaxWidth(),
-                enabled = viewModel.selectedRecipient.value != null,
+                enabled = recipientViewModel.selectedRecipient.value != null,
                 onClick = {
                     navController.navigate(Screen.CONTENT_UPDATE.name)
                 }
@@ -137,21 +139,21 @@ fun ContentVerificationScreen(
                     ) {
                         append("District: \t")
                     }
-                    append(viewModel.selectedRecipient.value?.district)
+                    append(recipientViewModel.selectedRecipient.value?.district)
 
                     withStyle(
                         SpanStyle(fontWeight = FontWeight.Bold)
                     ) {
                         append("Community: \t")
                     }
-                    append(viewModel.selectedRecipient.value?.communityname)
+                    append(recipientViewModel.selectedRecipient.value?.communityname)
 
                     withStyle(
                         SpanStyle(fontWeight = FontWeight.Bold)
                     ) {
                         append("Group: \t")
                     }
-                    append(viewModel.selectedRecipient.value?.groupname)
+                    append(recipientViewModel.selectedRecipient.value?.groupname)
 
                 })
             }

@@ -114,7 +114,7 @@ fun HomeScreen(
                             Text("Collect Statistics")
                         }
                         Button(
-                            enabled = viewModel.isMassStorageReady.value,
+//                            enabled = viewModel.isMassStorageReady.value,
 //                            enabled = viewModel.isDeviceConnected(),
                             onClick = {
                                 // TODO: check if device needs firmware updates, navigate to firmware update screen
