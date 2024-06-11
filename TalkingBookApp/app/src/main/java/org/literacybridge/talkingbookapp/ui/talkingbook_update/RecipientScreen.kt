@@ -13,31 +13,33 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.ui.components.SearchableExpandedDropDownMenu
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
+import org.literacybridge.talkingbookapp.view_models.RecipientViewModel
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 
 @Composable
 fun RecipientScreen(
     navController: NavController,
+    recipientViewModel: RecipientViewModel = viewModel(),
     viewModel: TalkingBookViewModel = viewModel(),
 ) {
+    val recipients by recipientViewModel.recipients.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     LaunchedEffect("load-recipients") {
-        // Populates the recipients list if empty
-        if (viewModel.recipients.isEmpty()) {
-            viewModel.recipients.addAll(viewModel.app.programSpec!!.recipients)
-            viewModel.districts.addAll(viewModel.app.programSpec!!.recipients.map { it.district }.distinct())
-        }
+        recipientViewModel.fromProgramSpec(viewModel.app.programSpec!!)
+        recipientViewModel.fromTalkingBook(viewModel.talkingBookDeviceInfo.value)
     }
 
     AppScaffold(title = "Choose Recipient", navController = navController,
@@ -45,9 +47,9 @@ fun RecipientScreen(
             Row(modifier = Modifier.fillMaxWidth()) {
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = viewModel.selectedRecipient.value != null,
+                    enabled = recipientViewModel.selectedRecipient.value != null,
                     onClick = {
-                        if (viewModel.selectedRecipient.value == null) {
+                        if (recipientViewModel.selectedRecipient.value == null) {
                             Toast.makeText(context, "No recipient selected!", Toast.LENGTH_LONG)
                                 .show()
                             return@Button
@@ -70,11 +72,11 @@ fun RecipientScreen(
         ) {
             Text(text = "Select District")
             SearchableExpandedDropDownMenu(
-                listOfItems = viewModel.districts,
+                listOfItems = recipientViewModel.districts,
                 modifier = Modifier.fillMaxWidth(),
                 onDropDownItemSelected = { item ->
-                    viewModel.selectedDistrict.value = item
-                    viewModel.updateSelectedRecipient()
+                    recipientViewModel.selectedDistrict.value = item
+                    recipientViewModel.updateSelectedRecipient()
                 },
                 enable = true,
                 placeholder = {
@@ -84,24 +86,23 @@ fun RecipientScreen(
                     Text(name)
                 },
                 defaultItem = {
-                    viewModel.districts.first()
+                    recipientViewModel.districts.first()
                 }
             ) {}
 
             Text(text = "Select Community")
             SearchableExpandedDropDownMenu(
-                listOfItems = if (viewModel.selectedDistrict.value != null) {
-                    viewModel.recipients.map { it.communityname }.distinct()
-                } else {
-                    viewModel.recipients.filter { it.district.equals(viewModel.selectedDistrict.value) }
-                        .map { it.communityname }.distinct()
-                },
+                listOfItems = recipients.filter {
+                    it.district.equals(
+                        recipientViewModel.selectedDistrict.value ?: ""
+                    )
+                }.map { it.communityname }.distinct(),
                 modifier = Modifier.fillMaxWidth(),
                 onDropDownItemSelected = { item ->
-                    viewModel.selectedCommunity.value = item
-                    viewModel.updateSelectedRecipient()
+                    recipientViewModel.selectedCommunity.value = item
+                    recipientViewModel.updateSelectedRecipient()
                 },
-                enable = !viewModel.selectedDistrict.value.isNullOrEmpty(),
+                enable = !recipientViewModel.selectedDistrict.value.isNullOrEmpty(),
                 placeholder = {
                     Text("Select community")
                 },
@@ -116,18 +117,17 @@ fun RecipientScreen(
 
             Text(text = "Select Group")
             SearchableExpandedDropDownMenu(
-                listOfItems = if (viewModel.selectedCommunity.value != null) {
-                    viewModel.recipients.map { it.groupname }.distinct()
-                } else {
-                    viewModel.recipients.filter { it.communityname.equals(viewModel.selectedCommunity.value) }
-                        .map { it.groupname }.distinct()
-                },
+                listOfItems = recipients.filter {
+                    it.communityname.equals(
+                        recipientViewModel.selectedCommunity.value ?: ""
+                    )
+                }.map { it.groupname }.distinct(),
                 modifier = Modifier.fillMaxWidth(),
                 onDropDownItemSelected = { item -> // Returns the item selected in the dropdown
-                    viewModel.selectedGroup.value = item
-                    viewModel.updateSelectedRecipient()
+                    recipientViewModel.selectedGroup.value = item
+                    recipientViewModel.updateSelectedRecipient()
                 },
-                enable = !viewModel.selectedCommunity.value.isNullOrEmpty(),
+                enable = !recipientViewModel.selectedCommunity.value.isNullOrEmpty(),
                 placeholder = {
                     Text("Select group")
                 },

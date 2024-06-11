@@ -13,10 +13,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -24,6 +22,7 @@ import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.ui.components.TalkingBookOperationProgress
 import org.literacybridge.talkingbookapp.ui.theme.Green40
 import org.literacybridge.talkingbookapp.util.Constants.Companion.SCREEN_MARGIN
+import org.literacybridge.talkingbookapp.view_models.RecipientViewModel
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
@@ -32,11 +31,13 @@ fun ContentUpdateScreen(
     navController: NavController,
     viewModel: TalkingBookViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
+    recipientViewModel: RecipientViewModel = viewModel()
 ) {
     LaunchedEffect("init-tb-content-update") {
         viewModel.updateDevice(
             deployment = userViewModel.deployment.value!!,
             user = userViewModel.user.value,
+            recipient = recipientViewModel.selectedRecipient.value!!
         )
     }
 
