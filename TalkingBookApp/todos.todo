@@ -6,6 +6,7 @@ Features:
 
 Configuration:
     * create new aws user pool app id
+    * 253ghc
 
 Bugs:
     * changing program should download/update content from s3 before navigating to home screen

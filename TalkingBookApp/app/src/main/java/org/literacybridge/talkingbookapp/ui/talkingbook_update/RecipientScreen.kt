@@ -14,10 +14,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -36,6 +41,9 @@ fun RecipientScreen(
     val recipients by recipientViewModel.recipients.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    var expanded by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
     LaunchedEffect("load-recipients") {
         recipientViewModel.fromProgramSpec(viewModel.app.programSpec!!)
@@ -70,7 +78,11 @@ fun RecipientScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.Start
         ) {
-            Text(text = "Select District")
+            Text(
+                text = "Select District",
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
             SearchableExpandedDropDownMenu(
                 listOfItems = recipientViewModel.districts,
                 modifier = Modifier.fillMaxWidth(),
@@ -90,7 +102,11 @@ fun RecipientScreen(
                 }
             ) {}
 
-            Text(text = "Select Community")
+            Text(
+                text = "Select Community",
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 8.dp, top = 15.dp)
+            )
             SearchableExpandedDropDownMenu(
                 listOfItems = recipients.filter {
                     it.district.equals(
@@ -115,7 +131,11 @@ fun RecipientScreen(
             ) {
             }
 
-            Text(text = "Select Group")
+            Text(
+                text = "Select Group",
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 8.dp, top = 15.dp)
+            )
             SearchableExpandedDropDownMenu(
                 listOfItems = recipients.filter {
                     it.communityname.equals(

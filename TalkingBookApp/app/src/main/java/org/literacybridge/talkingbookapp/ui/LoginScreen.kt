@@ -50,7 +50,7 @@ fun LoginScreen(
 //        )
 //    }
     )
-    { state ->
+    {
         // TODO: fix rare bug in amplify auth where the user is not able to login after not using the app for
         // some weeks
         // Encountered AuthException: SignedInException{message=There is already a user signed in., cause=null,
