@@ -98,7 +98,7 @@ fun RecipientScreen(
                     Text(name)
                 },
                 defaultItem = {
-                    recipientViewModel.districts.first()
+                    recipientViewModel.selectedRecipient.value?.district ?: recipientViewModel.districts.first()
                 }
             ) {}
 
@@ -126,7 +126,7 @@ fun RecipientScreen(
                     Text(name)
                 },
                 defaultItem = {
-                    ""
+                    recipientViewModel.selectedRecipient.value?.communityname ?: ""
                 }
             ) {
             }
@@ -155,7 +155,7 @@ fun RecipientScreen(
                     Text(name)
                 },
                 defaultItem = {
-                    ""
+                    recipientViewModel.selectedRecipient.value?.groupname ?: ""
                 }
             ) {
             }
