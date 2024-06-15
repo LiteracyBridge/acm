@@ -5,8 +5,11 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.amplifyframework.auth.cognito.result.AWSCognitoAuthSignOutResult
+import com.amplifyframework.core.Amplify
 import org.literacybridge.talkingbookapp.ui.CollectStatisticsScreen
 import org.literacybridge.talkingbookapp.ui.ContentDownloaderScreen
+import org.literacybridge.talkingbookapp.ui.LogoutUser
 import org.literacybridge.talkingbookapp.ui.ProgramSelectionScreen
 import org.literacybridge.talkingbookapp.ui.talkingbook_update.ContentUpdateScreen
 import org.literacybridge.talkingbookapp.ui.talkingbook_update.ContentVerificationScreen
@@ -97,6 +100,13 @@ fun AppNavHost(
                 LocalViewModelStoreOwner provides viewModelStoreOwner
             ) {
                 FirmwareUpdateScreen(navController)
+            }
+        }
+        composable(NavigationItem.Logout.route) {
+            CompositionLocalProvider(
+                LocalViewModelStoreOwner provides viewModelStoreOwner
+            ){
+                LogoutUser(navController)
             }
         }
     }

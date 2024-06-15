@@ -19,6 +19,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -176,6 +177,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onStart() {
         super.onStart()
 
@@ -185,7 +187,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         usb.setOnUsbChangeListener(this)
 
         // Handle two types of intents. Device attachment and permission
-        registerReceiver(usb.getmUsbReceiver(), IntentFilter(Usb.ACTION_USB_PERMISSION))
+        registerReceiver(usb.getmUsbReceiver(), IntentFilter(Usb.ACTION_USB_PERMISSION), RECEIVER_EXPORTED)
         registerReceiver(usb.getmUsbReceiver(), IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED))
         registerReceiver(usb.getmUsbReceiver(), IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
 
