@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.MainWindow;
 
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.PathsProvider;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.UIConstants;
@@ -328,6 +329,13 @@ public class ToolbarView extends JToolBar {
             player.stop();
             updatePlayerStateTimer.stop();
         }
+
+        // In cases where the file is locked, we can't play it.
+        if(PathsProvider.getLocalLockFile(item.getId(), false).exists()){
+            // TODO: show error dialog/message/toast
+            return;
+        }
+
         System.out.println("Audio Item to play:" + item.getId());
         Application parent = Application.getApplication();
         try {
@@ -335,6 +343,7 @@ public class ToolbarView extends JToolBar {
             parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             File f = ACMConfiguration.getInstance().getCurrentDB().getRepository()
                     .getAudioFile(item, AudioFormat.WAV);
+
             Application.getFilterState().updateResult();
             initPlayer();
             player.play(f);

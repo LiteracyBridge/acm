@@ -3,6 +3,7 @@ package org.literacybridge.acm.config;
 import org.literacybridge.acm.Constants;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,7 +34,7 @@ public class PathsProvider {
     PathsProvider(String acmDbDirName) {
         programId = ACMConfiguration.cannonicalProjectName(acmDbDirName);
         acmDbDirName = acmDbDirName;
-        assert(acmDbDirName != null);
+        assert (acmDbDirName != null);
         this.acmDbDirName = acmDbDirName;
 
         programHomeDir = new File(AmplioHome.getHomeDbsRootDir(), acmDbDirName);
@@ -48,6 +49,7 @@ public class PathsProvider {
 
     /**
      * Gets the home (or root) directory for the given program.
+     *
      * @return ~/Amplio/acm-dbs/${programId}
      */
     public File getProgramHomeDir() {
@@ -63,6 +65,7 @@ public class PathsProvider {
 
     /**
      * Get the program configuration file, config.properties.
+     *
      * @return ${programDbDir}/config.properties
      */
     public File getProgramConfigFile() {
@@ -71,6 +74,7 @@ public class PathsProvider {
 
     /**
      * The directory with audio content.
+     *
      * @return ~/Amplio/acm-dbs/${programId}/content
      */
     public File getProgramContentDir() {
@@ -79,6 +83,7 @@ public class PathsProvider {
 
     /**
      * The directory with TB-Loaders.
+     *
      * @return ~/Amplio/acm-dbs/${programId}
      */
     public File getProgramTbLoadersDir() {
@@ -87,6 +92,7 @@ public class PathsProvider {
 
     /**
      * The directory with the Program specification
+     *
      * @return ~/Amplio/acm-dbs/${programId}/programspec
      */
     public File getProgramSpecDir() {
@@ -95,6 +101,7 @@ public class PathsProvider {
 
     /**
      * The (optional) file with a list of deployments for which user feedback is processed.
+     *
      * @return ~/Amplio/acm-dbs/${programId}/userfeedback.includelist or null
      */
     public File getProgramUserFeedbackInclusionFile() {
@@ -127,6 +134,7 @@ public class PathsProvider {
 
     /**
      * The local directory for keeping track of Talking Books deployed and collected.
+     *
      * @return ~/Amplio/TB-History/${programId}
      */
     public File getLocalTbLoaderHistoryDir() {
@@ -169,6 +177,26 @@ public class PathsProvider {
      */
     public File getLocalLockFile() {
         return new File(AmplioHome.getTempsDir(), acmDbDirName + ".lock");
+    }
+
+    /**
+     * Returns/creates a lock file in the temp directory.
+     *
+     * @param name Name of the lock file.
+     * @return ~/Amplio/ACM/temp/${name}.lock
+     */
+    static public File getLocalLockFile(String name, Boolean create) {
+        try {
+            File f = new File(AmplioHome.getTempsDir(), name + ".lock");
+            if (create) {
+                if (!f.exists()) f.createNewFile();
+                return f;
+            }
+            return f;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**

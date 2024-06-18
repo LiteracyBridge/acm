@@ -99,7 +99,11 @@ public abstract class BaseAudioConverter {
             // check for converter error
             int result = proc.waitFor();
             success = (result >= 0);
+            isr.close();
+            br.close();
+            proc.destroy();
         } catch (Exception ignored) {
+            ignored.printStackTrace();
         } finally {
             if (!success) {
                 //noinspection ThrowFromFinallyBlock
