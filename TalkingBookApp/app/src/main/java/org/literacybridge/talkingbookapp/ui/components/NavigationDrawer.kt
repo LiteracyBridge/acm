@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.Lock
@@ -42,7 +43,7 @@ fun NavigationDrawer(
                     label = { Text(text = "Home") },
                     icon = {
                         Icon(
-                            Icons.Outlined.List,
+                            Icons.Outlined.Home,
                             contentDescription = "Manage program audio content"
                         )
                     },
@@ -119,7 +120,6 @@ fun NavigationDrawer(
                     selected = false,
                     onClick = { /*TODO*/ }
                 )
-                // ...other drawer items
             }
         }
     ) {
