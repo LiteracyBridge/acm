@@ -668,6 +668,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         }
 
         private void addSystemDirFilesToImage() throws IOException {
+
             File targetSystemDir = new File(imageDir, "system");
             // Look for an override in the program's TB_Options directory.
             File sourceSystemDir = new File(builderContext.sourceTbOptionsDir, "system.v2");
@@ -689,6 +690,23 @@ class CreateForV2 extends CreateFromDeploymentInfo {
                      DataOutputStream dos = new DataOutputStream(fos)){
                     dos.write(publicKey);
                 }
+            }
+
+            //
+            Integer volumeStep = ACMConfiguration.getInstance().getCurrentDB().getVolumeStep();
+            if (volumeStep != null) {
+                File targetConfigPath = new File(targetSystemDir, "config.txt");
+                String text = "volume_step:" + volumeStep;
+
+                // Write volume step value to config file
+                try {
+                    FileWriter fw = new FileWriter(targetConfigPath, true);
+                    fw.write(text);
+                    fw.close();
+                } catch (Exception ignore) {
+                    //
+                }
+
             }
         }
 
