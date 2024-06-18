@@ -25,6 +25,11 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
 
     val selectedRecipient = mutableStateOf<Recipient?>(null)
 
+    /**
+     * The connected talking book's recipient info
+     */
+    val defaultRecipient = mutableStateOf<Recipient?>(null)
+
 
     fun fromProgramSpec(spec: ProgramSpec) {
         recipients.value = spec.recipients
@@ -37,6 +42,8 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
         val tbRecipient = recipients.value.find { it.recipientid == tb.recipientid }
             ?: // No recipient found, could be TB from a different program
             return
+
+        defaultRecipient.value = tbRecipient
 
         selectedDistrict.value = tbRecipient.district
         selectedCommunity.value = tbRecipient.communityname
