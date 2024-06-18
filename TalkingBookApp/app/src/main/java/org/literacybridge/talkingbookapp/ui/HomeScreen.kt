@@ -21,6 +21,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
@@ -150,7 +151,10 @@ fun HomeScreen(
 //                )
 
                 if (showDialog.value) {
-                    UpdateFirmware(viewModel.firmwareUpdateStatus.value!!)
+                    UpdateFirmware(viewModel.firmwareUpdateStatus.value!!, onDismissRequest = {
+                        showDialog.value = false;
+                        // TODO: exit device from DFU mode
+                    })
                 }
 
                 Box(modifier = Modifier.padding(top = 50.dp)) {
@@ -188,7 +192,10 @@ fun HomeScreen(
 }
 
 @Composable
-fun UpdateFirmware(status: TalkingBookViewModel.OperationResult) {
+fun UpdateFirmware(
+    status: TalkingBookViewModel.OperationResult,
+    onDismissRequest: () -> Unit,
+) {
     AlertDialog(
         properties = DialogProperties(
             dismissOnBackPress = false,
@@ -208,7 +215,9 @@ fun UpdateFirmware(status: TalkingBookViewModel.OperationResult) {
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 } else {
-                    LinearProgressIndicator(progress = 1f)
+                    LinearProgressIndicator(
+                        progress = { 1f },
+                    )
                     Text(
                         "Firmware updated successfully!",
                         modifier = Modifier.padding(top = 8.dp)
@@ -218,7 +227,15 @@ fun UpdateFirmware(status: TalkingBookViewModel.OperationResult) {
         },
         onDismissRequest = {},
         confirmButton = {},
-        dismissButton = {}
+        dismissButton = {
+            if (status == TalkingBookViewModel.OperationResult.Success || status == TalkingBookViewModel.OperationResult.Failure) {
+                TextButton(onClick = {
+                    onDismissRequest()
+                }) {
+                    Text("Okay")
+                }
+            }
+        }
     )
 }
 
