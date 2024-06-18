@@ -1,5 +1,3 @@
 <resources>
     <string name="app_name">Talking Book App</string>
-    <string name="title_activity_logout_user.kt">LogoutUser.kt</string>
-    <string name="title_activity_logout_user">LogoutUser</string>
 </resources>
