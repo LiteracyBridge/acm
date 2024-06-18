@@ -174,7 +174,7 @@ fun HomeScreen(
                             onClick = {
                                 // TODO: check if device needs firmware updates, navigate to firmware update screen
                                 showDialog.value = true
-//                                viewModel.updateFirmware()
+                                viewModel.updateFirmware()
                             }) {
                             Text("Update Firmware")
                         }

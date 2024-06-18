@@ -1,14 +1,16 @@
 package org.literacybridge.talkingbookapp.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,51 +29,54 @@ fun TalkingBookOperationProgress(
     operationStepDetail: String,
     isOperationInProgress: Boolean,
 ) {
+//    Box(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .fillMaxHeight()
+//    ) {
     Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 15.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .fillMaxWidth()
+            .fillMaxHeight()
     ) {
-        LinearProgressIndicator(
-            modifier = Modifier
-                .width(80.dp)
-                .fillMaxWidth()
-                .height(60.dp)
-//                .wrapContentHeight()
-                .padding(top = 30.dp, bottom = 60.dp),
-//            strokeWidth = 5.dp,
-        )
-
-        Text(
-            text = operationStep,
-            style = TextStyle(
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 20.sp,
-                textAlign = TextAlign.Center
-            ),
-            modifier = Modifier.padding(bottom = 15.dp)
-        )
-        Text(
-            text = operationStepDetail,
-            style = TextStyle(
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                textAlign = TextAlign.Center
-            ),
-            modifier = Modifier.padding(bottom = 15.dp)
-        )
-
         if (isOperationInProgress) {
             Text(
                 text = "DO NOT DISCONNECT THE DEVICE!",
                 style = TextStyle(
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.Red,
-                    fontSize = 17.sp
+                    fontSize = 17.sp,
+                    textAlign = TextAlign.Center
                 ),
-                modifier = Modifier.padding(top = 70.dp, bottom = 20.dp)
+                modifier = Modifier.padding(bottom = 15.dp, top=5.dp)
+            )
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+        Text(
+            text = operationStep,
+            style = TextStyle(
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
+                textAlign = TextAlign.Left
+            ),
+            modifier = Modifier.padding(bottom = 15.dp)
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState(0), reverseScrolling = true),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = operationStepDetail,
+                style = TextStyle(
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Left
+                ),
+                modifier = Modifier.padding(bottom = 15.dp)
             )
         }
     }

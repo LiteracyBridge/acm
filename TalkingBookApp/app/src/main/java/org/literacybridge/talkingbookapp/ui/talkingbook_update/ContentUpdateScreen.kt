@@ -78,8 +78,8 @@ fun ContentUpdateScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
-                .padding(SCREEN_MARGIN)
-                .verticalScroll(rememberScrollState()),
+                .padding(SCREEN_MARGIN),
+//                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.Start
         ) {
             if (viewModel.isOperationInProgress.value) {

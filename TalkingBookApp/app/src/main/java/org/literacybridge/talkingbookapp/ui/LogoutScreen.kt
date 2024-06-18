@@ -14,14 +14,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.NavOptions
 import com.amplifyframework.auth.cognito.result.AWSCognitoAuthSignOutResult
 import com.amplifyframework.core.Amplify
 import io.sentry.Sentry.captureException
 
 
 @Composable
-fun LogoutUser(
+fun LogoutScreen(
     navController: NavController
 ) {
     val isSuccessful = remember { mutableStateOf(false) }

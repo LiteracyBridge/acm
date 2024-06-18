@@ -53,10 +53,6 @@ import java.util.Properties
 import javax.inject.Inject
 
 
-data class DeviceState(
-    var device: UsbDevice? = null,
-)
-
 @HiltViewModel
 class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener {
     enum class TalkingBookOperation {
@@ -442,17 +438,14 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
     }
 
     private val mProgressListener: MyProgressListener = object : MyProgressListener() {
-        private var mLog: String? = null
-
         override fun clear() {
-            operationStepDetail.value = ""
+//            operationStepDetail.value = ""
             operationStep.value = ""
-            mLog = ""
             refresh()
         }
 
         override fun refresh() {
-            operationStepDetail.value = ""
+//            operationStepDetail.value = ""
             operationStep.value = ""
         }
 
@@ -462,48 +455,47 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
          */
         override fun extraStep(step: String?) {
             operationStep.value = step ?: ""
-            operationStepDetail.value = ""
+//            operationStepDetail.value = ""
         }
 
         override fun step(step: Steps) {
             operationStep.value = step.description ?: ""
-            operationStepDetail.value = ""
+//            operationStepDetail.value = ""
 
             Log.d(LOG_TAG, "$step")
-
         }
 
         override fun detail(detail: String?) {
-            operationStepDetail.value = detail ?: ""
+            operationStepDetail.value = "${operationStepDetail.value}\n$detail".trimIndent()
             Log.d(LOG_TAG, "$detail")
 
         }
 
         override fun log(line: String) {
-            mLog = "$line\n$mLog\n".trimIndent()
-            operationStepDetail.value = mLog!!
-
-            Log.d(LOG_TAG, "$mLog")
+            operationStepDetail.value = "${operationStepDetail.value}\n$line".trimIndent()
+            Log.d(LOG_TAG, line)
         }
 
         override fun log(append: Boolean, line: String) {
+            var mLog = operationStepDetail.value
+
             mLog = if (!append) {
                 "$line\n$mLog\n".trimIndent()
             } else {
                 // Find first (or only) line break
-                val nl = mLog!!.indexOf("\n")
+                val nl = mLog.indexOf("\n")
                 if (nl > 0) {
                     // {old stuff from before line break} {new stuff} {line break} {old stuff from after line break}
-                    val pref = mLog!!.substring(0, nl)
-                    val suff = mLog!!.substring(nl + 1)
+                    val pref = mLog.substring(0, nl)
+                    val suff = mLog.substring(nl + 1)
                     "$pref\n$line\n$suff\n".trimIndent()
                 } else {
                     // No line breaks, so simply append to anything already there.
                     mLog + line
                 }
             }
-            Log.d(LOG_TAG, "$mLog")
-            operationStepDetail.value = mLog ?: ""
+            Log.d(LOG_TAG, mLog)
+            operationStepDetail.value = "${operationStepDetail.value}\n$mLog".trimIndent()
         }
 
         override fun error(value: String) {
@@ -511,7 +503,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         }
     }
 
-    suspend fun updateFirmware() {
+    fun updateFirmware() {
         if (usbState.value == null) {
             Toast.makeText(
                 App.context,
