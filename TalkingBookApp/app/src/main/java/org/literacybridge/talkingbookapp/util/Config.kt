@@ -6,6 +6,7 @@ import android.util.Log
 import org.json.JSONException
 import org.json.JSONObject
 import org.literacybridge.core.fs.OperationLog
+import org.literacybridge.core.spec.ProgramSpec
 import org.literacybridge.talkingbookapp.App
 import java.util.function.Function
 import java.util.stream.Collectors
@@ -39,6 +40,8 @@ class Config(private val mAppContext: App) {
         get() = mUserPrefs.getString(EMAIL_PROP, null)
     val name: String?
         get() = mUserPrefs.getString(NAME_PROP, "")
+
+    var g_programSpec: ProgramSpec? = null
 
     fun updateName(newName: String?) {
         val prefsEditor = mUserPrefs.edit()

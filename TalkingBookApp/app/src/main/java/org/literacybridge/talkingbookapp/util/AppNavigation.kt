@@ -7,6 +7,7 @@ enum class Screen {
     RECIPIENT,
     CONTENT_VERIFICATION,
     CONTENT_UPDATE,
+    CONTENT_VARIANT,
     UPLOAD_STATUS,
     FIRMWARE_REFRESH,
     LOGOUT,
@@ -21,6 +22,7 @@ sealed class NavigationItem(val route: String) {
     object Recipient : NavigationItem(Screen.RECIPIENT.name)
     object ContentVerification : NavigationItem(Screen.CONTENT_VERIFICATION.name)
     object ContentUpdate : NavigationItem(Screen.CONTENT_UPDATE.name)
+    data object ContentVariant : NavigationItem(Screen.CONTENT_VARIANT.name)
     object UploadStatus : NavigationItem(Screen.UPLOAD_STATUS.name)
     object FirmwareUpdate : NavigationItem(Screen.FIRMWARE_REFRESH.name)
     data object Logout : NavigationItem(Screen.LOGOUT.name)

@@ -93,7 +93,7 @@ fun ProgramSelectionScreen(
                 showDialog.value = false
                 viewModel.setActiveProgram(selectedProgram.value!!, deployment, navController)
             },
-            deployments = selectedProgram.value!!.project!!.deployments
+            deployments = selectedProgram.value!!.project.deployments
         )
     }
 }

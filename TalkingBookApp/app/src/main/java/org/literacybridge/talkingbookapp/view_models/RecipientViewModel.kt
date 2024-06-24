@@ -19,9 +19,9 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
     val recipients = MutableStateFlow<List<Recipient>>(emptyList())
     val districts = mutableStateListOf<String>() // District names
 
-    val selectedDistrict = mutableStateOf<String?>(null)
-    val selectedCommunity = mutableStateOf<String?>(null)
-    val selectedGroup = mutableStateOf<String?>(null)
+    var selectedDistrict = mutableStateOf<String?>(null)
+    var selectedCommunity = mutableStateOf<String?>(null)
+    var selectedGroup = mutableStateOf<String?>(null)
 
     val selectedRecipient = mutableStateOf<Recipient?>(null)
 

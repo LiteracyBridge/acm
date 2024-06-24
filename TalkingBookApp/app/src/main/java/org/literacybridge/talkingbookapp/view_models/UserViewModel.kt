@@ -16,6 +16,7 @@ import org.literacybridge.talkingbookapp.api_services.NetworkModule
 import org.literacybridge.talkingbookapp.models.Deployment
 import org.literacybridge.talkingbookapp.models.Program
 import org.literacybridge.talkingbookapp.models.UserModel
+import org.literacybridge.talkingbookapp.models.UserProgramModel
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.dataStoreManager
 import javax.inject.Inject

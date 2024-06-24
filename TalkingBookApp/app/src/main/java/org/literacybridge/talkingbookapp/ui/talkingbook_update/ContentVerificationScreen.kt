@@ -101,7 +101,7 @@ fun ContentVerificationScreen(
                         ) {
                             append("\nGroup: \t")
                         }
-                        // TODO: change to get community
+                        // TODO: change to get group
                         append(recipientViewModel.defaultRecipient.value?.groupname ?: "N/A")
                     })
             }
@@ -145,6 +145,23 @@ fun ContentVerificationScreen(
                         append(recipientViewModel.selectedRecipient.value?.groupname)
 
                     })
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "",
+                    modifier = Modifier.padding(50.dp),
+                    textAlign = TextAlign.Left,
+                    style = TextStyle(fontWeight = FontWeight.Bold)
+                )
+
+                Button(onClick = { navController.navigate(Screen.CONTENT_VARIANT.name) }) {
+                    Text(text = "Select Content")
+                }
             }
         }
     }
