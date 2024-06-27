@@ -159,7 +159,10 @@ fun ContentVerificationScreen(
                     style = TextStyle(fontWeight = FontWeight.Bold)
                 )
 
-                Button(onClick = { navController.navigate(Screen.CONTENT_VARIANT.name) }) {
+                Button(onClick = {
+                    recipientViewModel.loadPackagesInDeployment()
+                    navController.navigate(Screen.CONTENT_VARIANT.name)
+                }) {
                     Text(text = "Select Content Package")
                 }
             }

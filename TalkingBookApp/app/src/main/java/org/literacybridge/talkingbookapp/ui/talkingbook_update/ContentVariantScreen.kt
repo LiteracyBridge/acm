@@ -83,7 +83,7 @@ fun ContentVariantScreen(
             // TODO: change to packages list
             items(packages.value.size) { index ->
                 ListItem(
-                    headlineContent = { Text(packages.value.get(index)) },
+                    headlineContent = { Text(packages.value.get(index).label) },
                     trailingContent = {
                         Row {
                             if (index == packages.value.size - 1) { // Last item, hide "down" arrow

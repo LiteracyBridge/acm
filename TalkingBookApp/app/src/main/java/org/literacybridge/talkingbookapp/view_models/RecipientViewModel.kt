@@ -8,8 +8,24 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.literacybridge.core.spec.ProgramSpec
 import org.literacybridge.core.spec.Recipient
 import org.literacybridge.core.tbdevice.TbDeviceInfo
+import org.literacybridge.core.tbloader.TBLoaderUtils
+import org.literacybridge.talkingbookapp.App
+import org.literacybridge.talkingbookapp.util.PathsProvider
+import java.io.File
 import javax.inject.Inject
 
+
+data class ContentPackage(
+    /**
+     * Directory name of the content package. {deploymentName}-{languageCode}
+     */
+    val dir: String,
+
+    /**
+     * User friendly name, eg. English (eng)
+     */
+    val label: String
+)
 
 @HiltViewModel
 class RecipientViewModel @Inject constructor() : ViewModel() {
@@ -31,8 +47,10 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
     val defaultRecipient = mutableStateOf<Recipient?>(null)
 
     // TODO: get packages from core module
-    val packages = MutableStateFlow(listOf("Ama", "Lindsay", "Kofi", "James", "John Doe").toMutableList())
-
+//    val packages =
+//        MutableStateFlow(listOf("Ama", "Lindsay", "Kofi", "James", "John Doe").toMutableList())
+    val packages =
+        MutableStateFlow(emptyList<ContentPackage>().toMutableList())
 
     fun fromProgramSpec(spec: ProgramSpec) {
         recipients.value = spec.recipients
@@ -52,6 +70,18 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
         selectedCommunity.value = tbRecipient.communityname
         selectedGroup.value = tbRecipient.groupname
         selectedRecipient.value = tbRecipient
+    }
+
+    fun loadPackagesInDeployment() {
+        val resp =
+            TBLoaderUtils.getPackagesInDeployment(PathsProvider.getLocalDeploymentDirectory(App.getInstance().programContent!!))
+        packages.value = resp.map { it -> // {deploymentName}-{lang}
+            val code = it.split("-").last() // select the language code
+            val lang =
+                App.getInstance().programSpec!!.languages.find { it.code.lowercase() == code }
+
+            ContentPackage(dir=it, label="${lang?.name} ($code)")
+        }.toMutableList()
     }
 
     /**
@@ -90,7 +120,6 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
         } else {
             null
         }
-
     }
 
 }

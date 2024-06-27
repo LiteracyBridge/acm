@@ -333,6 +333,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         // What firmware comes with this Deployment?
         val firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(deploymentDirectory)
         val builder = DeploymentInfoBuilder()
+//            .withPackageNames() TODO: use this if package name is not
             .withSerialNumber(deviceSerialNumber)
             .withNewSerialNumber(tbDeviceInfo.newSerialNumberNeeded())
             .withProjectName(deployment!!.program_id)
