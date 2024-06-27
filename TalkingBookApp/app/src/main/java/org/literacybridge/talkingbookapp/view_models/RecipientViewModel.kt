@@ -73,6 +73,8 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
     }
 
     fun loadPackagesInDeployment() {
+        // TODO: auto select default packages currently on the talking book
+        
         val resp =
             TBLoaderUtils.getPackagesInDeployment(PathsProvider.getLocalDeploymentDirectory(App.getInstance().programContent!!))
         packages.value = resp.map { it -> // {deploymentName}-{lang}

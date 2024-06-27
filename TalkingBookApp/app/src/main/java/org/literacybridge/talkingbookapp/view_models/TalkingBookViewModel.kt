@@ -322,6 +322,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         deploymentDirectory: File,
         recipient: Recipient
     ): DeploymentInfo {
+        // TODO: skip this check if packages are selected by the user
         // Get image for recipient; if not found, fall back to directory.
         var imageName: String = getPackageForRecipient(recipient)
         if (imageName.isEmpty()) {
@@ -333,7 +334,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         // What firmware comes with this Deployment?
         val firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(deploymentDirectory)
         val builder = DeploymentInfoBuilder()
-//            .withPackageNames() TODO: use this if package name is not
+//            .withPackageNames() TODO: use this if package name is selected
             .withSerialNumber(deviceSerialNumber)
             .withNewSerialNumber(tbDeviceInfo.newSerialNumberNeeded())
             .withProjectName(deployment!!.program_id)
