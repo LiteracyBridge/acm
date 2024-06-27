@@ -160,7 +160,7 @@ fun ContentVerificationScreen(
                 )
 
                 Button(onClick = { navController.navigate(Screen.CONTENT_VARIANT.name) }) {
-                    Text(text = "Select Content")
+                    Text(text = "Select Content Package")
                 }
             }
         }

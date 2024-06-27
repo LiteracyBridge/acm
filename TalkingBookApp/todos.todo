@@ -14,3 +14,4 @@ Bugs:
     * changing program should download/update content from s3 before navigating to home screen
     * maintain folder structure after unzipping content - NO RESTRUCTURING (doesn't work always)
     * login screen stack in loading stats when request to fetch user info from server time out
+    * default recipient info not selected (recipient UI)

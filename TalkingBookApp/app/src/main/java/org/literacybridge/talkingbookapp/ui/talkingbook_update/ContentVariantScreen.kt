@@ -37,7 +37,7 @@ fun ContentVariantScreen(
     recipientViewModel: RecipientViewModel = viewModel(),
 ) {
     val languages = remember { userViewModel.program.value?.languages }
-    var optionselected = ""
+    var optionSelected = ""
     val pubCsv = createPropertiesMap()
     val recipient = Recipient(pubCsv)
     val defaultRecipient = recipientViewModel.defaultRecipient
@@ -54,7 +54,7 @@ fun ContentVariantScreen(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     //navController.popBackStack()
-                    Log.i("option selected", optionselected)
+                    Log.i("option selected", optionSelected)
                     defaultRecipient.value = recipient
                     navController.navigate(Screen.CONTENT_VERIFICATION.name)
                 }
@@ -72,6 +72,7 @@ fun ContentVariantScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             val (selectedOption, onOptionSelected) = remember { mutableStateOf(languages!![1] ) }
+
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
@@ -99,7 +100,7 @@ fun ContentVariantScreen(
                             style = typography.bodyMedium.merge(),
                             modifier = Modifier.padding(start = 16.dp)
                         )
-                        optionselected = selectedOption
+                        optionSelected = selectedOption
                     }
                 }
             }
@@ -108,7 +109,6 @@ fun ContentVariantScreen(
     }
 }
 
-@Composable
 fun createPropertiesMap() : Map<String, String> {
     val pubCsv = hashMapOf<String, String>()
     pubCsv["recipientid"] = "12"
