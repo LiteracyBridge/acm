@@ -3,15 +3,14 @@ package org.literacybridge.talkingbookapp.ui.talkingbook_update
 import Screen
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
@@ -22,6 +21,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +42,9 @@ fun ContentVariantScreen(
     userViewModel: UserViewModel = viewModel(),
     recipientViewModel: RecipientViewModel = viewModel(),
 ) {
-    val languages = remember { userViewModel.program.value?.languages }
+//    val data by remember { mutableListOf("Amam", "Ghana") }
+    val packages = recipientViewModel.packages.collectAsState()
+    val languages = listOf("Ama", "Ghana", "We", "Lindsay")
     var optionSelected = ""
     val pubCsv = createPropertiesMap()
     val recipient = Recipient(pubCsv)
@@ -71,61 +73,74 @@ fun ContentVariantScreen(
         }
 
     }) { contentPadding ->
-//        DraggableLazyList(
-//            items = listOf("En", "Frensh", "We Mode It"),
-//            builder = { it ->
-//                Text("Working $it")
-//            },
-//            contentPadding = contentPadding,
-//            onSwap = { i1, i2 -> }
-//        )
-
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
                 .padding(Constants.SCREEN_MARGIN)
-                .verticalScroll(rememberScrollState())
+//                .verticalScroll(rememberScrollState())
         ) {
-            ListItem(
-                headlineContent = { Text("English (eng)") },
-                trailingContent = {
-                    Row {
-                        IconButton(
-                            onClick = {
-                            },
-                            content = {
-                                Icon(
-                                    Icons.Filled.KeyboardArrowDown,
-                                    contentDescription = "Move package down"
+            // TODO: change to packages list
+            items(packages.value.size) { index ->
+                ListItem(
+                    headlineContent = { Text(packages.value.get(index)) },
+                    trailingContent = {
+                        Row {
+                            if (index == packages.value.size - 1) { // Last item, hide "down" arrow
+                                Box {}
+                            } else {
+                                IconButton(
+                                    onClick = {
+                                        val temp = packages.value.map { it }.toMutableList()
+                                        val current = temp[index]
+                                        val next = temp[index + 1]
+
+                                        temp[index + 1] = current
+                                        temp[index] = next
+                                        recipientViewModel.packages.value = temp
+                                    },
+                                    content = {
+                                        Icon(
+                                            Icons.Filled.KeyboardArrowDown,
+                                            contentDescription = "Move package down"
+                                        )
+                                    }
                                 )
                             }
-                        )
-                        IconButton(
-                            onClick = {
-                            },
-                            content = {
-                                Icon(
-                                    Icons.Filled.KeyboardArrowUp,
-                                    contentDescription = "Move package up"
+
+                            if (index == 0) { // First item, don't show arrow up
+                                Box {}
+                            } else {
+                                IconButton(
+                                    onClick = {
+                                        val temp = packages.value.map { it }.toMutableList()
+                                        val current = temp[index]
+                                        val next = temp[index - 1]
+
+                                        temp[index - 1] = current
+                                        temp[index] = next
+                                        recipientViewModel.packages.value = temp
+
+                                    },
+                                    content = {
+                                        Icon(
+                                            Icons.Filled.KeyboardArrowUp,
+                                            contentDescription = "Move package up"
+                                        )
+                                    }
                                 )
                             }
+                        }
+                    },
+                    leadingContent = {
+                        Checkbox(
+                            checked = checked,
+                            onCheckedChange = { checked = it }
                         )
                     }
-                },
-                leadingContent = {
-                    Checkbox(
-                        checked = checked,
-                        onCheckedChange = { checked = it }
-                    )
-
-//                    Icon(
-//                        Icons.Filled.Favorite,
-//                        contentDescription = "Localized description",
-//                    )
-                }
-            )
-            HorizontalDivider()
+                )
+                HorizontalDivider()
+            }
 
 //            val (selectedOption, onOptionSelected) = remember { mutableStateOf(languages!![1]) }
 //

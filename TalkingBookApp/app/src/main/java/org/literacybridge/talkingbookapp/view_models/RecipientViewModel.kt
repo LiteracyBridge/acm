@@ -30,6 +30,9 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
      */
     val defaultRecipient = mutableStateOf<Recipient?>(null)
 
+    // TODO: get packages from core module
+    val packages = MutableStateFlow(listOf("Ama", "Lindsay", "Kofi", "James", "John Doe").toMutableList())
+
 
     fun fromProgramSpec(spec: ProgramSpec) {
         recipients.value = spec.recipients
