@@ -151,7 +151,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         volumeStepTextField.setToolTipText(
                 "A number between " + VOLUME_STEP_MINIMUM + " and " + VOLUME_STEP_MAXIMUM + " to control the maximum volume of the TB device.");
         vbox.add(volumeStepTextField);
-        volumeStepJLabel = new JLabel("Threshold must be an integer between " + Constants.VOLUME_STEP_MINIMUM + " and " + Constants.VOLUME_STEP_MAXIMUM);
+        volumeStepJLabel = new JLabel("Volume step must be an integer between " + Constants.VOLUME_STEP_MINIMUM + " and " + Constants.VOLUME_STEP_MAXIMUM);
         volumeStepJLabel.setFont(new Font("Sans Serif", Font.ITALIC, 10));
         volumeStepJLabel.setForeground(Color.RED);
         volumeStepJLabel.setVisible(false);
@@ -223,7 +223,10 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         email.setText(emailAddresses);
         fuzzyThreshold.setText(String.format("%d", threshold));
-        volumeStepTextField.setText(String.format("%d", volumeStep));
+        if (volumeStep == null)
+            volumeStepTextField.setText("0");
+        else
+            volumeStepTextField.setText(String.format("%d", volumeStep));
     }
 
     private static final Map<String, String> themeClasses;
