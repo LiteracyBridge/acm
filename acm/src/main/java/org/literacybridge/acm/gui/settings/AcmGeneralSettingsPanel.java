@@ -38,7 +38,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     private final JTextField volumeStepTextField;
     private final String emailAddresses;
     private final int threshold;
-    private final Integer intVolumeStep;
+    private final Integer volumeStep;
     private final boolean warnForMissingGreetings;
     private final JLabel fuzzyThresholdError;
     private final JLabel volumeStepJLabel;
@@ -61,7 +61,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         // Get values from the global configuration.
         threshold = ACMConfiguration.getInstance().getCurrentDB().getFuzzyThreshold();
-        intVolumeStep = ACMConfiguration.getInstance().getCurrentDB().getVolumeStep();
+        volumeStep = ACMConfiguration.getInstance().getCurrentDB().getVolumeStep();
         emailAddresses = String.join(", ",
                 ACMConfiguration.getInstance().getCurrentDB().getNotifyList());
         warnForMissingGreetings = ACMConfiguration.getInstance().getCurrentDB().getWarnForMissingGreetings();
@@ -145,7 +145,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         // Setting: volume step
         gridPanel.add(new JLabel("Volume step:"), gbcLeft);
         vbox = Box.createVerticalBox();
-        volumeStepTextField = new JTextField(intVolumeStep != null ? intVolumeStep.toString() : "0");
+        volumeStepTextField = new JTextField(volumeStep != null ? volumeStep.toString() : "0");
         volumeStepTextField.setInputVerifier(volumeStepVerifier);
         volumeStepTextField.getDocument().addDocumentListener(volumeStepDocumentListener);
         volumeStepTextField.setToolTipText(
@@ -223,7 +223,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         email.setText(emailAddresses);
         fuzzyThreshold.setText(String.format("%d", threshold));
-        volumeStepTextField.setText(String.format("%d", intVolumeStep));
+        volumeStepTextField.setText(String.format("%d", volumeStep));
     }
 
     private static final Map<String, String> themeClasses;
@@ -274,7 +274,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
             haveChanges = true;
         }
 
-        if (getVolumeStepTextField().intValue() != intVolumeStep) {
+        if (getVolumeStepTextField().intValue() != volumeStep) {
             ACMConfiguration.getInstance().getCurrentDB().setVolumeStep(getVolumeStepTextField());
             haveChanges = true;
         }
@@ -327,6 +327,10 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         return Integer.parseInt(str);
     }
 
+    /**
+     * Reads the value of the volume step from its edit control.
+     * @return the value, as an integer.
+     */
     private Integer getVolumeStepTextField() {
         String str = volumeStepTextField.getText();
         return Integer.parseInt(str);

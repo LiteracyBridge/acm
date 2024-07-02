@@ -540,10 +540,15 @@ public class DBConfiguration {
         getDbProperties().setProperty(Constants.FUZZY_THRESHOLD, Integer.toString(threshold));
     }
 
+    /**
+     * Retrieves a volume step value from a set of properties from a configuration file and converts it to an Integer
+     * If the property retrieval or conversion fails, the function catches the exception and returns null.
+     * If successful, it returns the integer value of the property.
+     *
+     */
     public Integer getVolumeStep() {
         Integer result = null;
-        try{
-            result = Constants.VOLUME_STEP_DEFAULT;
+        try {
             String value = getDbProperties().getProperty(Constants.VOLUME_STEP);
             result = new Integer(value);
         }

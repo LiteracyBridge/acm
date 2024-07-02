@@ -33,9 +33,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.Constants.BELL_SOUND_V2;
-import static org.literacybridge.acm.Constants.CUSTOM_GREETING_V1;
-import static org.literacybridge.acm.Constants.SILENCE_V2;
+import static org.literacybridge.acm.Constants.*;
 
 /*
  * Builds a TBv1 deployment.
@@ -696,7 +694,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
             Integer volumeStep = ACMConfiguration.getInstance().getCurrentDB().getVolumeStep();
             if (volumeStep != null) {
                 File targetConfigPath = new File(targetSystemDir, "config.txt");
-                String text = "volume_step:" + volumeStep;
+                String text = VOLUME_STEP + ":" + volumeStep;
 
                 // Write volume step value to config file
                 try {
