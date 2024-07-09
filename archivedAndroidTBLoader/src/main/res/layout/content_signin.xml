@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright 2013-2016 Amazon.com,
+  ~ Inc. or its affiliates. All Rights Reserved.
+  ~
+  ~ Licensed under the Amazon Software License (the "License").
+  ~ You may not use this file except in compliance with the
+  ~ License. A copy of the License is located at
+  ~
+  ~     http://aws.amazon.com/asl/
+  ~
+  ~ or in the "license" file accompanying this file. This file is
+  ~ distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+  ~ CONDITIONS OF ANY KIND, express or implied. See the License
+  ~ for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+    android:layout_marginRight="@dimen/activity_horizontal_margin"
+    android:layout_marginTop="@dimen/activity_vertical_margin"
+    tools:context="org.literacybridge.archived_androidtbloader.signin.SigninActivity">
+
+    <ImageView
+        android:id="@+id/imageViewAppMainCognitoIcon"
+        android:layout_width="110dp"
+        android:layout_height="110dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:scaleType="fitXY"
+        android:src="@mipmap/ic_launcher"/>
+
+    <Space
+        android:id="@+id/space_1"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/activity_inter_group_separation"
+        android:layout_below="@+id/imageViewAppMainCognitoIcon"
+        android:layout_centerHorizontal="true"/>
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/textViewAppMainTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/space_1"
+        android:layout_centerHorizontal="true"
+        android:text="@string/app_main_screen_title"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textSize="30dp"/>
+
+    <Space
+        android:id="@+id/space"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/activity_inter_group_separation"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/textViewAppMainTitle"/>
+
+    <!-- Sub-title -->
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/space"
+        android:layout_centerHorizontal="true"
+        android:text="@string/app_main_desc"
+        android:textAppearance="?android:attr/textAppearanceSmall"/>
+
+    <Space
+        android:id="@+id/space2"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/activity_inter_group_separation"
+        android:layout_below="@+id/textView"
+        android:layout_centerHorizontal="true"/>
+
+    <!-- User name field -->
+    <TextView
+        android:id="@+id/textViewUserIdLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/space2"
+        android:layout_centerHorizontal="true"
+        android:text=" "
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textSize="@dimen/activity_text_size_small"/>
+
+    <EditText
+        android:id="@+id/editTextUserId"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/activity_text_height"
+        android:layout_below="@+id/textViewUserIdLabel"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/text_border_selector"
+        android:hint="@string/email_address"
+        android:inputType="textPersonName"
+        android:paddingLeft="@dimen/activity_text_padding"
+        android:paddingRight="@dimen/activity_text_padding" />
+
+    <TextView
+        android:id="@+id/textViewUserIdMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/editTextUserId"
+        android:layout_centerHorizontal="true"
+        android:text=" "
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="@color/alert"
+        android:textSize="@dimen/activity_text_padding"/>
+
+    <!-- Password field -->
+    <TextView
+        android:id="@+id/textViewUserPasswordLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textViewUserIdMessage"
+        android:layout_centerHorizontal="true"
+        android:text=" "
+        android:textSize="@dimen/activity_text_size_small"/>
+
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/password_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textViewUserPasswordLabel"
+        app:passwordToggleEnabled="true"
+        app:hintEnabled="false">
+
+        <EditText
+            android:id="@+id/editTextUserPassword"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/activity_text_height"
+            android:layout_centerHorizontal="true"
+            android:background="@drawable/text_border_selector"
+            android:hint="@string/prompt_password"
+            android:inputType="textPassword"
+            android:paddingLeft="@dimen/activity_text_padding"
+            android:paddingRight="@dimen/activity_text_padding"
+            tools:textColor="@color/grey_300"
+            tools:inputType="text"
+            tools:text="Password" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/textViewUserPasswordMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/password_layout"
+        android:layout_centerHorizontal="true"
+        android:text=" "
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="@color/alert"
+        android:textSize="@dimen/activity_text_padding"/>
+
+    <Space
+        android:id="@+id/space4"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/activity_intra_group_separation"
+        android:layout_below="@+id/textViewUserPasswordMessage"
+        android:layout_centerHorizontal="true"/>
+
+    <!-- Sign in button -->
+    <Button
+            android:id="@+id/buttonLogIn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/space4"
+            android:layout_centerHorizontal="true"
+            android:background="@drawable/button_selector"
+            android:onClick="logIn"
+            android:text="Login"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="@dimen/activity_button_text_size" />
+
+    <Space
+        android:id="@+id/space5"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/activity_intra_group_separation"
+        android:layout_below="@+id/buttonLogIn"
+        android:layout_centerHorizontal="true"/>
+
+    <Space
+        android:id="@+id/space6"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/activity_intra_group_separation"
+        android:layout_below="@+id/space5"
+        android:layout_centerHorizontal="true"/>
+
+    <!-- Forgot password link -->
+    <TextView
+        android:id="@+id/textViewUserForgotPassword"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@+id/space6"
+        android:clickable="true"
+        android:onClick="forgotPassword"
+        android:text="Forgot password"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="@color/button_default"
+        android:textSize="15dp"/>
+
+    <!-- New user link -->
+    <TextView
+        android:id="@+id/textViewUserSignUp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/space6"
+        android:clickable="true"
+        android:onClick="signUp"
+        android:text="Sign up"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="@color/button_default"
+        android:textSize="15dp"/>
+
+</RelativeLayout>
