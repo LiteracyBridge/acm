@@ -71,7 +71,7 @@ fun ContentVerificationScreen(
                 textAlign = TextAlign.Left,
                 style = TextStyle(fontWeight = FontWeight.Bold)
             )
-            Divider()
+            HorizontalDivider()
 
             ElevatedCard(
                 modifier = Modifier
@@ -87,7 +87,6 @@ fun ContentVerificationScreen(
                         ) {
                             append("District: \t")
                         }
-                        // TODO: change to get district
                         append(recipientViewModel.defaultRecipient.value?.district ?: "N/A")
 
                         withStyle(
@@ -102,7 +101,6 @@ fun ContentVerificationScreen(
                         ) {
                             append("\nGroup: \t")
                         }
-                        // TODO: change to get group
                         append(recipientViewModel.defaultRecipient.value?.groupname ?: "N/A")
                     })
             }

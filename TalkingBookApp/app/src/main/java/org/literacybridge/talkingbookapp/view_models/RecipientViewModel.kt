@@ -74,10 +74,16 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
 
         defaultRecipient.value = tbRecipient
 
-        selectedDistrict.value = tbRecipient.district
-        selectedCommunity.value = tbRecipient.communityname
-        selectedGroup.value = tbRecipient.groupname
-        selectedRecipient.value = tbRecipient
+        if (!tbRecipient.district.isNullOrBlank()) {
+            selectedDistrict.value = tbRecipient.district
+        }
+        if (!tbRecipient.communityname.isNullOrBlank()) {
+            selectedCommunity.value = tbRecipient.communityname
+        }
+        if (!tbRecipient.groupname.isNullOrBlank()) {
+            selectedGroup.value = tbRecipient.groupname
+        }
+        updateSelectedRecipient()
     }
 
     fun loadPackagesInDeployment() {
