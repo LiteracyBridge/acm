@@ -16,10 +16,11 @@ import android.os.Handler
 import android.os.Message
 import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -30,13 +31,17 @@ import com.amplifyframework.core.Amplify
 import com.amplifyframework.core.plugin.Plugin
 import com.amplifyframework.storage.s3.AWSS3StoragePlugin
 import com.amplifyframework.storage.s3.configuration.AWSS3StoragePluginConfiguration
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.model.AppUpdateType.IMMEDIATE
+import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
 import io.sentry.compose.withSentryObservableEffect
 import org.literacybridge.talkingbookapp.ui.theme.TalkingBookAppTheme
 import org.literacybridge.talkingbookapp.util.Constants.Companion.LOG_TAG
 import org.literacybridge.talkingbookapp.util.FileObserverWrapper
 import org.literacybridge.talkingbookapp.util.content_manager.CustomS3PathResolver
-import org.literacybridge.talkingbookapp.util.device_manager.Dfu
 import org.literacybridge.talkingbookapp.util.device_manager.Usb
 import org.literacybridge.talkingbookapp.view_models.TalkingBookViewModel
 import java.io.File
@@ -51,8 +56,24 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
     private val PERMISSION_READ_AUDIO_CODE = 13
 
     private lateinit var usb: Usb
-//    private lateinit var dfu: Dfu
+
+    //    private lateinit var dfu: Dfu
     private val talkingBookViewModel: TalkingBookViewModel by viewModels()
+    private lateinit var appUpdateManager: AppUpdateManager
+
+    private val activityResultLauncher =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            // handle callback
+            if (result.resultCode != RESULT_OK) {
+                Toast.makeText(
+                    this,
+                    "Sorry, an error occurred updating the app",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            Log.d(LOG_TAG, "${result.resultCode}")
+            Log.d(LOG_TAG, "${result.data}")
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,6 +143,9 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             }
         observer.startWatching()
 
+        // Initialize AppUpdateManager
+        appUpdateManager = AppUpdateManagerFactory.create(this)
+        checkForAppUpdate()
 
 //        todo: add usb manager code here
         // Get the USB manager service
@@ -176,8 +200,16 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 //        }
     }
 
+    // Checks that the update is not stalled during 'onResume()'.
+// However, you should execute this check at all entry points into the app.
+    override fun onResume() {
+        super.onResume()
 
-    @RequiresApi(Build.VERSION_CODES.O)
+        resumeAppUpdate()
+    }
+
+
+    //    @RequiresApi(Build.VERSION_CODES.O)
     override fun onStart() {
         super.onStart()
 
@@ -187,11 +219,19 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         usb.setOnUsbChangeListener(this)
 
         // Handle two types of intents. Device attachment and permission
-        registerReceiver(usb.getmUsbReceiver(), IntentFilter(Usb.ACTION_USB_PERMISSION), RECEIVER_EXPORTED)
+        if (SDK_INT >= Build.VERSION_CODES.O) {
+            registerReceiver(
+                usb.getmUsbReceiver(),
+                IntentFilter(Usb.ACTION_USB_PERMISSION),
+                RECEIVER_EXPORTED
+            )
+        }
+
         registerReceiver(usb.getmUsbReceiver(), IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED))
         registerReceiver(usb.getmUsbReceiver(), IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
+        usb.requestPermission(this);
 
-        usb.requestPermission(this)
+        resumeAppUpdate()
     }
 
     override fun onStop() {
@@ -230,6 +270,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         talkingBookViewModel.disconnected()
         usb.release()
     }
+
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -278,6 +319,45 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             // permissions this app might request.
             else -> {
                 // Ignore all other requests.
+            }
+        }
+    }
+
+    /**
+     * If an in-app update is already running, resume the update.
+     */
+    private fun resumeAppUpdate() {
+        appUpdateManager
+            .appUpdateInfo
+            .addOnSuccessListener { appUpdateInfo ->
+                if (appUpdateInfo.updateAvailability()
+                    == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
+                ) {
+                    // If an in-app update is already running, resume the update.
+                    appUpdateManager.startUpdateFlowForResult(
+                        appUpdateInfo,
+                        activityResultLauncher,
+                        AppUpdateOptions.newBuilder(IMMEDIATE).build()
+                    )
+                }
+            }
+    }
+
+    private fun checkForAppUpdate() {
+        val appUpdateInfoTask = appUpdateManager.appUpdateInfo
+
+        // Checks that the platform will allow the specified type of update.
+        appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                && appUpdateInfo.isUpdateTypeAllowed(
+                    IMMEDIATE
+                )
+            ) {
+                appUpdateManager.startUpdateFlowForResult(
+                    appUpdateInfo,
+                    activityResultLauncher,
+                    AppUpdateOptions.newBuilder(IMMEDIATE).build()
+                )
             }
         }
     }

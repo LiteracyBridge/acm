@@ -90,10 +90,11 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10")
     implementation("io.sentry:sentry-android:7.8.0")
     implementation("io.sentry:sentry-compose-android:7.8.0")
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
+    implementation("com.google.android.play:app-update:2.1.0")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.51")
-    // implementation("androidx.hilt:hilt-navigation-fragment:1.2.0")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     ksp("com.google.dagger:hilt-compiler:2.51")
 
