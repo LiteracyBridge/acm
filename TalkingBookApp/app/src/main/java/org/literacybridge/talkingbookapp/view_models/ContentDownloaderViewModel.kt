@@ -219,12 +219,12 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                 // Update database
                 viewModelScope.launch {
                     withContext(Dispatchers.IO) {
-                        unzipFile(downloadedZip = done.file, destinationDir = dest)
+                       val content= unzipFile(downloadedZip = done.file, destinationDir = dest)
                         val entity = ProgramContentEntity(
                             programId = program.program_id,
                             deploymentName = deployment.deploymentname,
                             latestRevision = latestDeploymentRevision!!,
-                            localPath = dest.path,
+                            localPath = content.absolutePath,
                             status = ProgramContentDao.ProgramEntityStatus.SYNCED,
                             lastSync = LocalDateTime.now(),
                             s3Path = s3key
@@ -251,7 +251,8 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
             downloadedZip, destinationDir
         ) { _, _ -> true }
 
-        return destinationDir
+        // Final destination is "content/{deploymentname}"
+        return File("${destinationDir.absolutePath}/content/${this.deployment.deploymentname}")
         // Done unzipping, move unzipped files from {programId}/{deploymentname}/tmp/content/{deploymentname}
         // to {programId}/{deploymentname}/content
 //        val contentDir = File("${destinationDir.absolutePath}/content")

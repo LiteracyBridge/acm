@@ -67,11 +67,11 @@ object PathsProvider {
      * @return The Deployment directory for the project.
      */
     fun getLocalDeploymentDirectory(project: ProgramContentEntity): File {
-        return File(project.localPath, "content")
+        return File(project.localPath)
     }
 
     fun getProgramSpecDir(project: ProgramContentEntity): File {
-        return File(project.localPath, "content/programspec")
+        return File(project.localPath, "programspec")
     }
 
     fun getStatsDirectory(timestamp: String): File {
