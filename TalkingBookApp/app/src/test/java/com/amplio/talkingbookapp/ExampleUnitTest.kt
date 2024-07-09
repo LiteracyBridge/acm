@@ -1,4 +1,4 @@
-package org.literacybridge.talkingbookapp
+package org.literacybridge.androidtbloader
 
 import org.junit.Test
 

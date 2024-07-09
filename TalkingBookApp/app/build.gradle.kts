@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "org.literacybridge.talkingbookapp"
+    namespace = "org.literacybridge.androidtbloader"
     compileSdk = 34
 
     buildFeatures {
@@ -15,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "org.literacybridge.talkingbookapp"
+        applicationId = "org.literacybridge.androidtbloader"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
