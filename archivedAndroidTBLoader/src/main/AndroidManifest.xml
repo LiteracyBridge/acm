@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature android:name="android.hardware.usb.host"/>
+
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <!-- uses-permission android:name="android.permission.MANAGE_DOCUMENTS"/>
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"/ -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+    <application
+        android:name=".TBLoaderAppContext"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme.NoActionBar">
+        <!-- android:theme="@android:style/Theme.Material.Light.DarkActionBar" -->
+
+        <receiver android:name=".talkingbook.TalkingBookConnectionManager$USBReceiver"
+                android:exported="false">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"/>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED"/>
+            </intent-filter>
+
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/genplus_device_filter"/>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_DETACHED"
+                android:resource="@xml/genplus_device_filter"/>
+        </receiver>
+
+        <activity
+            android:name=".signin.SigninActivity"
+            android:label="TB Loader"
+                android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".signin.AboutApp"
+            android:label="@string/title_activity_about_app"/>
+        <activity
+            android:name=".signin.ForgotPasswordActivity"
+            android:label="@string/title_activity_forgot_password"/>
+        <activity
+            android:name=".signin.RegisterUser"/>
+        <activity
+            android:name=".signin.SignUpConfirm"
+            android:label="@string/title_activity_sign_up_confirm"/>
+        <activity
+            android:name=".signin.ChangePasswordActivity"
+            android:label="Change Password" />
+
+        <activity
+            android:name=".main.MainActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".content.ManageContentActivity"
+            android:label="Manage Content"
+            android:screenOrientation="portrait">
+        </activity>
+
+        <activity
+            android:name=".checkin.CheckinActivity"
+            android:label="Check-In"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".tbloader.TbLoaderActivity"
+            android:label="Update TB"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".community.ChooseCommunityActivity"
+            android:label="Choose Community"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".recipient.RecipientChooserActivity"
+            android:label="Choose Recipient"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".SettingsActivity"
+            android:label="Settings"
+            android:parentActivityName=".content.ManageContentActivity"
+            android:screenOrientation="portrait">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.literacybridge.archived_androidtbloader.content.ManageContentActivity"/>
+        </activity>
+
+        <activity
+            android:name=".uploader.UploadStatusActivity"
+            android:label="Upload Status"
+            android:screenOrientation="portrait"/>
+
+        <activity android:name=".talkingbook.TalkingBookConnectionSetupActivity">
+        </activity>
+
+        <service
+            android:name=".uploader.UploadService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true"/>
+
+        <service
+            android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService"
+            android:enabled="true"/>
+
+    </application>
+
+</manifest>
