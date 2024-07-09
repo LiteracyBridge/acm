@@ -11,34 +11,36 @@ import org.literacybridge.core.tbdevice.TbDeviceInfo
 import org.literacybridge.core.tbloader.TBLoaderUtils
 import org.literacybridge.talkingbookapp.App
 import org.literacybridge.talkingbookapp.util.PathsProvider
-import java.io.File
 import javax.inject.Inject
 
 
 data class ContentPackage(
     /**
-     * Directory name of the content package. {deploymentName}-{languageCode}
+     * Name of the content package. {deploymentName}-{languageCode}, eg. demo-2017-3-dga
      */
-    val dir: String,
+    val name: String,
 
     /**
      * User friendly name, eg. English (eng)
      */
-    val label: String
+    val label: String,
+
+    /**
+     * True if package has been selected by the user (checkbox)
+     */
+    var isSelected: Boolean = false
 )
 
 @HiltViewModel
 class RecipientViewModel @Inject constructor() : ViewModel() {
     // These fields track the recipient of the talking book device. They are populated
     // only when the user is performing Tb device update, ie. on the recipient screen
-//    val recipients = mutableStateListOf<Recipient>()
     val recipients = MutableStateFlow<List<Recipient>>(emptyList())
     val districts = mutableStateListOf<String>() // District names
 
     var selectedDistrict = mutableStateOf<String?>(null)
     var selectedCommunity = mutableStateOf<String?>(null)
     var selectedGroup = mutableStateOf<String?>(null)
-
     val selectedRecipient = mutableStateOf<Recipient?>(null)
 
     /**
@@ -46,11 +48,17 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
      */
     val defaultRecipient = mutableStateOf<Recipient?>(null)
 
-    // TODO: get packages from core module
-//    val packages =
-//        MutableStateFlow(listOf("Ama", "Lindsay", "Kofi", "James", "John Doe").toMutableList())
+    /**
+     * List of content packages in the deployment
+     * Items are arranged (by the user) in order to be deployed to a Talking Book
+     */
     val packages =
         MutableStateFlow(emptyList<ContentPackage>().toMutableList())
+
+    /**
+     * Whether the selected packages should be discarded. If true, the data won't be used
+     */
+    val shouldDiscardPackages = MutableStateFlow(false)
 
     fun fromProgramSpec(spec: ProgramSpec) {
         recipients.value = spec.recipients
@@ -74,7 +82,7 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
 
     fun loadPackagesInDeployment() {
         // TODO: auto select default packages currently on the talking book
-        
+
         val resp =
             TBLoaderUtils.getPackagesInDeployment(PathsProvider.getLocalDeploymentDirectory(App.getInstance().programContent!!))
         packages.value = resp.map { it -> // {deploymentName}-{lang}
@@ -82,8 +90,18 @@ class RecipientViewModel @Inject constructor() : ViewModel() {
             val lang =
                 App.getInstance().programSpec!!.languages.find { it.code.lowercase() == code }
 
-            ContentPackage(dir=it, label="${lang?.name} ($code)")
+            ContentPackage(name = it, label = "${lang?.name} ($code)")
         }.toMutableList()
+    }
+
+    /**
+     * Returns list of packages selected by the user, arranged in order to be deployed to a Talking Book
+     */
+    fun getSelectedPackages(): List<ContentPackage> {
+        if (shouldDiscardPackages.value) {
+            return emptyList()
+        }
+        return packages.value.filter { it.isSelected }
     }
 
     /**

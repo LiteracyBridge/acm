@@ -145,18 +145,20 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         }
 
         performOperation(
+            tbDeviceInfo = talkingBookDeviceInfo.value!!,
+            deviceSerialNumber = talkingBookDeviceInfo.value!!.serialNumber,
             user = user,
             deployment = deployment,
-            deviceSerialNumber = talkingBookDeviceInfo.value!!.serialNumber,
-            tbDeviceInfo = talkingBookDeviceInfo.value!!,
-            recipient = null
+            recipient = null,
+            packages = emptyList()
         )
     }
 
     suspend fun updateDevice(
         user: UserModel,
         deployment: Deployment,
-        recipient: Recipient
+        recipient: Recipient,
+        packages: List<ContentPackage>
     ) {
         val tb = talkingBookDevice.value
         if (tb == null) {
@@ -169,7 +171,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
             deployment = deployment,
             deviceSerialNumber = talkingBookDeviceInfo.value!!.serialNumber,
             tbDeviceInfo = talkingBookDeviceInfo.value!!,
-            recipient = recipient
+            recipient = recipient,
+            packages = packages
         )
     }
 
@@ -178,7 +181,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         deviceSerialNumber: String,
         user: UserModel,
         deployment: Deployment,
-        recipient: Recipient?
+        recipient: Recipient?,
+        packages: List<ContentPackage> = emptyList()
     ) {
         this.deployment = deployment
         isOperationInProgress.value = true
@@ -247,7 +251,8 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
                         collectionTimestamp, todaysDate,
                         collectedDataDirectory,
                         deploymentDirectory,
-                        recipient!!
+                        recipient!!,
+                        packages = packages
                     )
 
                     // Add in the update specific data, then go!
@@ -320,26 +325,33 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         todaysDate: String,
         collectedDataDirectory: File,
         deploymentDirectory: File,
-        recipient: Recipient
+        recipient: Recipient,
+        packages: List<ContentPackage> = emptyList()
     ): DeploymentInfo {
-        // TODO: skip this check if packages are selected by the user
-        // Get image for recipient; if not found, fall back to directory.
-        var imageName: String = getPackageForRecipient(recipient)
-        if (imageName.isEmpty()) {
-            // Find the image with the community's language and/or group (such as a/b test group).
-            imageName =
-                TBLoaderUtils.getPackageForCommunity(deploymentDirectory, recipient.communityname)
-        }
-
         // What firmware comes with this Deployment?
         val firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(deploymentDirectory)
+
+        val packageNames: MutableList<String> = packages.map { it.name }.toMutableList()
+        if (packages.isEmpty()) { // No packages was selected by the user
+            // Get image for recipient; if not found, fall back to directory.
+            var imageName: String = getPackageForRecipient(recipient)
+            if (imageName.isEmpty()) {
+                // Find the image with the community's language and/or group (such as a/b test group).
+                imageName =
+                    TBLoaderUtils.getPackageForCommunity(
+                        deploymentDirectory,
+                        recipient.communityname
+                    )
+            }
+            packageNames.add(imageName)
+        }
+
         val builder = DeploymentInfoBuilder()
-//            .withPackageNames() TODO: use this if package name is selected
+            .withPackageNames(packageNames)
             .withSerialNumber(deviceSerialNumber)
             .withNewSerialNumber(tbDeviceInfo.newSerialNumberNeeded())
             .withProjectName(deployment!!.program_id)
             .withDeploymentName(deploymentDirectory.name)
-            .withPackageName(imageName)
             .withUpdateDirectory(collectedDataDirectory.name)
             .withUpdateTimestamp(todaysDate) // TODO: this should be the "Deployment date", the first date the new content is deployed.
             .withFirmwareRevision(firmwareRevision)
@@ -351,7 +363,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         // TODO: set these values
         opLog.put<Any>("project", this.deployment!!.program_id)
             .put("deployment", deploymentDirectory.name)
-            .put("package", imageName)
+            .put("package", packageNames.joinToString(", "))
             .put<Any>("recipientid", recipient.recipientid)
             .put<Any>("community", "${this.app.programContent?.localPath}/communities")
             .put("sn", deviceSerialNumber)

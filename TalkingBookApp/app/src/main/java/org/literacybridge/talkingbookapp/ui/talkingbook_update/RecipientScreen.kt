@@ -39,11 +39,7 @@ fun RecipientScreen(
     viewModel: TalkingBookViewModel = viewModel(),
 ) {
     val recipients by recipientViewModel.recipients.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
-
-    var expanded by remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
 
     LaunchedEffect("load-recipients") {
         recipientViewModel.fromProgramSpec(viewModel.app.programSpec!!)

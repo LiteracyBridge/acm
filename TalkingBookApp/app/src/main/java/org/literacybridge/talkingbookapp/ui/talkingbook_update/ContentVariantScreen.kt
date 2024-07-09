@@ -1,10 +1,6 @@
 package org.literacybridge.talkingbookapp.ui.talkingbook_update
 
-import Screen
-import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,53 +15,49 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import org.literacybridge.core.spec.Recipient
 import org.literacybridge.talkingbookapp.ui.components.AppScaffold
 import org.literacybridge.talkingbookapp.util.Constants
 import org.literacybridge.talkingbookapp.view_models.RecipientViewModel
-import org.literacybridge.talkingbookapp.view_models.UserViewModel
 
 @Composable
 fun ContentVariantScreen(
     navController: NavController,
-    userViewModel: UserViewModel = viewModel(),
     recipientViewModel: RecipientViewModel = viewModel(),
 ) {
-//    val data by remember { mutableListOf("Amam", "Ghana") }
     val packages = recipientViewModel.packages.collectAsState()
-    val pubCsv = createPropertiesMap()
-    val recipient = Recipient(pubCsv)
-    val defaultRecipient = recipientViewModel.defaultRecipient
-    var checked by remember { mutableStateOf(true) }
+//    var checked by remember { mutableStateOf(true) }
 
     AppScaffold(title = "Available Content Packages", navController = navController, bottomBar = {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(Constants.SCREEN_MARGIN),
-            verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.CenterHorizontally
+//            verticalArrangement = Arrangement.SpaceEvenly,
+//            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    //navController.popBackStack()
-                    defaultRecipient.value = recipient
-                    navController.navigate(Screen.CONTENT_VERIFICATION.name)
+                    navController.popBackStack()
                 }
             ) {
-                Text("Continue")
+                Text("Save Selection")
+            }
+            OutlinedButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    recipientViewModel.shouldDiscardPackages.value = true
+                    navController.popBackStack()
+                }
+            ) {
+                Text("Discard")
             }
         }
 
@@ -131,8 +123,8 @@ fun ContentVariantScreen(
                     },
                     leadingContent = {
                         Checkbox(
-                            checked = checked,
-                            onCheckedChange = { checked = it }
+                            checked = packages.value.get(index).isSelected,
+                            onCheckedChange = { packages.value.get(index).isSelected = it }
                         )
                     }
                 )
@@ -141,17 +133,4 @@ fun ContentVariantScreen(
         }
 
     }
-}
-
-fun createPropertiesMap(): Map<String, String> {
-    val pubCsv = hashMapOf<String, String>()
-    pubCsv["recipientid"] = "12"
-    pubCsv["district"] = "Default District"
-    pubCsv["communityname"] = "WA"
-    pubCsv["groupname"] = "Default Group"
-    pubCsv["numtbs"] = "10"
-    pubCsv["agent"] = "Agent"
-    pubCsv["language"] = "en"
-    pubCsv["variant"] = "variant"
-    return pubCsv
 }
