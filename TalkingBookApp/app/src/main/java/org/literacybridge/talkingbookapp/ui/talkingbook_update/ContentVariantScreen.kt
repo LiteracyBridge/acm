@@ -44,8 +44,6 @@ fun ContentVariantScreen(
 ) {
 //    val data by remember { mutableListOf("Amam", "Ghana") }
     val packages = recipientViewModel.packages.collectAsState()
-    val languages = listOf("Ama", "Ghana", "We", "Lindsay")
-    var optionSelected = ""
     val pubCsv = createPropertiesMap()
     val recipient = Recipient(pubCsv)
     val defaultRecipient = recipientViewModel.defaultRecipient
@@ -63,12 +61,11 @@ fun ContentVariantScreen(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     //navController.popBackStack()
-                    Log.i("option selected", optionSelected)
                     defaultRecipient.value = recipient
                     navController.navigate(Screen.CONTENT_VERIFICATION.name)
                 }
             ) {
-                Text("Select")
+                Text("Continue")
             }
         }
 
@@ -141,40 +138,6 @@ fun ContentVariantScreen(
                 )
                 HorizontalDivider()
             }
-
-//            val (selectedOption, onOptionSelected) = remember { mutableStateOf(languages!![1]) }
-//
-//            Column(
-//                modifier = Modifier.fillMaxSize(),
-//                verticalArrangement = Arrangement.Center,
-//            ) {
-//                languages?.forEach { lang ->
-//                    Row(
-//                        Modifier
-//                            .fillMaxWidth()
-//                            .height(56.dp)
-//                            .selectable(
-//                                selected = (lang == selectedOption),
-//                                onClick = {
-//                                    onOptionSelected(lang)
-//                                }
-//                            )
-//                            .padding(horizontal = 16.dp),
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//                        RadioButton(
-//                            selected = (lang == selectedOption),
-//                            onClick = { onOptionSelected(lang) },
-//                        )
-//                        Text(
-//                            text = lang,
-//                            style = typography.bodyMedium.merge(),
-//                            modifier = Modifier.padding(start = 16.dp)
-//                        )
-//                        optionSelected = selectedOption
-//                    }
-//                }
-//            }
         }
 
     }
