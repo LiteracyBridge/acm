@@ -4,6 +4,7 @@ import Screen
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerState
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -36,29 +38,30 @@ fun NavigationDrawer(
                 modifier = Modifier.fillMaxWidth(0.8f),
             ) {
                 Text("Account Info Here!", modifier = Modifier.padding(16.dp))
-                Divider()
+                HorizontalDivider()
+                HorizontalDivider()
                 NavigationDrawerItem(
                     label = { Text(text = "Home") },
                     icon = {
                         Icon(
                             Icons.Outlined.Home,
-                            contentDescription = "Manage program audio content"
+                            contentDescription = "Go to home screen"
                         )
                     },
                     selected = false,
                     onClick = { navController.navigate(Screen.HOME.name) }
                 )
-                NavigationDrawerItem(
-                    label = { Text(text = "Manage Program Content") },
-                    icon = {
-                        Icon(
-                            Icons.Outlined.List,
-                            contentDescription = "Manage program audio content"
-                        )
-                    },
-                    selected = false,
-                    onClick = { /*TODO*/ }
-                )
+//                NavigationDrawerItem(
+//                    label = { Text(text = "Manage Program Content") },
+//                    icon = {
+//                        Icon(
+//                            Icons.Outlined.List,
+//                            contentDescription = "Manage program audio content"
+//                        )
+//                    },
+//                    selected = false,
+//                    onClick = { /*TODO*/ }
+//                )
                 NavigationDrawerItem(
                     label = { Text(text = "Change Program") },
                     icon = {
@@ -74,39 +77,39 @@ fun NavigationDrawer(
                     label = { Text(text = "Upload Status") },
                     icon = {
                         Icon(
-                            Icons.Outlined.Send,
+                            Icons.AutoMirrored.Outlined.Send,
                             contentDescription = "View progress of statistics and contents upload or download"
                         )
                     },
                     selected = false,
                     onClick = { navController.navigate(Screen.UPLOAD_STATUS.name) }
                 )
-                Divider()
-                NavigationDrawerItem(
-                    label = { Text(text = "Settings") },
-                    icon = {
-                        Icon(
-                            Icons.Outlined.Settings,
-                            contentDescription = "Explore advance features of the Talking Book Loader"
-                        )
-                    },
-                    selected = false,
-                    onClick = { /*TODO*/ }
-                )
-                NavigationDrawerItem(
-                    label = {
-                        Text(text = "About")
-                    },
-                    icon = {
-                        Icon(
-                            Icons.Outlined.Info,
-                            contentDescription = "More information about the Amplio Talking Book loader app"
-                        )
-                    },
-                    selected = false,
-                    onClick = { /*TODO*/ }
-                )
-                Divider()
+                HorizontalDivider()
+//                NavigationDrawerItem(
+//                    label = { Text(text = "Settings") },
+//                    icon = {
+//                        Icon(
+//                            Icons.Outlined.Settings,
+//                            contentDescription = "Explore advance features of the Talking Book Loader"
+//                        )
+//                    },
+//                    selected = false,
+//                    onClick = { /*TODO*/ }
+//                )
+//                NavigationDrawerItem(
+//                    label = {
+//                        Text(text = "About")
+//                    },
+//                    icon = {
+//                        Icon(
+//                            Icons.Outlined.Info,
+//                            contentDescription = "More information about the Amplio Talking Book loader app"
+//                        )
+//                    },
+//                    selected = false,
+//                    onClick = { /*TODO*/ }
+//                )
+//                HorizontalDivider()
                 NavigationDrawerItem(
                     label = { Text(text = "Logout") },
                     icon = {
