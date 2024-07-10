@@ -48,6 +48,7 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import org.literacybridge.core.tbdevice.TbDeviceInfo
 import org.literacybridge.androidtbloader.ui.components.NavigationDrawer
+import org.literacybridge.androidtbloader.ui.home.UpdateFirmware
 import org.literacybridge.androidtbloader.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.androidtbloader.view_models.TalkingBookViewModel
 import org.literacybridge.androidtbloader.view_models.UserViewModel
@@ -191,53 +192,6 @@ fun HomeScreen(
     }
 }
 
-@Composable
-fun UpdateFirmware(
-    status: TalkingBookViewModel.OperationResult,
-    onDismissRequest: () -> Unit,
-) {
-    AlertDialog(
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false
-        ),
-        title = { Text(text = "Updating Firmware") },
-        text = {
-            Column(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
-            ) {
-                if (status != TalkingBookViewModel.OperationResult.Success) {
-                    LinearProgressIndicator()
-                    Text(
-                        "Update in progress, please wait....",
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                } else {
-                    LinearProgressIndicator(
-                        progress = { 1f },
-                    )
-                    Text(
-                        "Firmware updated successfully!",
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
-            }
-        },
-        onDismissRequest = {},
-        confirmButton = {},
-        dismissButton = {
-            if (status == TalkingBookViewModel.OperationResult.Success || status == TalkingBookViewModel.OperationResult.Failure) {
-                TextButton(onClick = {
-                    onDismissRequest()
-                }) {
-                    Text("Okay")
-                }
-            }
-        }
-    )
-}
 
 @Composable
 fun BuildDeviceInfo(device: TbDeviceInfo) {
