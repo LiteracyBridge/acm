@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -7,6 +10,23 @@ plugins {
 }
 
 android {
+    // Load versionCode from version.properties file.
+    val versionProps = Properties()
+    val versionPropsFile = rootProject.file("version.properties")
+    if (versionPropsFile.exists()) {
+        versionProps.load(FileInputStream(versionPropsFile))
+    }
+    var code = (versionProps["versionCode"]).toString().toInt()
+
+    // If this is a release build (ie, will be signed for the play store), increment versionCode, and save.
+    gradle.startParameter.taskNames.forEach {
+        if (it.contains("assembleRelease")) {
+            code += 1
+            versionProps["versionCode"] = code.toString()
+            versionProps.store(versionPropsFile.outputStream(), null)
+        }
+    }
+
     namespace = "org.literacybridge.androidtbloader"
     compileSdk = 34
 
@@ -18,8 +38,8 @@ android {
         applicationId = "org.literacybridge.androidtbloader"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = code
+        versionName = "2.0.0 (${code})"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
