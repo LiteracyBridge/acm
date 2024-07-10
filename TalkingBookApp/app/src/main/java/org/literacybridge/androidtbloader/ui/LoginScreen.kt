@@ -19,6 +19,8 @@ import androidx.navigation.NavController
 import com.amplifyframework.auth.cognito.AWSCognitoAuthSession
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.ui.authenticator.ui.Authenticator
+import com.amplifyframework.ui.authenticator.ui.SignIn
+import com.amplifyframework.ui.authenticator.ui.SignInFooter
 import org.literacybridge.androidtbloader.R
 import org.literacybridge.androidtbloader.view_models.UserViewModel
 
@@ -44,11 +46,9 @@ fun LoginScreen(
                 )
             }
         },
-//        footerContent = {
-//        Text(
-//            "© All Rights Reserved", modifier = Modifier.align(Alignment.CenterHorizontally)
-//        )
-//    }
+        signInContent = { state ->
+            SignIn(state, footerContent = { SignInFooter(state = state, hideSignUp = true) })
+        }
     )
     {
         // TODO: fix rare bug in amplify auth where the user is not able to login after not using the app for
