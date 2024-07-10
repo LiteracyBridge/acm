@@ -48,6 +48,7 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import org.literacybridge.core.tbdevice.TbDeviceInfo
 import org.literacybridge.androidtbloader.ui.components.NavigationDrawer
+import org.literacybridge.androidtbloader.ui.home.StoragePermissionDialog
 import org.literacybridge.androidtbloader.ui.home.UpdateFirmware
 import org.literacybridge.androidtbloader.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.androidtbloader.view_models.TalkingBookViewModel
@@ -128,6 +129,9 @@ fun HomeScreen(
                 }
             }
         ) { contentPadding ->
+            // Mass storage permission check
+            StoragePermissionDialog()
+
             Column(
                 Modifier
                     .fillMaxSize()

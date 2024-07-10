@@ -93,20 +93,6 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
             Log.i(LOG_TAG, "Amplify plugin already configured")
         }
 
-        // Manage external storage is available in Android 11+, request user to enable it
-        // if we don't have it yet
-        if (SDK_INT >= Build.VERSION_CODES.R) {
-            // TODO: Improve the UX for this, maybe show a dialog explaining why we need it
-            if (!Environment.isExternalStorageManager()) {
-                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                val uri = Uri.fromParts("package", packageName, null)
-                intent.setData(uri)
-                startActivity(intent)
-            }
-        } else { // Below Android 11, we have to request for write external storage permission
-            val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            requestPermissions(permissions, PERMISSION_WRITE_STORAGE_CODE)
-        }
 
         // Setup dfu
 //        dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
@@ -259,7 +245,7 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 
         val deviceInfo = usb.getDeviceInfo(usb.usbDevice)
 
-        Log.d(TAG, "$deviceInfo")
+        Log.d(TAG, deviceInfo)
 //        status.setText(deviceInfo)
 //        dfu.setUsb(usb)
     }
@@ -269,58 +255,6 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
 
         talkingBookViewModel.disconnected()
         usb.release()
-    }
-
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>, grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        when (requestCode) {
-            PERMISSION_WRITE_STORAGE_CODE -> {
-                // If request is cancelled, the result arrays are empty.
-                if ((grantResults.isNotEmpty() &&
-                            grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                ) {
-                    // Permission is granted. Continue the action or workflow
-                    // in your app.
-                    Log.d(LOG_TAG, "storage permission granted")
-                } else {
-                    // Explain to the user that the feature is unavailable because
-                    // the feature requires a permission that the user has denied.
-                    // At the same time, respect the user's decision. Don't link to
-                    // system settings in an effort to convince the user to change
-                    // their decision.
-                }
-                return
-            }
-
-            PERMISSION_READ_AUDIO_CODE -> {
-                // If request is cancelled, the result arrays are empty.
-                if ((grantResults.isNotEmpty() &&
-                            grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                ) {
-                    // Permission is granted. Continue the action or workflow
-                    // in your app.
-                    Log.d(LOG_TAG, "storage permission granted")
-                } else {
-                    // Explain to the user that the feature is unavailable because
-                    // the feature requires a permission that the user has denied.
-                    // At the same time, respect the user's decision. Don't link to
-                    // system settings in an effort to convince the user to change
-                    // their decision.
-                }
-                return
-            }
-
-            // Add other 'when' lines to check for other
-            // permissions this app might request.
-            else -> {
-                // Ignore all other requests.
-            }
-        }
     }
 
     /**
