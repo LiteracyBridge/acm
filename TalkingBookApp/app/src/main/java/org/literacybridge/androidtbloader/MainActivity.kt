@@ -1,20 +1,14 @@
 package org.literacybridge.androidtbloader
 
 import AppNavHost
-import android.Manifest
-import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.hardware.usb.UsbManager
-import android.net.Uri
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
-import android.os.Environment
 import android.os.FileObserver
 import android.os.Handler
 import android.os.Message
-import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -51,19 +45,12 @@ const val TAG = "TalkingBook";
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListener {
-
-    private val PERMISSION_WRITE_STORAGE_CODE = 12
-    private val PERMISSION_READ_AUDIO_CODE = 13
-
     private lateinit var usb: Usb
-
-    //    private lateinit var dfu: Dfu
     private val talkingBookViewModel: TalkingBookViewModel by viewModels()
     private lateinit var appUpdateManager: AppUpdateManager
 
     private val activityResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-            // handle callback
             if (result.resultCode != RESULT_OK) {
                 Toast.makeText(
                     this,
@@ -92,11 +79,6 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         } catch (e: Amplify.AlreadyConfiguredException) {
             Log.i(LOG_TAG, "Amplify plugin already configured")
         }
-
-
-        // Setup dfu
-//        dfu = Dfu(Usb.USB_VENDOR_ID, Usb.USB_PRODUCT_ID)
-//        dfu.setListener(this)
 
         setContent {
             val navController = rememberNavController().withSentryObservableEffect(
@@ -132,70 +114,13 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         // Initialize AppUpdateManager
         appUpdateManager = AppUpdateManagerFactory.create(this)
         checkForAppUpdate()
-
-//        todo: add usb manager code here
-        // Get the USB manager service
-        // Get the USB manager service
-//        val usbManager = (getSystemService(USB_SERVICE) as UsbManager)!!
-//
-//        // Get a list of connected USB devices
-//        for (usbDevice in usbManager!!.deviceList.values) {
-//            // Check if the device matches the STM32Fx vendor and product IDs
-//            if ( /*usbDevice.getVendorId() == 1155 &&*/usbDevice.productId == 57105) {
-//                // Process the connected STM32 device
-//                val deviceId = usbDevice.deviceId
-//                val deviceName = usbDevice.deviceName
-//                //                String deviceManufacturer = usbDevice.getManufacturerName();
-////                String deviceProduct = usbDevice.getProductName();
-//
-//                // Perform actions based on the connected STM32 device
-//                // ...
-//
-//                // Log or display information about the connected STM32 device
-//                val deviceInfo = """
-//        Device ID: $deviceId
-//        Device Name: $deviceName
-//        """.trimIndent()
-//                //                        "\nManufacturer: " + deviceManufacturer +
-////                        "\nProduct: " + deviceProduct;
-//
-//                // Log the STM32 device information
-//                // You can also display this information in your app as needed
-//                Log.d(LOG_TAG, "$deviceInfo")
-//
-//                usb = Usb(this)
-//                usb.setUsbManager(usbManager)
-//                usb.setOnUsbChangeListener(this)
-//
-//                // Handle two types of intents. Device attachment and permission
-//                registerReceiver(usb.getmUsbReceiver(), IntentFilter(Usb.ACTION_USB_PERMISSION))
-//                registerReceiver(
-//                    usb.getmUsbReceiver(),
-//                    IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED)
-//                )
-//                registerReceiver(
-//                    usb.getmUsbReceiver(),
-//                    IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED)
-//                )
-//                usb.setDevice(usbDevice)
-//                dfu.setUsb(usb)
-//                //                device = usbDevice;
-//                Log.d("Device Finder", "device found$deviceInfo")
-//                break
-//            }
-//        }
     }
 
-    // Checks that the update is not stalled during 'onResume()'.
-// However, you should execute this check at all entry points into the app.
     override fun onResume() {
         super.onResume()
-
         resumeAppUpdate()
     }
 
-
-    //    @RequiresApi(Build.VERSION_CODES.O)
     override fun onStart() {
         super.onStart()
 
@@ -223,11 +148,9 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
     override fun onStop() {
         super.onStop()
 
-        /* USB */
-//        dfu.setUsb(null)
         talkingBookViewModel.disconnected()
-
         usb.release()
+
         try {
             unregisterReceiver(usb.getmUsbReceiver())
         } catch (e: IllegalArgumentException) {
@@ -244,15 +167,10 @@ class MainActivity : ComponentActivity(), Handler.Callback, Usb.OnUsbChangeListe
         talkingBookViewModel.setUsb(usb)
 
         val deviceInfo = usb.getDeviceInfo(usb.usbDevice)
-
         Log.d(TAG, deviceInfo)
-//        status.setText(deviceInfo)
-//        dfu.setUsb(usb)
     }
 
     override fun onUsbDisconnected() {
-//        dfu.setUsb(null)
-
         talkingBookViewModel.disconnected()
         usb.release()
     }
