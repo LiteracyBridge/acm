@@ -47,7 +47,6 @@ fun StoragePermissionDialog() {
 
     val startForResult =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-            Log.d(LOG_TAG, "$result\n${result.toString()}")
             if (result.resultCode == Activity.RESULT_CANCELED) {
                 // The all files access activity doesn't return any data (could be that the user
                 // has to press the back button) after enabling the permission

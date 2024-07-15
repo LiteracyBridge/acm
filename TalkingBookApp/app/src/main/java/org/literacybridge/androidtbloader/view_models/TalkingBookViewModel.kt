@@ -75,9 +75,10 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
     val operationStepDetail = mutableStateOf("")
 
     // Device info
-    val talkingBookDeviceInfo = MutableStateFlow<TbDeviceInfo?>(null)
     private val talkingBookDevice = mutableStateOf<Usb.TalkingBook?>(null)
+    val talkingBookDeviceInfo = MutableStateFlow<TbDeviceInfo?>(null)
     val isMassStorageReady = mutableStateOf(false)
+    val isTestingDeployment = MutableStateFlow(false)
 
     val usbDevice = MutableStateFlow<UsbDevice?>(null)
     val usbState = MutableStateFlow<Usb?>(null)
@@ -357,7 +358,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
             .withFirmwareRevision(firmwareRevision)
             .withCommunity(recipient.communityname)
             .withRecipientid(recipient.recipientid)
-//            .asTestDeployment(mTestingDeployment) // TODO: set these values
+            .asTestDeployment(isTestingDeployment.value)
 
         val newDeploymentInfo = builder.build()
         // TODO: set these values

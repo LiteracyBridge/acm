@@ -3,17 +3,21 @@ package org.literacybridge.androidtbloader.ui.talkingbook_update
 import Screen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -33,9 +37,11 @@ import org.literacybridge.androidtbloader.view_models.TalkingBookViewModel
 @Composable
 fun ContentVerificationScreen(
     navController: NavController,
-    viewModel: TalkingBookViewModel = viewModel(),
+    talkingBookViewModel: TalkingBookViewModel = viewModel(),
     recipientViewModel: RecipientViewModel = viewModel()
 ) {
+    val isTestingDeployment by talkingBookViewModel.isTestingDeployment.collectAsState()
+
     AppScaffold(title = "Verify Deployment", navController = navController, bottomBar = {
         Column(
             modifier = Modifier
@@ -63,7 +69,6 @@ fun ContentVerificationScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.Start
         ) {
-
             Text(
                 text = "Current Recipient",
                 modifier = Modifier
@@ -146,24 +151,24 @@ fun ContentVerificationScreen(
                     })
             }
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.Bottom,
-                horizontalAlignment = Alignment.CenterHorizontally
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 15.dp)
             ) {
-                Text(
-                    text = "",
-                    modifier = Modifier.padding(50.dp),
-                    textAlign = TextAlign.Left,
-                    style = TextStyle(fontWeight = FontWeight.Bold)
+                Checkbox(
+                    checked = isTestingDeployment,
+                    onCheckedChange = { talkingBookViewModel.isTestingDeployment.value = it }
                 )
+                Text("Deploy for testing")
+            }
 
-                TextButton(onClick = {
+            TextButton(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                onClick = {
                     recipientViewModel.loadPackagesInDeployment()
                     navController.navigate(Screen.CONTENT_VARIANT.name)
                 }) {
-                    Text(text = "Select Content Package")
-                }
+                Text(text = "Select Content Package")
             }
         }
     }
