@@ -1,65 +1,57 @@
 package org.literacybridge.androidtbloader.util
 
-import android.util.Log
-import org.literacybridge.core.tbloader.TBLoaderConstants
-import org.literacybridge.androidtbloader.App
+import android.os.Environment
 import org.literacybridge.androidtbloader.database.ProgramContentEntity
-import org.literacybridge.androidtbloader.util.Constants.Companion.LOG_TAG
+import org.literacybridge.core.tbloader.TBLoaderConstants
 import java.io.File
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 
 
 /**
- * The Deployments are stored locallin in a directory structure like this:
- * {externalFilesDirectory}/localrepository/{project}/content/{Deployment name}/basic/{image}.img
- * {externalFilesDirectory}/localrepository/{project}/content/{Deployment name}/communities/{... community names ...}/...
- * {externalFilesDirectory}/localrepository/{project}/content/{Deployment name}/images/{... image names ...}/...
+ * The Deployments are stored locally in in a directory structure like this:
+ *
+ * {externalStorageDirectory}/TalkingBookLoader/{project}/content/{Deployment name}/basic/{image}.img
+ * {externalStorageDirectory}/TalkingBookLoader/{project}/content/{Deployment name}/communities/{... community names ...}/...
+ * {externalStorageDirectory}/TalkingBookLoader/{project}/content/{Deployment name}/images/{... image names ...}/...
  */
 object PathsProvider {
-    private const val TAG = "TBL!:" + "PathsProvider"
-//    private var sTbLoaderAppContext: App = App()
-
-//    fun init(applicationContext: App) {
-//        sTbLoaderAppContext = applicationContext
-//    }
-
-    val localContentDirectory: File?
+    private val contentDirectory: File
         /**
          * Gets a File object that represents a directory containing all projects with their downloaded
-         * Deployments.
+         * deployments on the device external storage.
+         * Usually /storage/emulated/0/TalkingBookLoader
          *
          * @return the directory's File.
          */
-        get() = App.context.getExternalFilesDir("")
+        get() = Environment.getExternalStorageDirectory().resolve("TalkingBookLoader")
 
     /**
-     * Gets the {externalFilesDirectory}/{project} directory for a specific project.
+     * Gets the {externalStorageDirectory}/TalkingBookLoader/{project} directory for a specific project.
      *
      * @param project The name of the project.
      * @return the project's directory's File.
      */
     fun getProjectDirectory(project: String): File {
-        val dir = File(App.context.getExternalFilesDir(project), "")
+        if(!contentDirectory.exists()){
+            contentDirectory.mkdirs()
+        }
 
+        val dir = File(contentDirectory, project)
         if (!dir.exists()) {
             dir.mkdirs()
         }
         return dir
     }
 
-    val locationsCacheDirectory: File?
+    val locationsCacheDirectory: File
         /**
          * Gets a File object that represents a directory containing cached location information.
          *
          * @return the directory's File.
          */
-        get() = App.context.getExternalFilesDir("locations")
+        get() = contentDirectory.resolve("locations")
 
     /**
-     * Gets the {externalFilesDirectory}/localrepository/{project}/content/{Deployment name} directory
+     * Gets the {externalFilesDirectory}/{project}/content/{Deployment name} directory
      * for a specific project. There should be only one {Deployment name}, and this returns null if
      * there is not exactly one.
      *
@@ -88,7 +80,7 @@ object PathsProvider {
          *
          * @return the temporary directory's File.
          */
-        get() = File(App.context.getExternalFilesDir("temp"), "")
+        get() = contentDirectory.resolve("temp")
 
     val uploadDirectory: File?
         /**
@@ -97,16 +89,17 @@ object PathsProvider {
          *
          * @return the staging directory's File.
          */
-        get() = App.context.getExternalFilesDir("upload")
+        get() = contentDirectory.resolve("upload")
 
-    val logDirectory: File?
+    val logDirectory: File
         /**
          * Gets a File object that represents a directory into which log files should be placed. The
          * expectation is that they will eventually be moved to the "upload" directory.
          *
          * @return the staging directory's File.
          */
-        get() = App.context.getExternalFilesDir("log")
+        get() = contentDirectory.resolve("log")
+
     val srnDirectory: File?
         /**
          * Gets a File object that represents a directory into which srn files should be placed. The
@@ -114,15 +107,15 @@ object PathsProvider {
          *
          * @return the staging directory's File.
          */
-        get() = App.context.getExternalFilesDir("srn")
+        get() = contentDirectory.resolve("srn")
 
-    fun moveDirectory(src: Path, dest: Path): Boolean {
-        return try {
-            Files.move(src, dest, StandardCopyOption.REPLACE_EXISTING)
-            true
-        } catch (e: IOException) {
-            Log.d("$LOG_TAG funMoveDirectory:", e.stackTraceToString())
-            false
-        }
-    }
+//    fun moveDirectory(src: Path, dest: Path): Boolean {
+//        return try {
+//            Files.move(src, dest, StandardCopyOption.REPLACE_EXISTING)
+//            true
+//        } catch (e: IOException) {
+//            Log.d("$LOG_TAG funMoveDirectory:", e.stackTraceToString())
+//            false
+//        }
+//    }
 }

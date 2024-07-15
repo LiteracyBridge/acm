@@ -6,6 +6,7 @@ import android.hardware.usb.UsbManager
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
+import android.os.Environment
 import android.os.FileObserver
 import android.os.Handler
 import android.os.Message

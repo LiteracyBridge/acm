@@ -67,27 +67,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
     suspend fun syncProgramContent(
         navController: NavController
     ) {
-        Log.d(LOG_TAG, "Started download")
 
-
-//        val contentInfo = ContentInfo(model.program.value!!.program_id)
-//
-//        var manager = ContentManager(App())
-//        manager.startDownload(context, contentInfo, mTransferListener)
-
-//        val request = ListObjectsV2Request {
-//            this.bucket = CONTENT_BUCKET_NAME
-//            this.prefix = "${program.program_id}/TB-Loaders/published/${deployment.deploymentname}"
-//        }
-
-//        1. get latest revision
-//        1a. compare to latest db record, and download if neccessary
-//        2. download and unzip
-//        3. update db with revision & deployment stats
-//        4. navigate to home screen
-
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
         val basePath = getBasePath(program.program_id)
         val options = StoragePagedListOptions.builder()
             .setPageSize(1000)
@@ -129,8 +109,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                         "$basePath/$latestDeploymentRevision/content-$latestDeploymentRevision.zip"
 
                     downloadContent(
-                        s3key = downloadPath,
-                        navController = navController
+                        s3key = downloadPath
                     )
                 }
             },
@@ -193,7 +172,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         return null
     }
 
-    private suspend fun downloadContent(s3key: String, navController: NavController) {
+    private suspend fun downloadContent(s3key: String) {
         _syncState.value = SyncState.DOWNLOADING
         displayText.value =
             "${this.latestDeploymentRevision} found, downloading content package..."

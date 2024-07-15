@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import org.literacybridge.androidtbloader.ui.components.AppScaffold
+import org.literacybridge.androidtbloader.ui.home.StoragePermissionDialog
 import org.literacybridge.androidtbloader.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.androidtbloader.view_models.ContentDownloaderViewModel
 import org.literacybridge.androidtbloader.view_models.ContentDownloaderViewModel.SyncState
@@ -47,6 +48,9 @@ fun ContentDownloaderScreen(
         title = "Downloading Program",
         navController = navController
     ) { innerPadding ->
+        // Mass storage permission check
+        StoragePermissionDialog()
+
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -57,9 +61,10 @@ fun ContentDownloaderScreen(
         ) {
             if (syncState == SyncState.DOWNLOADING) {
                 CircularProgressIndicator(
+                    progress = {
+                        viewModel.downloadProgress.floatValue
+                    },
                     modifier = Modifier.width(70.dp),
-                    progress = viewModel.downloadProgress.floatValue
-
                 )
             } else {
                 CircularProgressIndicator(modifier = Modifier.width(70.dp))

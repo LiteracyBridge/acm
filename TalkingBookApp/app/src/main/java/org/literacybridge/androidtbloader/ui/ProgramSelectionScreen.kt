@@ -31,6 +31,7 @@ import androidx.navigation.NavController
 import org.literacybridge.androidtbloader.models.Deployment
 import org.literacybridge.androidtbloader.models.Program
 import org.literacybridge.androidtbloader.ui.components.AppScaffold
+import org.literacybridge.androidtbloader.ui.home.StoragePermissionDialog
 import org.literacybridge.androidtbloader.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.androidtbloader.view_models.UserViewModel
 
@@ -43,6 +44,9 @@ fun ProgramSelectionScreen(
     val selectedProgram = remember { mutableStateOf<Program?>(null) }
 
     AppScaffold(title = "Select Program", navController = navController) { innerPadding ->
+        // Mass storage permission check
+        StoragePermissionDialog()
+
         if (user.programs.isEmpty()) {
             Column(
                 modifier = Modifier
