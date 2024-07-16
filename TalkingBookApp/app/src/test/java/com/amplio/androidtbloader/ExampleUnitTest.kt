@@ -1,4 +1,4 @@
-package org.literacybridge.androidtbloader
+package org.literacybridge.tbloaderandroid
 
 import org.junit.Test
 

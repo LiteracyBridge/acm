@@ -1,4 +1,4 @@
-package org.literacybridge.androidtbloader
+package org.literacybridge.tbloaderandroid
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

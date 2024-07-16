@@ -27,7 +27,7 @@ android {
         }
     }
 
-    namespace = "org.literacybridge.androidtbloader"
+    namespace = "org.literacybridge.tbloaderandroid"
     compileSdk = 34
 
     buildFeatures {
@@ -35,7 +35,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "org.literacybridge.androidtbloader"
+        applicationId = "org.literacybridge.tbloaderandroid"
         minSdk = 24
         targetSdk = 34
         versionCode = code
