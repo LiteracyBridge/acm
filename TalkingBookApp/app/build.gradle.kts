@@ -30,6 +30,10 @@ android {
     namespace = "org.literacybridge.tbloaderandroid"
     compileSdk = 34
 
+    hilt {
+        enableAggregatingTask = true
+    }
+
     buildFeatures {
         buildConfig = true
     }
@@ -39,7 +43,7 @@ android {
         minSdk = 24
         targetSdk = 34
         versionCode = code
-        versionName = "2.0.0 (${code})"
+        versionName = "2.0.0_${code}"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -53,12 +57,19 @@ android {
             "API_URL",
             "\"https://nhr12r5plj.execute-api.us-west-2.amazonaws.com/dev/\""
         )
+
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
     }
 
     buildTypes {
         release {
             isDebuggable = false
             isMinifyEnabled = true
+            isShrinkResources = true
+            ndk.debugSymbolLevel = "FULL"
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
