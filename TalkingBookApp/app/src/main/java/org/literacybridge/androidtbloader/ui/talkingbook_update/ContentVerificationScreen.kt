@@ -16,6 +16,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import org.literacybridge.androidtbloader.BuildConfig
 import org.literacybridge.androidtbloader.ui.components.AppScaffold
 import org.literacybridge.androidtbloader.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.androidtbloader.view_models.RecipientViewModel
@@ -41,6 +43,13 @@ fun ContentVerificationScreen(
     recipientViewModel: RecipientViewModel = viewModel()
 ) {
     val isTestingDeployment by talkingBookViewModel.isTestingDeployment.collectAsState()
+
+    // In development mode, deployment must be in testing mode, unless changed by the user
+    LaunchedEffect("set-testing-deployment") {
+        if (BuildConfig.DEBUG) {
+            talkingBookViewModel.isTestingDeployment.value = true
+        }
+    }
 
     AppScaffold(title = "Verify Deployment", navController = navController, bottomBar = {
         Column(

@@ -20,7 +20,7 @@ android {
 
     // If this is a release build (ie, will be signed for the play store), increment versionCode, and save.
     gradle.startParameter.taskNames.forEach {
-        if (it.contains("assembleRelease")) {
+        if (it.contains("assembleRelease") or it.contains("bundleRelease")) {
             code += 1
             versionProps["versionCode"] = code.toString()
             versionProps.store(versionPropsFile.outputStream(), null)
@@ -57,6 +57,7 @@ android {
 
     buildTypes {
         release {
+            isDebuggable = false
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

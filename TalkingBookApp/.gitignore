@@ -12,7 +12,10 @@
 /captures
 .externalNativeBuild
 .cxx
+*.jks
+*.aab
 local.properties
+app/sentry.properties
 
 #amplify-do-not-edit-begin
 amplify/\#current-cloud-backend
