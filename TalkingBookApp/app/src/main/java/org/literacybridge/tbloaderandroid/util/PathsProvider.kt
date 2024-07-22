@@ -3,26 +3,27 @@ package org.literacybridge.tbloaderandroid.util
 import android.os.Environment
 import org.literacybridge.tbloaderandroid.database.ProgramContentEntity
 import org.literacybridge.core.tbloader.TBLoaderConstants
+import org.literacybridge.tbloaderandroid.App
 import java.io.File
 
 
 /**
  * The Deployments are stored locally in in a directory structure like this:
  *
- * {externalStorageDirectory}/TalkingBookLoader/{project}/content/{Deployment name}/basic/{image}.img
- * {externalStorageDirectory}/TalkingBookLoader/{project}/content/{Deployment name}/communities/{... community names ...}/...
- * {externalStorageDirectory}/TalkingBookLoader/{project}/content/{Deployment name}/images/{... image names ...}/...
+ * {externalFilesDirectory}/{project}/content/{Deployment name}/basic/{image}.img
+ * {externalFilesDirectory}/{project}/content/{Deployment name}/communities/{... community names ...}/...
+ * {externalFilesDirectory}/{project}/content/{Deployment name}/images/{... image names ...}/...
  */
 object PathsProvider {
     private val contentDirectory: File
         /**
          * Gets a File object that represents a directory containing all projects with their downloaded
-         * deployments on the device external storage.
-         * Usually /storage/emulated/0/TalkingBookLoader
+         * deployments on the device storage.
+         * Usually /storage/emulated/0/Android/data/org.literacybridge.tbloaderandroid
          *
          * @return the directory's File.
          */
-        get() = Environment.getExternalStorageDirectory().resolve("TalkingBookLoader")
+        get() = App.context.getExternalFilesDir("")!!
 
     /**
      * Gets the {externalStorageDirectory}/TalkingBookLoader/{project} directory for a specific project.
@@ -82,7 +83,7 @@ object PathsProvider {
          */
         get() = contentDirectory.resolve("temp")
 
-    val uploadDirectory: File?
+    val uploadDirectory: File
         /**
          * Gets a File object that represents a directory into which files intended to be uploaded
          * to a LB server should be placed. Think of this as a staging directory to the cloud.
@@ -100,7 +101,7 @@ object PathsProvider {
          */
         get() = contentDirectory.resolve("log")
 
-    val srnDirectory: File?
+    val srnDirectory: File
         /**
          * Gets a File object that represents a directory into which srn files should be placed. The
          * expectation is that they will eventually be moved to the "upload" directory.

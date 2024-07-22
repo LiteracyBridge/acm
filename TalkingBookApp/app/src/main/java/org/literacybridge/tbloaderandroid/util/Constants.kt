@@ -26,7 +26,7 @@ class Constants {
          * Amplify storage supports only one bucket, as a result, collected data cannot be uploaded to
          * 'acm-stats' bucket because 'amplio-program-content' is configured as the default bucket.
          */
-        const val COLLECTED_DATA_DIR_NAME = "temporary-android-collected-data"
+        const val COLLECTED_DATA_DIR_NAME = "staging-android-collected-data"
 
         // Time to sit twiddling thumbs on Android, because we can't flush files on USB storage.
         const val AndroidPostUpdateSleepTime = 5000 // millis
