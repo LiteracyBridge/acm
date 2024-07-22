@@ -44,6 +44,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
         SUCCESS,
         UNZIPPING
     }
+
     // Matches deploymentName-suffix.current or .rev. Like TEST-19-2-ab.rev
     // group(0) is entire string, like 'TEST-19-2-ab.rev'
     // group(1) is deployment + revision, like 'TEST-19-2-ab'
@@ -62,7 +63,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
 
     lateinit var program: Program
     lateinit var deployment: Deployment
-    var latestDeploymentRevision: String? = null
+    private var latestDeploymentRevision: String? = null
 
     suspend fun syncProgramContent(
         navController: NavController
