@@ -30,7 +30,7 @@ fun NavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet(
-                modifier = Modifier.fillMaxWidth(0.8f),
+//                modifier = Modifier.fillMaxWidth(0.8f),
             ) {
                 Text("Account Info Here!", modifier = Modifier.padding(16.dp))
                 HorizontalDivider()
