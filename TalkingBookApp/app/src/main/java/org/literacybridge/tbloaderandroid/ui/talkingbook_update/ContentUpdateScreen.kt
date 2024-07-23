@@ -1,24 +1,17 @@
 package org.literacybridge.tbloaderandroid.ui.talkingbook_update
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import org.literacybridge.tbloaderandroid.ui.components.AppScaffold
+import org.literacybridge.tbloaderandroid.ui.components.OperationCompleted
 import org.literacybridge.tbloaderandroid.ui.components.TalkingBookOperationProgress
-import org.literacybridge.tbloaderandroid.ui.theme.Green40
 import org.literacybridge.tbloaderandroid.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.tbloaderandroid.view_models.RecipientViewModel
 import org.literacybridge.tbloaderandroid.view_models.TalkingBookViewModel
@@ -40,39 +33,7 @@ fun ContentUpdateScreen(
         )
     }
 
-    AppScaffold(title = "Updating Contenting", navController = navController, bottomBar = {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(SCREEN_MARGIN),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Button(
-                enabled = !viewModel.isOperationInProgress.value,
-                onClick = {
-                    // Disconnect device and wait for new connection
-//                    Usb.getInstance().forceDisconnectDevice()
-//                    showDialog.value = true
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 5.dp)
-            ) {
-                Text("Update another Talking Book")
-            }
-
-            OutlinedButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.fillMaxWidth(),
-                border = BorderStroke(1.dp, Green40),
-                enabled = !viewModel.isOperationInProgress.value,
-
-                ) {
-                Text("I'm Finished")
-            }
-        }
-    }) { contentPadding ->
+    AppScaffold(title = "Updating Contenting", navController = navController) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -88,8 +49,11 @@ fun ContentUpdateScreen(
                     isOperationInProgress = viewModel.isOperationInProgress.value,
                 )
             } else {
-                Text("Talking book updated successfully!")
-//                OperationCompleted(result = viewModel.operationResult.value)
+                OperationCompleted(
+                    result = viewModel.operationResult.value,
+                    navController = navController,
+                    successText = "Talking book updated successfully!"
+                )
             }
         }
     }

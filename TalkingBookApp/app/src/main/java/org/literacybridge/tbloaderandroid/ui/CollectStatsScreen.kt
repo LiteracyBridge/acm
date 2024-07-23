@@ -35,7 +35,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import org.literacybridge.tbloaderandroid.ui.components.AppScaffold
+import org.literacybridge.tbloaderandroid.ui.components.OperationCompleted
+import org.literacybridge.tbloaderandroid.ui.components.TalkingBookOperationProgress
 import org.literacybridge.tbloaderandroid.ui.theme.Green40
+import org.literacybridge.tbloaderandroid.util.Constants
 import org.literacybridge.tbloaderandroid.util.device_manager.Usb
 import org.literacybridge.tbloaderandroid.view_models.TalkingBookViewModel
 import org.literacybridge.tbloaderandroid.view_models.UserViewModel
@@ -84,53 +87,57 @@ fun CollectStatisticsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
-                .verticalScroll(rememberScrollState()),
+                .padding(Constants.SCREEN_MARGIN),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
             if (viewModel.isOperationInProgress.value) {
-                OperationProgress(
+                TalkingBookOperationProgress(
                     operationStep = viewModel.operationStep.value,
                     operationStepDetail = viewModel.operationStepDetail.value,
                     isOperationInProgress = viewModel.isOperationInProgress.value,
                 )
             } else {
-                OperationCompleted(result = viewModel.operationResult.value)
+                OperationCompleted(
+                    result = viewModel.operationResult.value,
+                    navController = navController,
+                    successText = "Statistics collected successfully!"
+                )
             }
 
-            if (!viewModel.isOperationInProgress.value) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 20.dp, horizontal = 15.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            // Disconnect device and wait for new connection
-                            Usb.getInstance().forceDisconnectDevice()
-                            showDialog.value = true
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 5.dp)
-                    ) {
-                        Text("Update another Talking Book")
-                    }
-
-                    OutlinedButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.fillMaxWidth(),
-                        border = BorderStroke(1.dp, Green40)
-                    ) {
-                        Text("I'm Finished")
-                    }
-                }
-            }
-
+//            if (!viewModel.isOperationInProgress.value) {
+//                Column(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(vertical = 20.dp, horizontal = 15.dp)
+//                ) {
+//                    Button(
+//                        onClick = {
+//                            // Disconnect device and wait for new connection
+//                            Usb.getInstance().forceDisconnectDevice()
+//                            showDialog.value = true
+//                        },
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(bottom = 5.dp)
+//                    ) {
+//                        Text("Update another Talking Book")
+//                    }
+//
+//                    OutlinedButton(
+//                        onClick = { navController.popBackStack() },
+//                        modifier = Modifier.fillMaxWidth(),
+//                        border = BorderStroke(1.dp, Green40)
+//                    ) {
+//                        Text("I'm Finished")
+//                    }
+//                }
+//            }
         }
     }
 
+    // TODO: Make use of this; Not used now
     if (showDialog.value) {
         ConnectDeviceDialog(
             onDismissRequest = {
@@ -196,48 +203,6 @@ fun OperationProgress(
     }
 }
 
-@Composable
-fun OperationCompleted(result: TalkingBookViewModel.OperationResult) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 15.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        CircularProgressIndicator(
-            modifier = Modifier
-                .width(80.dp)
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(top = 100.dp, bottom = 60.dp),
-            strokeWidth = 5.dp,
-            progress = 1.0f
-        )
-
-        if (result == TalkingBookViewModel.OperationResult.Success) {
-            Text(
-                text = "Statistics collected successfully!",
-                style = TextStyle(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 17.sp
-                ),
-                modifier = Modifier.padding(top = 20.dp)
-            )
-        } else {
-            Text(
-                text = "An error occurred while collecting statistics from the talking book.\nPlease reconnect the device and try again",
-                style = TextStyle(
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Red,
-                    fontSize = 17.sp
-                ),
-                modifier = Modifier.padding(top = 20.dp)
-            )
-        }
-    }
-}
 
 @Composable
 fun ConnectDeviceDialog(
