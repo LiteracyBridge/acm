@@ -59,7 +59,6 @@ fun HomeScreen(
     userViewModel: UserViewModel = viewModel(),
 ) {
     val deviceState by viewModel.usbDevice.collectAsStateWithLifecycle()
-    val usbState by viewModel.usbState.collectAsStateWithLifecycle()
     val deviceInfo by viewModel.talkingBookDeviceInfo.collectAsStateWithLifecycle()
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -113,8 +112,7 @@ fun HomeScreen(
                             Text("Collect Statistics")
                         }
                         Button(
-//                            enabled = viewModel.isMassStorageReady.value,
-//                            enabled = viewModel.isDeviceConnected(),
+                            enabled = viewModel.isMassStorageReady.value,
                             onClick = {
                                 // TODO: check if device needs firmware updates, navigate to firmware update screen
                                 navController.navigate(Screen.RECIPIENT.name)
