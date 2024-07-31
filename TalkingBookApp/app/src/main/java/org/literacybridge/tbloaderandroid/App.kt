@@ -8,16 +8,12 @@ import dagger.hilt.android.HiltAndroidApp
 import org.literacybridge.core.spec.ProgramSpec
 import org.literacybridge.tbloaderandroid.database.AppDatabase
 import org.literacybridge.tbloaderandroid.database.ProgramContentEntity
-import org.literacybridge.tbloaderandroid.util.Config
 import org.literacybridge.tbloaderandroid.util.PathsProvider
 import java.io.File
 
 
 @HiltAndroidApp
 class App : Application() {
-    var config: Config? = null
-        private set
-
     val db by lazy { AppDatabase.getDatabase() }
 
     var programSpec: ProgramSpec? = null
@@ -29,8 +25,6 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         application = this
-
-        config = Config(this)
     }
 
     companion object {
