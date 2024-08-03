@@ -38,7 +38,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     private final JTextField volumeStepTextField;
     private final String emailAddresses;
     private final int threshold;
-    private final Integer volumeStep;
+    private Integer volumeStep;
     private final boolean warnForMissingGreetings;
     private final JLabel fuzzyThresholdError;
     private final JLabel volumeStepJLabel;
@@ -62,6 +62,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         // Get values from the global configuration.
         threshold = ACMConfiguration.getInstance().getCurrentDB().getFuzzyThreshold();
         volumeStep = ACMConfiguration.getInstance().getCurrentDB().getVolumeStep();
+        if (volumeStep == null) volumeStep = 0;
         emailAddresses = String.join(", ",
                 ACMConfiguration.getInstance().getCurrentDB().getNotifyList());
         warnForMissingGreetings = ACMConfiguration.getInstance().getCurrentDB().getWarnForMissingGreetings();
@@ -277,7 +278,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
             haveChanges = true;
         }
 
-        if (getVolumeStepTextField().intValue() != volumeStep) {
+        if (getVolumeStepTextField().intValue() != volumeStep.intValue()) {
             ACMConfiguration.getInstance().getCurrentDB().setVolumeStep(getVolumeStepTextField());
             haveChanges = true;
         }
