@@ -43,11 +43,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import org.literacybridge.core.tbdevice.TbDeviceInfo
+import org.literacybridge.tbloaderandroid.ui.components.AppUpdateDialog
 import org.literacybridge.tbloaderandroid.ui.components.NavigationDrawer
 import org.literacybridge.tbloaderandroid.ui.home.StoragePermissionDialog
 import org.literacybridge.tbloaderandroid.ui.home.UpdateFirmware
 import org.literacybridge.tbloaderandroid.util.Constants.Companion.SCREEN_MARGIN
 import org.literacybridge.tbloaderandroid.view_models.TalkingBookViewModel
+import org.literacybridge.tbloaderandroid.view_models.UpdatesDownloaderViewModel
 import org.literacybridge.tbloaderandroid.view_models.UserViewModel
 
 
@@ -57,6 +59,7 @@ fun HomeScreen(
     navController: NavController,
     viewModel: TalkingBookViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
+    updateViewModel: UpdatesDownloaderViewModel = viewModel()
 ) {
     val deviceState by viewModel.usbDevice.collectAsStateWithLifecycle()
     val deviceInfo by viewModel.talkingBookDeviceInfo.collectAsStateWithLifecycle()
@@ -125,6 +128,9 @@ fun HomeScreen(
         ) { contentPadding ->
             // Mass storage permission check
             StoragePermissionDialog()
+
+            // Check for new app version
+            AppUpdateDialog(viewModel = updateViewModel)
 
             Column(
                 Modifier

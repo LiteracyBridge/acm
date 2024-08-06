@@ -22,13 +22,20 @@ import com.amplifyframework.ui.authenticator.ui.Authenticator
 import com.amplifyframework.ui.authenticator.ui.SignIn
 import com.amplifyframework.ui.authenticator.ui.SignInFooter
 import org.literacybridge.tbloaderandroid.R
+import org.literacybridge.tbloaderandroid.ui.components.AppUpdateDialog
+import org.literacybridge.tbloaderandroid.view_models.UpdatesDownloaderViewModel
 import org.literacybridge.tbloaderandroid.view_models.UserViewModel
+
 
 @Composable
 fun LoginScreen(
     navController: NavController,
-    viewModel: UserViewModel = viewModel()
+    viewModel: UserViewModel = viewModel(),
+    updateViewModel: UpdatesDownloaderViewModel = viewModel()
 ) {
+
+    // Check for new version
+    AppUpdateDialog(viewModel = updateViewModel)
 
     return Authenticator(
         headerContent = {

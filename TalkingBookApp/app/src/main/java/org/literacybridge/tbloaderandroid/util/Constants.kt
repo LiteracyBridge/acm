@@ -31,7 +31,6 @@ class Constants {
         // Time to sit twiddling thumbs on Android, because we can't flush files on USB storage.
         const val AndroidPostUpdateSleepTime = 5000 // millis
 
-
         val SCREEN_MARGIN = 5.dp
     }
 }

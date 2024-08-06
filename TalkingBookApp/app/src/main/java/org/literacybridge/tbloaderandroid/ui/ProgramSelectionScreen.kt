@@ -31,13 +31,17 @@ import androidx.navigation.NavController
 import org.literacybridge.tbloaderandroid.models.Deployment
 import org.literacybridge.tbloaderandroid.models.Program
 import org.literacybridge.tbloaderandroid.ui.components.AppScaffold
+import org.literacybridge.tbloaderandroid.ui.components.AppUpdateDialog
 import org.literacybridge.tbloaderandroid.ui.home.StoragePermissionDialog
 import org.literacybridge.tbloaderandroid.util.Constants.Companion.SCREEN_MARGIN
+import org.literacybridge.tbloaderandroid.view_models.UpdatesDownloaderViewModel
 import org.literacybridge.tbloaderandroid.view_models.UserViewModel
 
 @Composable
 fun ProgramSelectionScreen(
-    navController: NavController, viewModel: UserViewModel = viewModel()
+    navController: NavController,
+    viewModel: UserViewModel = viewModel(),
+    updateViewModel: UpdatesDownloaderViewModel = viewModel()
 ) {
     val user by viewModel.user.collectAsStateWithLifecycle()
     val showDialog = remember { mutableStateOf(false) }
@@ -46,6 +50,10 @@ fun ProgramSelectionScreen(
     AppScaffold(title = "Select Program", navController = navController) { innerPadding ->
         // Mass storage permission check
         StoragePermissionDialog()
+
+        // Check for app update
+        AppUpdateDialog(viewModel = updateViewModel)
+
 
         if (user.programs.isEmpty()) {
             Column(
@@ -56,7 +64,7 @@ fun ProgramSelectionScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("No program has been assigned to you. \nPlease contact your IT administrator for assistance")
+                Text("No program has been assigned to you.\nPlease contact your IT administrator for assistance")
             }
         }
 
