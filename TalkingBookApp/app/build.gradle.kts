@@ -121,7 +121,7 @@ dependencies {
 
     // Others
     implementation(project(":core"))
-    implementation("com.google.code.gson:gson:2.10")
+    implementation("com.google.code.gson:gson:2.10.1")
     implementation("io.sentry:sentry-android:7.8.0")
     implementation("io.sentry:sentry-compose-android:7.8.0")
     implementation("com.google.android.play:app-update-ktx:2.1.0")
