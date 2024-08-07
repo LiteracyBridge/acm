@@ -63,12 +63,33 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            // Load key store credentials from keystore.properties file
+            val keyProps = Properties()
+            val keyPropsFile = rootProject.file("keystore.properties")
+            if (keyPropsFile.exists()) {
+                keyProps.load(FileInputStream(keyPropsFile))
+            } else {
+                throw GradleException("'keystore.properties' file no found! Create a new file from 'key.properties.example'")
+            }
+
+            // You need to specify either an absolute path or include the
+            // keystore file in the same directory as the build.gradle file.
+            storeFile = file(keyProps["STORE_FILE"].toString())
+            storePassword = keyProps["STORE_PASSWORD"].toString()
+            keyAlias = keyProps["KEY_ALIAS"].toString()
+            keyPassword = keyProps["KEY_PASSWORD"].toString()
+        }
+    }
+
     buildTypes {
         release {
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
             ndk.debugSymbolLevel = "FULL"
+            signingConfig = signingConfigs.getByName("release")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -82,6 +103,7 @@ android {
 //                "\"https://nhr12r5plj.execute-api.us-west-2.amazonaws.com/production/\""
 //            )
         }
+
         debug {
             isMinifyEnabled = false
             buildConfigField("Boolean", "DEBUG_MODE", "true")

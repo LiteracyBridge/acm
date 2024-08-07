@@ -14,7 +14,8 @@
 .cxx
 *.jks
 *.aab
-local.properties
+local.
+keystore.properties
 app/sentry.properties
 
 #amplify-do-not-edit-begin
