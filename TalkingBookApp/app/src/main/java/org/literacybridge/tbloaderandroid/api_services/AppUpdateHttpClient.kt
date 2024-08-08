@@ -60,7 +60,7 @@ class AppUpdateHttpClient {
             if (e.javaClass == UnknownHostException::class.java) throw (e as UnknownHostException) else if (e.javaClass == InterruptedIOException::class.java) throw (e as InterruptedIOException)
             e.printStackTrace()
         }
-        if (response != null && response.isSuccessful) {
+        if (response != null && !response.isSuccessful) {
             throw HttpException(response.code)
         }
 

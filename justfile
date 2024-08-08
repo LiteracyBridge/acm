@@ -29,4 +29,4 @@ release_android: build_android
     git push --tags
 
     # Create a release on GitHub
-    gh release create $tagName --title "v/android/${versionCode}_${version}" --notes-from-tag --latest "app/build/outputs/apk/release/app-release.apk#android-talking-book-loader-${version}_${versionCode}.apk"
+    gh release create $tagName --title "v/android/${version}_${versionCode}" --notes-from-tag --latest "app/build/outputs/apk/release/app-release.apk#android-talking-book-loader-${version}_${versionCode}.apk"

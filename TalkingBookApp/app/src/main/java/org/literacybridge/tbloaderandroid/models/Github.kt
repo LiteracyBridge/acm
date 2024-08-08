@@ -9,7 +9,12 @@ data class Release(
     val zipball_url: String? = null,
     val id: Float = 0f,
     val node_id: String? = null,
+
+    /**
+     * Format is v/android/2.0.0_83 -> v/android/{version}_{versionCode}
+     */
     val tag_name: String? = null,
+
     val target_commitish: String? = null,
     val name: String? = null,
     val body: String? = null,

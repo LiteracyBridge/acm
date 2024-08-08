@@ -1,6 +1,7 @@
 package org.literacybridge.tbloaderandroid.view_models
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
@@ -9,6 +10,7 @@ import io.sentry.Sentry.captureException
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.literacybridge.tbloaderandroid.App
 import org.literacybridge.tbloaderandroid.BuildConfig
+import org.literacybridge.tbloaderandroid.TAG
 import org.literacybridge.tbloaderandroid.api_services.AppUpdateHttpClient
 import org.literacybridge.tbloaderandroid.models.Asset
 import org.literacybridge.tbloaderandroid.models.Release
@@ -44,17 +46,17 @@ class UpdatesDownloaderViewModel @Inject constructor() : ViewModel() {
                 isUpdateChecked.value = true
             }
 
-            if (release != null) {
-                try {
-                    // TODO: Reimplement parsing the tag_name to get version code
-                    if (!release.tag_name.isNullOrEmpty() && release.tag_name!!.toInt() > BuildConfig.VERSION_CODE
-                    ) {
-                        showUpdateAvailable(
-                            release
-                        )
-                    }
-                } catch (e: NumberFormatException) {
-                    e.printStackTrace()
+            if (release != null && !release.tag_name.isNullOrEmpty() && release.tag_name!!.startsWith(
+                    "v/android"
+                )
+            ) {
+                val versionCode =
+                    release.tag_name!!.split("_").last().toInt() // Split to get version code
+
+                if (versionCode > BuildConfig.VERSION_CODE) {
+                    showUpdateAvailable(
+                        release
+                    )
                 }
             }
         }.start()

@@ -1,15 +1,6 @@
 package org.literacybridge.tbloaderandroid.ui.components
 
-import android.Manifest
-import android.app.Activity
-import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Environment
-import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
@@ -20,14 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
 import org.literacybridge.tbloaderandroid.App
-import org.literacybridge.tbloaderandroid.util.Constants.Companion.LOG_TAG
 import org.literacybridge.tbloaderandroid.view_models.UpdatesDownloaderViewModel
 
 @Composable
@@ -63,6 +49,7 @@ fun AppUpdateDialog(
                         Toast.LENGTH_LONG
                     ).show()
                     viewModel.downloadUpdate()
+                    viewModel.showDialog.value = false
                 }) {
                     Text("DOWNLOAD")
                 }
