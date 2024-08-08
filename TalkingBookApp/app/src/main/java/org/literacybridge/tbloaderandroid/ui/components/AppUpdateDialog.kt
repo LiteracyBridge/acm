@@ -21,6 +21,7 @@ fun AppUpdateDialog(
     viewModel: UpdatesDownloaderViewModel
 ) {
     val showDialog by viewModel.showDialog.collectAsState()
+    val newRelease by viewModel.newRelease.collectAsState()
 
     LaunchedEffect("app-updates-check") {
         viewModel.checkUpdate()
@@ -36,7 +37,12 @@ fun AppUpdateDialog(
             title = { Text(text = "New Version Available") },
             text = {
                 Text(
-                    text = "Update [x.x.x] is available to download",
+                    text = "Update ${
+                        newRelease?.tag_name?.replace(
+                            "v/android",
+                            ""
+                        )
+                    } is available to download",
                     fontSize = 17.sp
                 )
             },

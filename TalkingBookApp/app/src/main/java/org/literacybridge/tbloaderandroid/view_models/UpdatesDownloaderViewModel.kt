@@ -1,7 +1,6 @@
 package org.literacybridge.tbloaderandroid.view_models
 
 import android.content.Intent
-import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
@@ -10,7 +9,6 @@ import io.sentry.Sentry.captureException
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.literacybridge.tbloaderandroid.App
 import org.literacybridge.tbloaderandroid.BuildConfig
-import org.literacybridge.tbloaderandroid.TAG
 import org.literacybridge.tbloaderandroid.api_services.AppUpdateHttpClient
 import org.literacybridge.tbloaderandroid.models.Asset
 import org.literacybridge.tbloaderandroid.models.Release
@@ -23,9 +21,10 @@ class UpdatesDownloaderViewModel @Inject constructor() : ViewModel() {
     private val CONTENT_TYPE_APK = "application/vnd.android.package-archive"
     private val RELEASE_URL = "https://api.github.com/repos/LiteracyBridge/acm/releases/latest"
 
-    val isUpdateChecked = mutableStateOf(false)
+    private val isUpdateChecked = mutableStateOf(false)
+    private val newVersionAsset = mutableStateOf<Asset?>(null)
     val showDialog = MutableStateFlow(false)
-    private val newVersion = mutableStateOf<Asset?>(null)
+    val newRelease = MutableStateFlow<Release?>(null)
 
     fun checkUpdate() {
         if (isUpdateChecked.value) {
@@ -65,7 +64,8 @@ class UpdatesDownloaderViewModel @Inject constructor() : ViewModel() {
     private fun showUpdateAvailable(release: Release) {
         for (asset in release.assets) {
             if (asset.content_type == CONTENT_TYPE_APK && asset.browser_download_url.isNotEmpty()) {
-                newVersion.value = asset
+                newVersionAsset.value = asset
+                newRelease.value = release
                 showDialog.value = true
                 break
             }
@@ -106,7 +106,7 @@ class UpdatesDownloaderViewModel @Inject constructor() : ViewModel() {
             try {
                 val httpClient = AppUpdateHttpClient()
                 val apkFile: File? =
-                    httpClient.download(newVersion.value!!.browser_download_url, FILENAME_APK)
+                    httpClient.download(newVersionAsset.value!!.browser_download_url, FILENAME_APK)
                 if (apkFile != null) installAPK(apkFile)
             } catch (e: java.lang.Exception) {
                 e.printStackTrace()
