@@ -20,13 +20,13 @@ release_android: build_android
 
     version="$(prop 'versionNumber')"
     versionCode="$(prop 'versionCode')"
-    tagName="v${version}_${versionCode}_android"
+    tagName="v/android/${version}_${versionCode}"
 
     # Stage & commit the version properties file, and tag the release
     git add version.properties
     git commit --message "Bump version to $versionCode"
-    git tag --annotate "$tagName" --message "v/android/$version_${versionCode}"
+    git tag --annotate "$tagName" --message "v/android/${version}_${versionCode}"
     git push --tags
 
     # Create a release on GitHub
-    gh release create $tagName --title "v/android/${versionCode}_$version" --notes-from-tag --latest 'app/build/outputs/apk/release/app-release.apk#android-talking-book-loader-$version_${versionCode}.apk'
+    gh release create $tagName --title "v/android/${versionCode}_${version}" --notes-from-tag --latest "app/build/outputs/apk/release/app-release.apk#android-talking-book-loader-${version}_${versionCode}.apk"
