@@ -21,6 +21,10 @@ release_android: build_android
     version="$(prop 'versionNumber')"
     versionCode="$(prop 'versionCode')"
     tagName="v/android/${version}_${versionCode}"
+    apkFileName="android-talking-book-loader-${version}_${versionCode}.apk"
+
+    # Rename the generated apk file
+    mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/"${apkFileName}"
 
     # Stage & commit the version properties file, and tag the release
     git add version.properties
@@ -29,4 +33,4 @@ release_android: build_android
     git push --tags
 
     # Create a release on GitHub
-    gh release create $tagName --title "v/android/${version}_${versionCode}" --notes-from-tag --latest "app/build/outputs/apk/release/app-release.apk#android-talking-book-loader-${version}_${versionCode}.apk"
+    gh release create $tagName --title "v/android/${version}_${versionCode}" --notes-from-tag --latest "app/build/outputs/apk/release/${apkFileName}"
