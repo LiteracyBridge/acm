@@ -82,9 +82,11 @@ public class SystemPrompts {
             //promptItem = store.getAudioItem(items.get(0));
         }
         // Nothing yet, look harder.
-        if (promptItem == null) {
-            searchIgnoringUnderscores(categoryList, localeList);
-        }
+        // Since we're making searches based on the audio titles,
+        // there's no need for a second title search
+        //if (promptItem == null) {
+        //    searchIgnoringUnderscores(categoryList, localeList);
+        //}
 
         return promptItem;
     }
