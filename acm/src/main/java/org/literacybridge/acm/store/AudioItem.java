@@ -12,7 +12,6 @@ import com.google.common.collect.Sets;
 /**
  * An AudioItem is a unique audio entity, identified by its audioItemID. It is
  * optionally associated with one or more categories and one ore more playlist.
- *
  */
 public class AudioItem extends Committable {
   private final String id;
@@ -160,6 +159,17 @@ public class AudioItem extends Committable {
 
   public String getTitle() {
       return metadata.getMetadataValue(MetadataSpecification.DC_TITLE).getValue();
+  }
+
+  public String getDuration() {
+	    return metadata.getMetadataValue(MetadataSpecification.LB_DURATION).getValue().trim();
+	}
+
+  /**
+   * Audio is considered as corrupted if it has a negative or 00:00 duration
+   */
+  public Boolean isCorrupted() {
+  		return this.getDuration().indexOf('-') != -1 || this.getDuration().equals("00:000");
   }
 
   @Override

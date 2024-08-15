@@ -40,6 +40,19 @@ class SandboxingRepository implements FileRepositoryInterface {
         return writeAccess ? sandbox.outputFile(path) : sandbox.inputFile(path);
     }
 
+//    /**
+//     * TODO: add javadoc
+//     *
+//     * @param audioItem
+//     * @param format
+//     * @param writeAccess
+//     * @return
+//     */
+//    public File resolveFile(AudioItem audioItem, String format, boolean writeAccess) {
+//        Path path = resolveDirectoryPath(audioItem.getId()).resolve(audioItem.getId() + "." + format);
+//        return writeAccess ? sandbox.outputFile(path) : sandbox.inputFile(path);
+//    }
+
     @Override
     public List<String> getAudioItemIds() {
         List<String> result = new ArrayList<>();
