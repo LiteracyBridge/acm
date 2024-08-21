@@ -33,9 +33,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.Constants.BELL_SOUND_V2;
-import static org.literacybridge.acm.Constants.CUSTOM_GREETING_V1;
-import static org.literacybridge.acm.Constants.SILENCE_V2;
+import static org.literacybridge.acm.Constants.*;
 
 /*
  * Builds a TBv1 deployment.
@@ -668,6 +666,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         }
 
         private void addSystemDirFilesToImage() throws IOException {
+
             File targetSystemDir = new File(imageDir, "system");
             // Look for an override in the program's TB_Options directory.
             File sourceSystemDir = new File(builderContext.sourceTbOptionsDir, "system.v2");
@@ -689,6 +688,23 @@ class CreateForV2 extends CreateFromDeploymentInfo {
                      DataOutputStream dos = new DataOutputStream(fos)){
                     dos.write(publicKey);
                 }
+            }
+
+            //
+            Integer volumeStep = ACMConfiguration.getInstance().getCurrentDB().getVolumeStep();
+            if (volumeStep != null) {
+                File targetConfigPath = new File(targetSystemDir, "config.txt");
+                String text = VOLUME_STEP + ":" + volumeStep;
+
+                // Write volume step value to config file
+                try {
+                    FileWriter fw = new FileWriter(targetConfigPath, true);
+                    fw.write(text);
+                    fw.close();
+                } catch (Exception ignore) {
+                    //
+                }
+
             }
         }
 
