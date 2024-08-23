@@ -34,7 +34,7 @@ fun ContentDownloaderScreen(
     LaunchedEffect(key1 = "content-download") {
         viewModel.program = userViewModel.program.value!!
         viewModel.deployment = userViewModel.deployment.value!!
-        viewModel.syncProgramContent(navController)
+        viewModel.syncProgramContent()
     }
 
     LaunchedEffect(syncState) {

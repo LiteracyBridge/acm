@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
 import com.amplifyframework.core.Amplify
 import com.amplifyframework.storage.StorageItem
 import com.amplifyframework.storage.options.StorageDownloadFileOptions
@@ -65,9 +64,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
     lateinit var deployment: Deployment
     private var latestDeploymentRevision: String? = null
 
-    suspend fun syncProgramContent(
-        navController: NavController
-    ) {
+    suspend fun syncProgramContent() {
 
         val basePath = getBasePath(program.program_id)
         val options = StoragePagedListOptions.builder()
@@ -222,39 +219,12 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun unzipFile(downloadedZip: File, destinationDir: File): File {
-//        val temp = File("${destinationDir.absolutePath}/tmp")
-//        if (!temp.exists()) {
-//            temp.mkdirs()
-//        }
-
         ZipUnzip.unzip(
             downloadedZip, destinationDir
         ) { _, _ -> true }
 
         // Final destination is "content/{deploymentname}"
         return File("${destinationDir.absolutePath}/content/${this.deployment.deploymentname}")
-        // Done unzipping, move unzipped files from {programId}/{deploymentname}/tmp/content/{deploymentname}
-        // to {programId}/{deploymentname}/content
-//        val contentDir = File("${destinationDir.absolutePath}/content")
-//        if (!contentDir.exists()) {
-//            contentDir.mkdirs()
-//        }
-
-//        val sourceDir = File("${temp.absolutePath}/content/${deployment.deploymentname}")
-//        val result = PathsProvider.moveDirectory(
-//            sourceDir.toPath(),
-//            contentDir.toPath()
-//        )
-//        if (result) {
-//            // Cleanup resources
-//            temp.deleteRecursively()
-//            downloadedZip.delete()
-//            return contentDir
-//        }
-
-        // An error occurred during folder restructuring, we use the tmp source directory as the default
-        // content dir
-//        return sourceDir
     }
 
     /**
