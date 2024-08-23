@@ -124,6 +124,7 @@ class UpdatesDownloaderViewModel @Inject constructor() : ViewModel() {
         val i = Intent(Intent.ACTION_VIEW)
         i.setDataAndType(uri, CONTENT_TYPE_APK)
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         App.context.startActivity(i)
     }
 }
