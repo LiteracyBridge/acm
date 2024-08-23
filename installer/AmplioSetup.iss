@@ -17,7 +17,7 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-AppPublisherURL={#MyAppURL}                          
+AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 ; This becomes {app}
@@ -42,7 +42,7 @@ BackColor=$409B6A
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; 
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}";
 
 [Dirs]
 ; The flag means "remove the directory if it is empty". These could contain user data that we need to recover.
@@ -76,6 +76,10 @@ Type: filesandordirs; Name: "{app}\updates\*"
 ; Copy this setup file itself. TODO: we don't seem to actually use the file. Remove this?
 ; Source: "{srcexe}"; DestDir: "{app}\updater"; Flags: external
 
+; Add 7-zip for extracting zipped files
+Source: ".\7zip\*"; DestDir: "{tmp}"; Flags: deleteafterinstall;
+Source: "ffmpeg.7z"; DestDir: "{tmp}"; Flags: deleteafterinstall;
+
 ; Install Java
 Source: ".\jre\*"; DestDir: "{app}\ACM\jre\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
@@ -98,6 +102,9 @@ Root: HKCU; Subkey: "SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags
 
 
 [Run]
+; Extract ACM/converts/ffmpeg/ffmpeg.zip
+Filename: {tmp}\7za.exe; Parameters: "x ""{tmp}\ffmpeg.7z"" -o""{app}\ACM\converters\ffmpeg"" * -r -aoa"; Flags: runhidden runascurrentuser;
+
 Filename: "{app}\ACM\start_sync.bat"; WorkingDir: "{app}\ACM\"; Description: "Starts the synchronizer"; Flags: runminimized postinstall shellexec
 
 [UninstallRun]

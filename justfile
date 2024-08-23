@@ -34,3 +34,22 @@ release_android: build_android
 
     # Create a release on GitHub
     gh release create $tagName --title "v/android/${version}_${versionCode}" --notes-from-tag --latest "app/build/outputs/apk/release/${apkFileName}"
+
+[doc("Compiles ACM, TB Loader, CSM Compiler and CloudSync")]
+build_acm:
+    # Build csm compiler. Assumes 'CSMcompile' repo is cloned and in the parent folder
+    cd ../CSMcompile && ./gradlew clean && ./gradlew jar
+
+    # Build CloudSync & ctrl. Assumes 'S3Sync' repo is cloned and in the parent folder
+    cd ../S3Sync/ctrl && ./gradlew clean && ./gradlew dist
+
+    # Build acm
+    cd acm && ./gradlew clean && ./gradlew dist
+
+[doc("Creates ACM/TB Loader installer")]
+build_acm_installer: build_acm
+    cd installer && sh ./build_dist.sh && sh ./build_inst.sh
+
+[doc("Uploads new ACM installer to S3 buckets")]
+release_acm: build_acm_installer
+    cd installer && sh ./build_s3.sh

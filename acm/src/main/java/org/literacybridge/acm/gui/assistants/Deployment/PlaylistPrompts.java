@@ -278,9 +278,9 @@ public class PlaylistPrompts {
             }
         }
 
-        if (longPromptItem == null || shortPromptItem == null) {
+        /*if (longPromptItem == null || shortPromptItem == null) {
             searchIgnoringUnderscores(categoryList, localeList);
-        }
+        }*/
 
         return longPromptItem != null || shortPromptItem != null;
     }

@@ -36,6 +36,7 @@ public class LBMetadataIDs {
 //          .put(LB_CORRELATION_ID, 34)
           .put(LB_SDG_GOALS, 35)
           .put(LB_SDG_TARGETS, 36)
+          .put(LB_VOLUME, 37)
           .build();
   public static final ImmutableBiMap<MetadataField<?>, String> FieldToNameMap = new ImmutableBiMap.Builder<MetadataField<?>, String>()
           .put(DC_TITLE, DC_TITLE.getName())
@@ -59,6 +60,7 @@ public class LBMetadataIDs {
           .put(LB_STATUS, LB_STATUS.getName())
           .put(LB_SDG_GOALS, LB_SDG_GOALS.getName())
           .put(LB_SDG_TARGETS, LB_SDG_TARGETS.getName())
+          .put(LB_VOLUME, LB_VOLUME.getName())
           .build();
 
   public static final ImmutableBiMap<String, MetadataField<?>> NameToFieldMap = FieldToNameMap.inverse();
@@ -85,6 +87,7 @@ public class LBMetadataIDs {
           .put(LB_STATUS, Integer.class)
           .put(LB_SDG_GOALS, String.class)
           .put(LB_SDG_TARGETS, String.class)
+          .put(LB_VOLUME, String.class)
           .build();
 
 }

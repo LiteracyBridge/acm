@@ -175,7 +175,7 @@ public class PromptsDB {
         }
 
         // Schedule the file for deletion from the OS file system
-        ACMConfiguration.getInstance().getCurrentDB().getSandbox().delete(promptFile);
+        //ACMConfiguration.getInstance().getCurrentDB().getSandbox().delete(promptFile);
     }
 
     /**
