@@ -88,19 +88,18 @@ class AppUpdateHttpClient {
         try {
             response = client.newCall(Request.Builder().url(url).build()).execute()
         } catch (e: IOException) {
-            if (e.javaClass == UnknownHostException::class.java) throw (e as UnknownHostException) else if (e.javaClass == InterruptedIOException::class.java) throw (e as InterruptedIOException)
-            e.printStackTrace()
+            if (e.javaClass == UnknownHostException::class.java) {
+                throw (e as UnknownHostException)
+            } else if (e.javaClass == InterruptedIOException::class.java) {
+                throw (e as InterruptedIOException)
+            }
+            throw e
         }
 
-        if (response != null && !response.isSuccessful) throw HttpException(response.code)
+        if (!response.isSuccessful) throw HttpException(response.code)
 
-        val responseBody: ResponseBody = response!!.body ?: return null
-        try {
-            return responseBody.string()
-        } catch (e: IOException) {
-            // nothing
-        }
-        return null
+        val responseBody: ResponseBody = response.body ?: return null
+        return responseBody.string()
     }
 
     fun isConnectedToInternet(): Boolean {

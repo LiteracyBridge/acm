@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.literacybridge.tbloaderandroid.App
+import org.literacybridge.tbloaderandroid.api_services.AppUpdateHttpClient
 import org.literacybridge.tbloaderandroid.api_services.NetworkModule
 import org.literacybridge.tbloaderandroid.models.Deployment
 import org.literacybridge.tbloaderandroid.models.Program
@@ -23,6 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class UserViewModel @Inject constructor() : ViewModel() {
     val isLoading = mutableStateOf(false)
+    val signInError = mutableStateOf(false)
     val deployment = mutableStateOf<Deployment?>(null)
     val program = mutableStateOf<Program?>(null)
 
@@ -30,7 +32,6 @@ class UserViewModel @Inject constructor() : ViewModel() {
     private val _user = MutableStateFlow(UserModel())
     val user: StateFlow<UserModel> = _user.asStateFlow()
 
-    val dataStore get() = dataStoreManager.data
 
     fun getPrograms(): List<Program> {
         return _user.value.programs.map { it ->
@@ -78,7 +79,11 @@ class UserViewModel @Inject constructor() : ViewModel() {
                         _user.value = response.data[0]
 
                         navigateToNextScreen(navController)
-                    } catch (e: Exception) {
+                    } catch (e: AppUpdateHttpClient.HttpException) {
+                        if(e.message != null && e.message!!.contains("504")) { // Request timeout from the lambda function
+                          setToken(token, cognitoSubId, navController) // re-fetch user info
+                        }
+
                         // TODO: navigate to error page
                         Log.d(LOG_TAG, "$e")
                     } finally {
