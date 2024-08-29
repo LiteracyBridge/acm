@@ -51,7 +51,7 @@ android {
         }
 
         // Env variables
-        buildConfigField("Boolean", "DEBUG_MODE", "false")
+        buildConfigField("Boolean", "DEBUG_MODE", "true")
         buildConfigField(
             "String",
             "API_URL",
@@ -96,12 +96,12 @@ android {
                 "proguard-rules.pro"
             )
 
-//            // TODO: Enable this when ready to go live!
-//            buildConfigField(
-//                "String",
-//                "API_URL",
-//                "\"https://nhr12r5plj.execute-api.us-west-2.amazonaws.com/production/\""
-//            )
+            buildConfigField("Boolean", "DEBUG_MODE", "false")
+            buildConfigField(
+                "String",
+                "API_URL",
+                "\"https://nhr12r5plj.execute-api.us-west-2.amazonaws.com/production/\""
+            )
         }
 
         debug {
