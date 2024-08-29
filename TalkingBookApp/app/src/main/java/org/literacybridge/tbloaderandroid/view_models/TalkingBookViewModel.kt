@@ -296,7 +296,9 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
                 mProgressListener.extraStep("Finished")
 
                 // Update ui to reflect state
-                operationResult.value = OperationResult.Success
+                if(operationResult.value != OperationResult.Failure) { // No error occurred in the process
+                    operationResult.value = OperationResult.Success
+                }
                 isOperationInProgress.value = false
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -314,8 +316,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
                 isOperationInProgress.value = false
             }
         }
-
-
     }
 
     private fun getUpdateDeploymentInfo(
@@ -453,6 +453,22 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
     }
 
     private val mProgressListener: MyProgressListener = object : MyProgressListener() {
+
+        private fun parseLineForError(line: String?) {
+            if (line.isNullOrEmpty()) return
+
+            if (line.contains("Update failed") ||
+                line.contains("update failed") ||
+                line.contains("Get Stats failed") ||
+                line.contains(
+                    "get stats failed"
+                )
+            ) {
+                Log.d(LOG_TAG, "ERROR LINE FOUND!")
+                operationResult.value = OperationResult.Failure
+            }
+        }
+
         override fun clear() {
 //            operationStepDetail.value = ""
             operationStep.value = ""
@@ -483,12 +499,13 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         override fun detail(detail: String?) {
             operationStepDetail.value = "${operationStepDetail.value}\n$detail".trimIndent()
             Log.d(LOG_TAG, "$detail")
-
+            parseLineForError(detail)
         }
 
         override fun log(line: String) {
             operationStepDetail.value = "${operationStepDetail.value}\n$line".trimIndent()
             Log.d(LOG_TAG, line)
+            parseLineForError(line)
         }
 
         override fun log(append: Boolean, line: String) {
@@ -514,6 +531,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         }
 
         override fun error(value: String) {
+            operationResult.value = OperationResult.Failure
             throw Exception(value)
         }
     }
