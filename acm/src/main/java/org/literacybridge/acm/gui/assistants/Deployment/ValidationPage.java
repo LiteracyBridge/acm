@@ -344,10 +344,10 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             context.systemprompts.put(language, systemPromptsMap);
 
             for (String prompt : required_messages) {
-                PromptsInfo.PromptInfo tempPromptInfo = promptsInfo.getPrompt(prompt);
+                PromptsInfo.PromptInfo newPromptInfo = promptsInfo.getPrompt(prompt);
                 // If prompt doesn't exist in repo, report as missing
-                if (tempPromptInfo != null) {
-                    String desc = tempPromptInfo.getPromptTitle();
+                if (newPromptInfo != null) {
+                    String desc = newPromptInfo.getPromptTitle();
                     SystemPrompts tempSystemPrompt = new SystemPrompts(prompt, desc, language);
                     if (tempSystemPrompt.findPrompt() == null) {
                         missing.add(Integer.parseInt(prompt));
