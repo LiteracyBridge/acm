@@ -502,7 +502,6 @@ public class AccessControl {
         }
 
         StringBuilder requestUrl = new StringBuilder(Authenticator.ACCESS_CONTROL_API);
-        requestUrl.append("/acm");
         requestUrl.append('/').append(action);
         requestUrl.append('/').append(db);
         requestUrl.append("?version=").append(Constants.ACM_VERSION);
@@ -657,7 +656,6 @@ public class AccessControl {
         }
 
         StringBuilder requestUrl = new StringBuilder(Authenticator.ACCESS_CONTROL_API);
-        requestUrl.append("/acm");
         requestUrl.append('/').append(action);
         requestUrl.append('/').append(acmName);
         requestUrl.append("?version=").append(Constants.ACM_VERSION);

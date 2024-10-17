@@ -13,6 +13,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog;
 import org.literacybridge.acm.cloud.cognito.AuthenticationHelper;
 import org.literacybridge.acm.cloud.cognito.CognitoHelper;
@@ -60,7 +61,7 @@ public class Authenticator {
     public final static Set<String> ALL_USER_ROLES = new HashSet<>(Arrays.asList(ADMIN_ROLE_STRING,
             PROGRAM_MANAGER_ROLE_STRING, CONTENT_OFFICER_ROLE_STRING, FIELD_OFFICER_ROLE_STRING));
 
-    public static final String ACCESS_CONTROL_API = "https://oxn3lknwre.execute-api.us-west-2.amazonaws.com/prod";
+    public static final String ACCESS_CONTROL_API = Constants.API_URL + "/acm";
     public static final String TBL_HELPER_API= "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod";
     public static final String PROGRAMS_INFO_API = "https://uomgzti07c.execute-api.us-west-2.amazonaws.com/prod/getprograms";
     public static final String UF_KEYS_HELPER_API = "https://l9gt6xbtm5.execute-api.us-west-2.amazonaws.com/prod";
