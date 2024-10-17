@@ -51,19 +51,14 @@ import java.util.stream.Collectors;
 public class Authenticator {
     private static final Logger LOG = Logger.getLogger(Authenticator.class.getName());
 
-    public static final String SUPER_ADMIN_ROLE_STRING = "*";
-    public static final String ADMIN_ROLE_STRING = "AD";
-    public static final String PROGRAM_MANAGER_ROLE_STRING = "PM";
-    public static final String CONTENT_OFFICER_ROLE_STRING = "CO";
+    public static final List<String> ALL_ACM_ROLES = Arrays.asList("manage_deployment", "manage_playlist", "manage_prompt", "manage_content", "manage_checkout", "deploy_content");
     public static final String FIELD_OFFICER_ROLE_STRING = "FO";
-    public final static Set<String> UPDATING_ROLES = new HashSet<>(Arrays.asList(SUPER_ADMIN_ROLE_STRING,
-            ADMIN_ROLE_STRING, PROGRAM_MANAGER_ROLE_STRING, CONTENT_OFFICER_ROLE_STRING));
-    public final static Set<String> ALL_USER_ROLES = new HashSet<>(Arrays.asList(ADMIN_ROLE_STRING,
-            PROGRAM_MANAGER_ROLE_STRING, CONTENT_OFFICER_ROLE_STRING, FIELD_OFFICER_ROLE_STRING));
+    public final static Set<String> UPDATING_ROLES = new HashSet<>(ALL_ACM_ROLES);
+    public final static Set<String> ALL_USER_ROLES = new HashSet<>(ALL_ACM_ROLES);
 
     public static final String ACCESS_CONTROL_API = Constants.API_URL + "/acm";
     public static final String TBL_HELPER_API= "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod";
-    public static final String PROGRAMS_INFO_API = "https://uomgzti07c.execute-api.us-west-2.amazonaws.com/prod/getprograms";
+    public static final String PROGRAMS_INFO_API = Constants.API_URL +"/programs?for-acm=true";
     public static final String UF_KEYS_HELPER_API = "https://l9gt6xbtm5.execute-api.us-west-2.amazonaws.com/prod";
 
     public static final String PROGRAMS_INFO_FILE = "programs.info";

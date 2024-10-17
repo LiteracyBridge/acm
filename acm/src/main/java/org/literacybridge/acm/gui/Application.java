@@ -38,6 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.literacybridge.acm.cloud.Authenticator.ALL_ACM_ROLES;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.CHOOSE_PROGRAM;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.INCLUDE_FB_ACMS;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.INCLUDE_FOUND_ACMS;
@@ -440,9 +441,8 @@ public class Application extends JXFrame {
       boolean sandbox = authInstance.isSandboxSelected();
       // Even if the user didn't ask for sandbox, if they have no role in the db they picked, force sandbox.
       if (!sandbox) {
-          List<String> ACM_ROLES = Arrays.asList("*", "AD", "PM", "CO");
           Set<String> roles = authInstance.getUserRolesInSelectedProgram();
-          sandbox = Collections.disjoint(roles, ACM_ROLES);
+          sandbox = Collections.disjoint(roles, ALL_ACM_ROLES);
       }
       ACMConfiguration.getInstance().setForceSandbox(sandbox);
   }
