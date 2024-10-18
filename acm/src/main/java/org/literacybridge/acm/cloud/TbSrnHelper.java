@@ -2,6 +2,7 @@ package org.literacybridge.acm.cloud;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.core.tbloader.TbSrnAllocationInfo;
 
@@ -370,9 +371,8 @@ public class TbSrnHelper {
     private Map<String, Object> allocateTbSrnBlock(int n) {
         Map<String,Object> result = new HashMap<>();
 
-        String baseURL = Authenticator.TBL_HELPER_API;
-        String requestURL = baseURL + "/reserve";
-        if (n > 0) requestURL += "?n=" + n;
+        String requestURL = Constants.API_URL + "/tb-loader/reserve?for-acm=true";
+        if (n > 0) requestURL += "&n=" + n;
 
         JSONObject jsonResponse = authInstance.getAwsInterface().authenticatedGetCall(requestURL);
 

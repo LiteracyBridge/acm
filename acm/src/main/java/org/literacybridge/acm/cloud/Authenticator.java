@@ -57,7 +57,7 @@ public class Authenticator {
     public final static Set<String> ALL_USER_ROLES = new HashSet<>(ALL_ACM_ROLES);
 
     public static final String ACCESS_CONTROL_API = Constants.API_URL + "/acm";
-    public static final String TBL_HELPER_API= "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod";
+    // public static final String TBL_HELPER_API= "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod";
     public static final String PROGRAMS_INFO_API = Constants.API_URL +"/programs?for-acm=true";
     public static final String UF_KEYS_HELPER_API = "https://l9gt6xbtm5.execute-api.us-west-2.amazonaws.com/prod";
 
