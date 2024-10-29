@@ -280,10 +280,11 @@ public class ACMConfiguration {
 
         // It seems ACM DB is accessible only after we've initilaized config file
         // We can now go ahead and do the system prompts migration
-        if (migratePrompts) {
-            PromptsDB PromptsDB = new PromptsDB();
-            PromptsDB.migrateSystemPrompts();
-        }
+        //if (migratePrompts) {
+        //    Disable prompts conversion at application startup
+        //    PromptsDB PromptsDB = new PromptsDB();
+        //    PromptsDB.migrateSystemPrompts();
+        //}
 
         return initialized;
     }
