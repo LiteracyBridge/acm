@@ -339,6 +339,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
         for (String language : languages) {
             List<Integer> missing = new ArrayList<>();
+            List<Integer> invalidFiles = new ArrayList<>();
 
             Map<String, SystemPrompts> systemPromptsMap = new HashMap<>();
             context.systemprompts.put(language, systemPromptsMap);
@@ -352,6 +353,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     if (tempSystemPrompt.findPrompt() == null) {
                         missing.add(Integer.parseInt(prompt));
                     } else {
+                        if (!tempSystemPrompt.isAudioVerified())
+                            invalidFiles.add(Integer.parseInt(prompt));
                         systemPromptsMap.put(prompt, tempSystemPrompt);
                     }
                 } else {
@@ -392,6 +395,49 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     getLanguageAndName(language));
                 // Add details on the individual missing messages.
                 for (int n : missing) {
+                    PromptsInfo.PromptInfo pi = promptsInfo.getPrompt(Integer.toString(n));
+                    // The 'ding' doesn't have a filename.
+                    if (pi != null) {
+                        issue.addDetail(String.format("(%d) %s - \"%s\"", n, pi.getPromptTitle(), pi.getPromptText()));
+                    }
+                }
+            }
+
+            if (!invalidFiles.isEmpty()) {
+                /*
+                 * Some system prompts files are corrupted.
+                 * This can happen when ACM tries to convert files from one format to another.
+                 * Or the file itself was corrupted before being imported into the ACM
+                 * Represent them on the issues pane.
+                 */
+                StringBuilder msg = new StringBuilder();
+                invalidFiles.sort(Integer::compareTo);
+                boolean combining = false;
+                int prevN = Short.MIN_VALUE;
+                for (int n : invalidFiles) {
+                    if (n == prevN + 1) {
+                        combining = true;
+                    } else if (combining) {
+                        // We were combining, but this one is not prev+1, so close out the previous run.
+                        msg.append('-').append(prevN).append(',').append(n);
+                        combining = false;
+                    } else {
+                        if (msg.length() > 0) msg.append(',');
+                        msg.append(n);
+                    }
+                    prevN = n;
+                }
+                if (combining) {
+                    // We were combining, and finished the list, so close out the final run.
+                    msg.append('-').append(prevN);
+                }
+                msg.insert(0, "System prompts are invalid/corrupted for language '%s': ");
+                Issues.Issue issue = context.issues.add(Issues.Severity.ERROR,
+                        Issues.Area.SYSTEM_PROMPTS,
+                        msg.toString(),
+                        getLanguageAndName(language));
+                // Add details on the individual missing messages.
+                for (int n : invalidFiles) {
                     PromptsInfo.PromptInfo pi = promptsInfo.getPrompt(Integer.toString(n));
                     // The 'ding' doesn't have a filename.
                     if (pi != null) {
@@ -453,6 +499,26 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                             getLanguageAndName(language),
                             title);
 
+                    } else if (prompts.shortPromptItem != null) {
+                        if (!prompts.isShortAudioVerified()) {
+
+                            context.issues.add(Issues.Severity.ERROR,
+                                Issues.Area.PLAYLISTS,
+                                "The short prompt file '%s' for language '%s' is invalid/corrupted.",
+                                title,
+                                getLanguageAndName(language)
+                            );
+                        }
+                    } else if (prompts.longPromptItem != null) {
+                        if (!prompts.isLongAudioVerified()) {
+
+                            context.issues.add(Issues.Severity.ERROR,
+                                    Issues.Area.PLAYLISTS,
+                                    "The long prompt file '%s' for language '%s' is invalid/corrupted.",
+                                    title,
+                                    getLanguageAndName(language)
+                            );
+                        }
                     } else if (prompts.hasEitherPromptAmbiguity()) {
                         StringBuilder msg = new StringBuilder(
                             "There is both an ACM message and a category ");
