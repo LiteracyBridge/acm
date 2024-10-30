@@ -223,7 +223,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
                     .withUserName(user.first_name)
                     .build()
 
-                val oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(deployment.program_id)
+                val oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(deployment.project_id)
                 val acceptableFirmwareVersions: String = app.programSpec!!.deploymentProperties
                     .getProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS)
 
@@ -351,7 +351,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
             .withPackageNames(packageNames)
             .withSerialNumber(deviceSerialNumber)
             .withNewSerialNumber(tbDeviceInfo.newSerialNumberNeeded())
-            .withProjectName(deployment!!.program_id)
+            .withProjectName(deployment!!.project_id)
             .withDeploymentName(deploymentDirectory.name)
             .withUpdateDirectory(collectedDataDirectory.name)
             .withUpdateTimestamp(todaysDate) // TODO: this should be the "Deployment date", the first date the new content is deployed.
@@ -362,7 +362,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
 
         val newDeploymentInfo = builder.build()
         // TODO: set these values
-        opLog.put<Any>("project", this.deployment!!.program_id)
+        opLog.put<Any>("project", this.deployment!!.project_id)
             .put("deployment", deploymentDirectory.name)
             .put("package", packageNames.joinToString(", "))
             .put<Any>("recipientid", recipient.recipientid)
@@ -407,7 +407,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         )
 
         val sync = S3SyncEntity(
-            programId = deployment!!.program_id,
+            programId = deployment!!.project_id,
             awsTransferId = transfer.transferId,
             createdAt = LocalDateTime.now(),
             updatedAt = LocalDateTime.now(),

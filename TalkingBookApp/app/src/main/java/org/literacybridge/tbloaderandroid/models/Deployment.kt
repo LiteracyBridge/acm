@@ -9,6 +9,6 @@ data class Deployment(
     val distribution: Any,
     val end_date: String,
     val id: Int,
-    val program_id: String,
+    val project_id: String,
     val start_date: String
 )

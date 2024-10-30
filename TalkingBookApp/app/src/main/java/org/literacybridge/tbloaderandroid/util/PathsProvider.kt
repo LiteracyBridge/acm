@@ -69,8 +69,8 @@ object PathsProvider {
 
     fun getStatsDirectory(timestamp: String): File {
         return File(
-            localTempDirectory,
-            "${TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME}${File.separator}${timestamp}"
+            contentDirectory.resolve(TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME),
+            timestamp
         )
     }
 

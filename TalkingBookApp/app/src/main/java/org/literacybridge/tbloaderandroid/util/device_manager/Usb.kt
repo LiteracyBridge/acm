@@ -27,6 +27,7 @@ import android.os.Build
 import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
 import android.util.Log
+import org.literacybridge.core.fs.FsFile
 import org.literacybridge.core.fs.TbFile
 import org.literacybridge.core.tbdevice.TbDeviceInfo
 import org.literacybridge.tbloaderandroid.App
@@ -208,7 +209,7 @@ class Usb {
 //            val root = DocumentFile.fromFile(File(MASS_STORAGE_PATH))
 //            val externalStorage = Environment.getExternalStoragePublicDirectory(MASS_STORAGE_PATH)
 //            Log.d(LOG_TAG, externalStorage.absolutePath)
-            val fs: TbFile = AndroidDocFile(File(MASS_STORAGE_PATH))
+            val fs: TbFile = FsFile(File(MASS_STORAGE_PATH))
             talkingBookDevice = TalkingBook(
                 fs,
                 TbDeviceInfo.getSerialNumberFromFileSystem(fs),

@@ -79,7 +79,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
             }
         }
 
-        Amplify.Storage.list("$basePath/${deployment.program_id}",
+        Amplify.Storage.list("$basePath/${deployment.project_id}",
             options,
             { result ->
                 if (result.items.isEmpty()) {

@@ -87,6 +87,7 @@ public class FsFile extends TbFile {
 
         try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file, append))) {
             copy(content, out);
+            out.flush();
         }
     }
 
