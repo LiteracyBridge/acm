@@ -296,7 +296,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
                 mProgressListener.extraStep("Finished")
 
                 // Update ui to reflect state
-                if(operationResult.value != OperationResult.Failure) { // No error occurred in the process
+                if (operationResult.value != OperationResult.Failure) { // No error occurred in the process
                     operationResult.value = OperationResult.Success
                 }
                 isOperationInProgress.value = false
@@ -396,7 +396,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
     }
 
     private suspend fun uploadCollectedData(file: File, s3Key: String) {
-//        withContext(Dispatchers.IO) {
         val _s3Key = "$COLLECTED_DATA_DIR_NAME/$s3Key"
         val options = StorageUploadFileOptions.defaultInstance()
 
@@ -442,9 +441,14 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
     }
 
     /**
-     * Listens to progress from the tbloader, updates the progress display.
+     * Listens to progress from the tbloader module, updates the progress display.
      */
     internal abstract class MyProgressListener : ProgressListener() {
+        val errorRegex =
+            "(unable to update)|update failed|stats failed|java.*.Exception:|android.*.Exception".toRegex(
+                setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE)
+            )
+
         abstract fun clear()
         abstract fun refresh()
         abstract fun extraStep(step: String?)
@@ -457,13 +461,7 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         private fun parseLineForError(line: String?) {
             if (line.isNullOrEmpty()) return
 
-            if (line.contains("Update failed") ||
-                line.contains("update failed") ||
-                line.contains("Get Stats failed") ||
-                line.contains(
-                    "get stats failed"
-                )
-            ) {
+            if (this.errorRegex.containsMatchIn(line)) {
                 Log.d(LOG_TAG, "ERROR LINE FOUND!")
                 operationResult.value = OperationResult.Failure
             }
