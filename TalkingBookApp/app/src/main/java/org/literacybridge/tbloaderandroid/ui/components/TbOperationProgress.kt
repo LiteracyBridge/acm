@@ -40,6 +40,7 @@ fun TalkingBookOperationProgress(
 //    ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
@@ -108,7 +109,7 @@ fun OperationCompleted(
                 .width(80.dp)
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(top = 100.dp, bottom = 60.dp),
+                .padding(bottom = 15.dp),
             strokeWidth = 5.dp,
         )
 

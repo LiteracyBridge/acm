@@ -1,5 +1,6 @@
 package org.literacybridge.tbloaderandroid.ui.talkingbook_update
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -40,7 +41,8 @@ fun ContentUpdateScreen(
                 .padding(contentPadding)
                 .padding(SCREEN_MARGIN),
 //                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.Start
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (viewModel.isOperationInProgress.value) {
                 TalkingBookOperationProgress(
