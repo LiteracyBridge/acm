@@ -23,6 +23,7 @@ import org.literacybridge.core.spec.Recipient
 import org.literacybridge.core.tbdevice.TbDeviceInfo
 import org.literacybridge.core.tbloader.DeploymentInfo
 import org.literacybridge.core.tbloader.DeploymentInfo.DeploymentInfoBuilder
+import org.literacybridge.core.tbloader.PackagesData
 import org.literacybridge.core.tbloader.ProgressListener
 import org.literacybridge.core.tbloader.TBLoaderConfig
 import org.literacybridge.core.tbloader.TBLoaderConstants
@@ -183,9 +184,17 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
         user: UserModel,
         deployment: Deployment,
         recipient: Recipient?,
-        packages: List<ContentPackage> = emptyList()
+        packages: List<ContentPackage> = emptyList(),
+        retries: Int = 0
     ) {
         this.deployment = deployment
+
+        if (retries > 2) { // max retries is 2
+            isOperationInProgress.value = false
+            operationResult.value = OperationResult.Failure
+            return;
+        }
+
         isOperationInProgress.value = true
         operationResult.value = OperationResult.InProgress
 
@@ -296,8 +305,30 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
                 mProgressListener.extraStep("Finished")
 
                 // Update ui to reflect state
-                if (operationResult.value != OperationResult.Failure) { // No error occurred in the process
-                    operationResult.value = OperationResult.Success
+                if (operationResult.value != OperationResult.Failure && result.gotStatistics) { // operation successful
+                    if (!collectStatsOnly) {
+                        // For content update, re-verify that content/package_data.txt was created AND not empty!
+                        val packageData = talkingBookDevice.value!!.root.open("content")
+                            .open(PackagesData.PACKAGES_DATA_TXT)
+                        if (packageData.exists() && File(packageData.absolutePath).length() > 0) {
+                            operationResult.value = OperationResult.Success
+                        } else {
+                            // Operation completed but package_data.txt validation failed, retry operation again
+                            return@withContext performOperation(
+                                tbDeviceInfo,
+                                deviceSerialNumber,
+                                user,
+                                deployment,
+                                recipient,
+                                packages,
+                                retries + 1
+                            )
+                        }
+                    } else {
+                        operationResult.value = OperationResult.Success
+                    }
+                } else {
+                    operationResult.value = OperationResult.Failure
                 }
                 isOperationInProgress.value = false
             } catch (e: IOException) {
@@ -361,7 +392,6 @@ class TalkingBookViewModel @Inject constructor() : ViewModel(), Dfu.DfuListener 
             .asTestDeployment(isTestingDeployment.value)
 
         val newDeploymentInfo = builder.build()
-        // TODO: set these values
         opLog.put<Any>("project", this.deployment!!.project_id)
             .put("deployment", deploymentDirectory.name)
             .put("package", packageNames.joinToString(", "))
