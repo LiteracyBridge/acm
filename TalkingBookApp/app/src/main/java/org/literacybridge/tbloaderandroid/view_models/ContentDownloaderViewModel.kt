@@ -91,11 +91,12 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
 
                 viewModelScope.launch {
                     val latest = findLatestDeployment(result.items)
-                    if(latest == null){
+                    if (latest == null) {
                         TODO("Show error that no latest deployment was found")
                     }
 
-                    latestDeploymentRevision = latest.key.split('/').last().replace("\\.(current|rev)".toRegex(), "")
+                    latestDeploymentRevision =
+                        latest.key.split('/').last().replace("\\.(current|rev)".toRegex(), "")
 
                     val content = getLocalContent(latestDeploymentRevision)
                     if (_syncState.value == SyncState.SUCCESS && content != null) {
@@ -177,7 +178,9 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
 
         val dest =
             File("${PathsProvider.getProjectDirectory(program.program_id).path}/${deployment.deploymentname}")
-        if (!dest.exists()) {
+        if (dest.exists()) { // Old deployment data already exists, delete them first
+            dest.deleteRecursively();
+        } else {
             dest.mkdirs()
         }
 
@@ -196,7 +199,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
                 // Update database
                 viewModelScope.launch {
                     withContext(Dispatchers.IO) {
-                       val content= unzipFile(downloadedZip = done.file, destinationDir = dest)
+                        val content = unzipFile(downloadedZip = done.file, destinationDir = dest)
                         val entity = ProgramContentEntity(
                             programId = program.program_id,
                             deploymentName = deployment.deploymentname,
@@ -230,16 +233,16 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
     /**
      * TODO: add docs
      */
-    private fun getLatestRevisionName(key: String): String? {
-        val result = "published/(.*)/programspec".toRegex().find(key)
-
-        if (result?.groupValues?.size == 2) {
-            return result.groupValues.last()
-        }
-
-        // No deployment has been created
-        return null
-    }
+//    private fun getLatestRevisionName(key: String): String? {
+//        val result = "published/(.*)/programspec".toRegex().find(key)
+//
+//        if (result?.groupValues?.size == 2) {
+//            return result.groupValues.last()
+//        }
+//
+//        // No deployment has been created
+//        return null
+//    }
 
     private fun getBasePath(programId: String): String {
         return "$programId/TB-Loaders/published";
@@ -279,7 +282,7 @@ class ContentDownloaderViewModel @Inject constructor() : ViewModel() {
             } else { // Outdated content, set program spec and try to download latest version
                 App.getInstance().setProgramSpec(result)
                 _syncState.value = SyncState.OUT_DATED
-                result
+                null
             }
         }
     }
