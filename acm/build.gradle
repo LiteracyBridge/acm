@@ -160,7 +160,7 @@ dependencies {
     implementation 'org.apache.lucene:lucene-core:5.5.0'
     implementation 'org.apache.lucene:lucene-facet:5.5.0'
     implementation 'org.apache.lucene:lucene-analyzers-common:5.5.0'
-    implementation 'org.apache.avro:avro:1.7.7'
+    implementation 'org.apache.avro:avro:1.11.4'
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
     implementation 'org.slf4j:slf4j-api:1.7.16'
     implementation 'org.slf4j:slf4j-simple:1.7.16'
@@ -168,7 +168,7 @@ dependencies {
     implementation 'jakarta-regexp:jakarta-regexp:1.4'
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
     implementation 'com.google.collections:google-collections:1.0-rc5'
-    implementation 'org.yaml:snakeyaml:1.26'
+    implementation 'org.yaml:snakeyaml:2.0'
     // This site has become inaccessible; they don't have a valid certificate. Copied
     // jar file to 3rdparty directory.
     // implementation 'it.cnr.imaa.essi:lablib-checkboxtree:3.1.1'
@@ -176,7 +176,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.swinglabs.swingx/swingx-all
     implementation group: 'org.swinglabs.swingx', name: 'swingx-all', version: '1.6.5-1'
     implementation 'args4j:args4j:2.0.16'
-    implementation 'commons-io:commons-io:2.8.0'
+    implementation 'commons-io:commons-io:2.14.0'
     implementation 'com.opencsv:opencsv:5.5'
     implementation group: 'me.xdrop', name: 'fuzzywuzzy', version: '1.1.6'
 
@@ -184,8 +184,8 @@ dependencies {
     implementation 'com.amazonaws:aws-java-sdk-cognitoidp:1.11.228'
     implementation 'com.amazonaws:aws-java-sdk-cognitoidentity:1.11.228'
     implementation 'com.amazonaws:aws-java-sdk-s3:1.11.228'
-
-    implementation 'com.formdev:flatlaf:1.5'
+    implementation 'com.formdev:flatlaf:3.5.4'
+    implementation 'org.xerial:sqlite-jdbc:3.41.2.2'
 
     // TODO: Merge projects.
     implementation files('../../S3Sync/CloudSync/build/libs/CloudSync-1.0.jar')
