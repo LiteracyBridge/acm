@@ -1,24 +1,15 @@
 package org.literacybridge.acm.config;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+
+import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-
-import static com.ibm.media.codec.audio.g723.G723Tables.s;
 
 /**
  * This class encapsulates methods for requesting a server via HTTP GET/POST and
