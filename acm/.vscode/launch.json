@@ -1,0 +1,140 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "ACM",
+            "request": "launch",
+            "mainClass": "ACM",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "DEV",
+            "request": "launch",
+            "mainClass": "DEV",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "TB",
+            "request": "launch",
+            "mainClass": "TB",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "TBLoader",
+            "request": "launch",
+            "mainClass": "TBLoader",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "AudioConverter",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.audioconverter.gui.AudioConverter",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "DeviceContents",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.device.DeviceContents",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "Application",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.gui.Application",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "LabelProvider",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.gui.resourcebundle.LabelProvider",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "TBBuilder",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.tbbuilder.TBBuilder",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "TBData",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.tbloader.TBData",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "TBLoader(1)",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.tbloader.TBLoader",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "AcmCleaner",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.tools.AcmCleaner",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "CSVDatabaseExporter",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.tools.CSVDatabaseExporter",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "DBExporter",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.tools.DBExporter",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "CmdLineImporter",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.utils.CmdLineImporter",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "FeedbackImporter",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.utils.FeedbackImporter",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "MessageExtractor",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.utils.MessageExtractor",
+            "projectName": "acm"
+        },
+        {
+            "type": "java",
+            "name": "MoveStats",
+            "request": "launch",
+            "mainClass": "org.literacybridge.acm.utils.MoveStats",
+            "projectName": "acm"
+        }
+    ]
+}

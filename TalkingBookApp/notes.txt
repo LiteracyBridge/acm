@@ -1,0 +1,9 @@
+s3_file_sync {
+    id: int,
+    createdAt: datetime
+    updatedAt: datetime
+    status: pending/failed/uploading/cancelled
+    aws_transfer_id: string
+    s3_key: string
+    file_path: string
+}
