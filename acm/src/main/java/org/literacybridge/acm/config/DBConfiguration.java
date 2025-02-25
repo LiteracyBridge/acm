@@ -56,8 +56,14 @@ public class DBConfiguration {
 
     private AccessControl accessControl;
 
+    private SqliteManager db;
+
     public DBConfiguration(PathsProvider pathsProvider) {
         this.pathsProvider = pathsProvider;
+    }
+
+    public SqliteManager getDb() {
+        return this.db;
     }
 
     public boolean isSandboxed() {
@@ -224,6 +230,7 @@ public class DBConfiguration {
                 fixupLanguageCodes();
                 checkMessageIdMismatch();
 
+                this.db = new SqliteManager(this.pathsProvider);
                 initialized = true;
             }
         }
@@ -313,6 +320,8 @@ public class DBConfiguration {
         accessControl.discardDbChanges();
         getSandbox().discard();
         deleteChangeMarkerFile();
+
+        // TODO: update check-in
     }
 
     public void closeDb() {
