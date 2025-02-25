@@ -34,15 +34,9 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
         val migrationsDir = this::class.java.getResource("/db-migrations").toURI().path
 
         if (isNewDb) {
-           executeMigration(File("${migrationsDir}/1-initial-migration.sql"))
-//            query(path.readText()).executeLargeBatch()
-//
-//            val stmt = this.query("INSERT INTO migrations(timestamp, name) VALUES(?,?)")
-//            stmt.setString(1, Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT))
-//            stmt.setString(2, path.name)
-//            stmt.execute()
+            val f = File("${migrationsDir}/1-initial-migration.sql")
+            executeMigration(f)
         }
-
         val resultSet = this.query("SELECT name FROM migrations").executeQuery()
         val results = mutableListOf<String>()
         while (resultSet.next()) {
@@ -52,47 +46,20 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
         File(migrationsDir).listFiles()?.forEach { f ->
             if (!results.any { it == f.name }) {
                 executeMigration(f)
-
-//                query(f.readText()).execute()
-//
-//                val stmt = this.query("INSERT INTO migrations(timestamp, name) VALUES(?,?)")
-//                stmt.setString(1, Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT))
-//                stmt.setString(2, f.name)
-//                stmt.execute()
             }
         }
     }
 
     private fun executeMigration(file: File) {
-        try {
-//            connection.autoCommit = false // Start transaction
-
-//            val sql =
-//            val statement: Statement = connection.createStatement()
-
-            for (q in file.readText().split(";")) {
-                connection.createStatement().execute(q)
-//                println(q)
-//                connection.createStatement().execute(q)
-//                preparedStatement.executeUpdate()
-//                preparedStatement.close() //
-//                statement.addBatch(q)
-            }
-
-//            statement.executeBatch()
-
-            val stmt = this.query("INSERT INTO migrations(timestamp, name) VALUES(?,?)")
-            stmt.setString(1, Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT))
-            stmt.setString(2, file.name)
-            stmt.execute()
-
-//            connection.commit()
-            println("Database migration executed successfully.")
-        } catch (ex: Exception) {
-            connection.rollback()
-            ex.printStackTrace()
-        } finally {
-            connection.autoCommit = true
+        for (q in file.readText().split(";")) {
+            connection.createStatement().executeUpdate("$q;")
         }
+
+        val stmt = this.query("INSERT INTO migrations(timestamp, name) VALUES(?,?)")
+        stmt.setString(1, Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT))
+        stmt.setString(2, file.name)
+        stmt.execute()
+
+        println("Database migration executed successfully.")
     }
 }
