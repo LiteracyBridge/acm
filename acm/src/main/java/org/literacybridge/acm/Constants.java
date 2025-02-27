@@ -3,7 +3,7 @@ package org.literacybridge.acm;
 import java.io.File;
 
 public class Constants {
-  public final static String ACM_VERSION = "r2410292"; // yy mm dd n
+  public final static String ACM_VERSION = "r2502271"; // yy mm dd n
   public final static String API_URL = "https://ghost.amplio.org";
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String AmplioHomeDirName = "Amplio";
