@@ -1,38 +1,39 @@
 CREATE TABLE "migrations"
 (
-    "id"         INTEGER NOT NULL UNIQUE,
+    "id"        INTEGER NOT NULL UNIQUE,
     "timestamp" TEXT    NOT NULL,
-    "name"       INTEGER NOT NULL UNIQUE,
+    "name"      INTEGER NOT NULL UNIQUE,
     PRIMARY KEY ("id" AUTOINCREMENT)
 );
 
 CREATE TABLE "deployments"
 (
-    "id"                TEXT    NOT NULL UNIQUE,
+    "id"                INTEGER NOT NULL UNIQUE,
     "name"              TEXT    NOT NULL UNIQUE,
-    "deployment_number" INTEGER NOT NULL UNIQUE,
+    "deployment_number" INTEGER NOT NULL,
     "committed"         INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY ("id")
+    PRIMARY KEY ("id" AUTOINCREMENT),
+    UNIQUE ("name", "deployment_number")
 );
 
-CREATE TABLE "playlist"
+CREATE TABLE "playlists"
 (
-    "id"            TEXT    NOT NULL UNIQUE,
-    "titlle"        TEXT,
-    "deployment_id" TEXT,
+    "id"            INTEGER NOT NULL UNIQUE,
+    "title"         TEXT    NOT NULL UNIQUE,
+    "deployment_id" INTEGER,
     "committed"     INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY ("id"),
+    PRIMARY KEY ("id" AUTOINCREMENT),
+    UNIQUE ("title", "deployment_id"),
     FOREIGN KEY ("deployment_id") REFERENCES "deployments" ("id") ON DELETE CASCADE
-
 );
 
 CREATE TABLE "audio_items"
 (
-    "id"                    TEXT    NOT NULL UNIQUE,
+    "id"                    INTEGER NOT NULL UNIQUE,    -- random unique uuid
     "title"                 TEXT    NOT NULL,
-    "playlist_id"           TEXT,
+    "playlist_id"           INTEGER,
     "language"              TEXT    NOT NULL,
-    "duration"              INTEGER,
+    "duration"              TEXT,
     "file_path"             TEXT,
     "position"              INTEGER,
     "format"                TEXT,
@@ -50,18 +51,18 @@ CREATE TABLE "audio_items"
     "timing"                TEXT,
     "primary_speaker"       TEXT,
     "device_id"             TEXT,
-    "message_id"            TEXT,
-    "related_message_id"    TEXT,
+    "acm_id"                TEXT,
+    "related_id"            TEXT,
     "transcription"         TEXT,
     "note"                  TEXT,
     "beneficiary"           TEXT,
     "committed"             INTEGER NOT NULL DEFAULT 0, -- 0 = not committed, 1 = committed
     "type"                  TEXT,                       -- "SystemPrompt" or "Message" or "PlaylistPrompt"
-    "source"                TEXT,                       -- File path to file, if copied from a template
-    PRIMARY KEY ("id"),
-    UNIQUE ("playlist_id", "title"),
-    FOREIGN KEY ("playlist_id") REFERENCES "" ON DELETE CASCADE,
-    FOREIGN KEY ("related_message_id") REFERENCES "audio_items" ("message_id") ON DELETE SET NULL
+    "source"                TEXT,
+    PRIMARY KEY ("id" AUTOINCREMENT),
+    UNIQUE ("playlist_id", "title", "language"),
+    FOREIGN KEY ("playlist_id") REFERENCES "playlists" ("id") ON DELETE CASCADE,
+    FOREIGN KEY ("related_id") REFERENCES "audio_items" ("acm_id") ON DELETE SET NULL
 );
 
 CREATE TABLE "packages"
@@ -71,17 +72,18 @@ CREATE TABLE "packages"
     "platform"      TEXT    NOT NULL DEFAULT 'TalkingBook', -- TalkingBook or CompanionApp
     "created_at"    TEXT    NOT NULL,
     "published"     INTEGER NOT NULL,                       -- 0 = not published, 1 = published
-    "deployment_id" TEXT    NOT NULL,
-    PRIMARY KEY ("id" AUTOINCREMENT)
+    "deployment_id" INTEGER NOT NULL,
+    PRIMARY KEY ("id" AUTOINCREMENT),
+    FOREIGN KEY ("deployment_id") REFERENCES "deployments" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "package_contents"
 (
-    "id"         TEXT    NOT NULL UNIQUE,
+    "id"         INTEGER NOT NULL UNIQUE,
     "package_id" INTEGER NOT NULL,
     "path"       TEXT    NOT NULL,
-    "ref_id"     TEXT,
-    PRIMARY KEY ("id"),
+    "ref_id"     INTEGER,
+    PRIMARY KEY ("id" AUTOINCREMENT),
     FOREIGN KEY ("package_id") REFERENCES "packages" ("id") ON DELETE CASCADE,
     FOREIGN KEY ("ref_id") REFERENCES "audio_items" ("id")
 );
