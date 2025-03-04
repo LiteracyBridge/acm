@@ -18,6 +18,7 @@ import kotlin.properties.Delegates
 class Deployment {
     var id by Delegates.notNull<Int>()
 }
+
 class AudioItemDto {
     var id by Delegates.notNull<Int>()
     lateinit var title: String
@@ -54,14 +55,14 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
     /**
      * Saves the changes made to the database
      */
-    fun commit(){
+    fun commit() {
         connection.commit()
     }
 
     /**
      * Discard changes made to the database
      */
-    fun discard(){
+    fun discard() {
         connection.rollback()
     }
 
@@ -109,17 +110,19 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
                         deployment.deploymentnumber
                     )
 
+                    val prommptsTracker: ArrayList<String> = ArrayList()
 
-                    store.audioItems.forEach { audio ->
-//                    playlist.messageSpecs.forEach { msg ->
-//                        val audio = store.audioItems.find { it.title == msg.title }
+                    // Insert for playlist prompts & messages
+                    for (audio in store.audioItems) {
+//                    store.audioItems.forEach { audio ->
                         val msg = playlist.messageSpecs.find { it.title == audio.title }
+                        val title = audio?.title ?: msg?.title;
 
                         println(UIUtils.getCategoryNamesAsString(audio))
                         var index = 0;
                         var audioType = "Message"
-                        if(audio?.categoryList?.isNotEmpty() == true) {
-                            audioType= when (UIUtils.getCategoryNamesAsString(audio)) {
+                        if (audio?.categoryList?.isNotEmpty() == true) {
+                            audioType = when (UIUtils.getCategoryNamesAsString(audio)) {
                                 "General Other" -> "Message"
                                 "TB System" -> "SystemPrompt"
                                 "TB Categories" -> "PlaylistPrompt"
@@ -128,14 +131,25 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
                             }
                         }
 
+                        var playlistQuery = "(SELECT id FROM playlists WHERE title = '${playlist.playlistTitle}' LIMIT 1)"
+                        if (audioType == "SystemPrompt"){
+                            val key = "$title-${audio?.languageCode}"
+                            if (prommptsTracker.contains(key)) {
+                                continue
+                            }
+                            prommptsTracker.add(key)
+                            playlistQuery="null"
+                        }
+
+
                         update(
                             "INSERT OR IGNORE INTO audio_items(title, language, duration, file_path, position," +
                                     " format, default_category_code, variant, sdg_goal_id, key_points, created_at, status, " +
                                     " volume, keywords,timing, primary_speaker, acm_id, related_id, transcription, " +
                                     " note, beneficiary, category, type, committed, source, playlist_id)" +
                                     " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
-                                    + "(SELECT id FROM playlists WHERE title = ? LIMIT 1))",
-                            audio?.title ?: msg?.title,
+                                    +  "$playlistQuery)",
+                            title,
                             audio?.languageCode ?: msg?.languagecode,
                             audio?.duration,
                             null,
@@ -160,7 +174,6 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
                             audioType,
                             false,
                             audio?.metadata?.get(MetadataSpecification.DC_SOURCE),
-                            playlist.playlistTitle
                         )
                     }
                 }
