@@ -1,0 +1,184 @@
+package org.literacybridge.acm.tbbuilder
+
+import org.apache.commons.io.FileUtils
+import org.apache.commons.io.FilenameUtils
+import org.literacybridge.acm.Constants
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter
+import org.literacybridge.acm.cloud.UfKeyHelper
+import org.literacybridge.acm.config.ACMConfiguration
+import org.literacybridge.acm.config.AmplioHome
+import org.literacybridge.acm.config.AudioItemDto
+import org.literacybridge.acm.deployment.DeploymentInfo
+import org.literacybridge.acm.deployment.DeploymentInfo.PackageInfo.PlaylistInfo
+import org.literacybridge.acm.repository.AudioItemRepository
+import org.literacybridge.acm.store.RFC3066LanguageCode
+import org.literacybridge.acm.tbbuilder.TBBuilder.BuilderContext
+import org.literacybridge.acm.tbbuilder.TBBuilder.TBBuilderException
+import org.literacybridge.acm.tbbuilder.survey.Survey
+import org.literacybridge.acm.utils.ExternalCommandRunner
+import org.literacybridge.acm.utils.ExternalCommandRunner.CommandWrapper
+import org.literacybridge.acm.utils.IOUtils
+import org.literacybridge.core.spec.Recipient
+import org.literacybridge.core.spec.RecipientList
+import org.literacybridge.core.tbloader.PackagesData
+import org.literacybridge.core.tbloader.PackagesData.PackageData
+import org.literacybridge.core.tbloader.PackagesData.PackageData.PlaylistData
+import org.literacybridge.core.tbloader.TBLoaderConstants
+import java.io.*
+import java.nio.file.Path
+import java.util.*
+import java.util.function.BiConsumer
+import java.util.stream.Collectors
+
+/*
+* Builds a TBv1 deployment.
+* 
+
+* Given a program 'DEMO', a deployment 'DEMO-21-1', and a package 'DEMO-1-en-c'
+*
+* a "tree.txt" file with empty directories to be created in each image.
+*   inbox
+*   log
+*   log-archive
+*   statistics
+
+DEMO/content/DEMO-21-1/images/DEMO-1-en-c/
+*
+* DEMO/content/DEMO-21-1/
+├── firmware.v2
+├── recipients
+├── shaodowFiles
+├── images.v2
+│   ├── DEMO-1-en
+│   │   ├── content
+│   │   │   ├── prompts
+│   │   │   │   └── en
+│   │   │   │       ├── 0.mp3
+│   │   │   │       ├── 1.mp3
+│   │   │   │        . . .
+│   │   │   │       ├── 9.mp3
+│   │   │   │       ├── 9-0.mp3
+│   │   │   │       ├── LB-2_kkg8lufhqr_jp.mp3
+│   │   │   │        . . .
+│   │   │   │       └── iLB-2_uzz71upxwm_vn.mp3
+│   │   │   ├── messages
+│   │   │   │   ├── LB-2_uzz71upxwm_vg.mp3
+│   │   │   │    . . .
+│   │   │   │   └── LB-2_uzz71upxwm_zd.mp3
+│   │   │   └── packages_data.txt
+│   │   └── system
+│   │       ├── DEMO-1-en-c.pkg     <<-- zero-byte marker file
+│   │       ├── c.grp               <<-- zero-byte marker file
+│   │       ├── config.txt          <<-- fairly constant across programs
+│   │       └── profiles.txt        <<-- "DEMO-1-EN-C,en,1,menu"
+│   ├── DEMO-1-en-c
+│   . . .
+└── programspec
+   ├── content.csv
+   ├── content.json                <<-- remove
+   ├── deployment.properties
+   ├── deployment_spec.csv
+   ├── deployments.csv             <<-- remove
+   ├── etags.properties
+   ├── pending_spec.xlsx           <<-- remove?
+   ├── program_spec.xlsx           <<-- remove
+   ├── recipients.csv
+   └── recipients_map.csv
+
+Format of the package_data.txt file:
+1 # format version, currently "1"
+${deployment_name} # name of the deployment, like TEST-21-4
+${num_path_directories} # number of directories containing audio. Their ordinals are used to make paths
+${directory_1} # First path directory; referred to as "1"
+${directory_2} # Second path directory
+. . .
+${num_packages} # number of packages that follow
+#- - - - - - - - - - - - start of a package
+${package_name_1} # name of the first package
+ ${path_ordinal} ${package_announcement} # ordinal of the path that contains the ${package_announcement}
+ ${prompts_path} # up to 10 path ordinals, separated by semicolons. Searched in order for system prompts.
+ ${num_playlists} # number of playlists that follow
+ ${playlist_name_1} # name of the first playlist. Only used for logging purposes.
+   ${path_ordinal} ${playlist_announcement_1} # path ordinal and file name of short prompt for playlist 1
+   ${path_ordianl} ${playlist_invitation_2} # path ordinal and file name of invitation for playlist 1
+   ${num_messages} # number of messages that follow
+   ${path_ordinal} ${message_1} # path ordinal and file name of first message
+   ${path_ordianl} ${message_2} # path ordinal and file name of second message
+   . . .
+ ${playlist_name_2} # name of second playlist
+ . . .
+#- - - - - - - - - - - - end of previous package, start of next package
+* ${package_name_2} # name of the second package
+. . .
+
+Each image will contain a 1-package package_data.txt. To combine several on a single Talking Book,
+concatenate the path lines, and adjust the path ordinals in the audio file lines. Concatenate the
+resulting package sections
+
+*
+*/
+class CreateForCompanionApp internal constructor(
+    tbBuilder: TBBuilder,
+    private val builderContext: BuilderContext,
+    private val deploymentInfo: DeploymentInfo?
+) {
+    val audioFormat: AudioItemRepository.AudioFormat = AudioItemRepository.AudioFormat.MP3
+    private val repository = ACMConfiguration.getInstance().currentDB.repository
+
+    private var audioItems: List<AudioItemDto> = emptyList()
+
+    init {
+//        super(tbBuilder, builderContext, deploymentInfo);
+//        allPackagesData = PackagesData(builderContext.deploymentName)
+//        imagesDir = File(builderContext.stagedDeploymentDir, "")
+//        this.builderContext = builderContext
+
+        audioItems = ACMConfiguration.getInstance().currentDB.db.query<AudioItemDto>(
+            "SELECT a.id, a.title, a.language, a.acm_id, a.type FROM audio_items a\n" +
+                    "INNER JOIN playlists p ON p.id = a.playlist_id\n" +
+                    "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ?;",
+            builderContext.deploymentNo
+        )!!
+    }
+
+    fun go() {
+        // TODO: modifiy this
+        addPlaylistContentToImage()
+//        createBaseDeployment1()
+
+//        modify this
+//        for (packageInfo in deploymentInfo.getPackages()) {
+//            addImageForPackage(packageInfo)
+//        }
+//        finalizeDeployment()
+//        exportMetadata()
+    }
+
+    private fun addPlaylistContentToImage() {
+        val messagesDir = File(File(System.getProperty("java.io.tmpdir"), builderContext.deploymentName), "messages")
+//        val messagesDir = File(builderContext.stagedDeploymentDir, "messages")
+        audioItems.forEach { audioItem ->
+            println(String.format("    Exporting audioitem %s to %s%n", audioItem.acm_id, messagesDir))
+            builderContext.reportStatus(String.format("    Exporting audioitem %s to %s%n", audioItem.acm_id, messagesDir))
+
+            val audioRef = ACMConfiguration.getInstance().currentDB
+                .metadataStore.getAudioItem(audioItem.acm_id)
+            val filename: String = repository.getAudioFilename(audioRef, audioFormat)
+
+            // Export the audio file.
+            val exportFile =  File(messagesDir, filename)
+            println(exportFile.path)
+            if (!exportFile.exists()) {
+                try {
+                    repository.exportAudioFileWithFormat(audioRef, exportFile, audioFormat)
+                } catch (ex: Exception) {
+                    builderContext.logException(ex)
+                }
+            }
+            // Add audio item to the package_data.txt.
+//            val exportPath = makePath(File(messagesDir, filename))
+//            playlistData.addMessage(audioItem.title, exportPath)
+        }
+    }
+
+}
