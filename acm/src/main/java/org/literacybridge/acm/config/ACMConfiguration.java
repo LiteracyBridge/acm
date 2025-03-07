@@ -286,6 +286,9 @@ public class ACMConfiguration {
         //    PromptsDB.migrateSystemPrompts();
         //}
 
+        if(ACMConfiguration.getInstance().getCurrentDB().getDb().isNewDb()){
+            ACMConfiguration.getInstance().getCurrentDB().getDb().migratContentsToSqlite();
+        }
         return initialized;
     }
 
