@@ -107,19 +107,7 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
                 spec.contentSpec.deploymentSpecs.find { it.deploymentNumber == deployment.deploymentnumber }?.playlistSpecs
                     ?: emptyList()
 
-//            val playlists: ArrayList<ContentSpec.PlaylistSpec> = ArrayList()
-            // 1. switch back to deployment
-//            spec.contentSpec.deploymentSpecs.find { it.deploymentNumber == deployment.deploymentnumber }
-//                ?.playlistSpecs?.forEach { playlist ->
             for (playlist in specPlaylist) {
-                // 2. find acm playlist match (optional)
-                // 3. use playlist audio items instead.
-//                    val test = (select<Deployment>(
-//                        "SELECT id FROM deployments WHERE deployment_number = ?",
-//                        deployment.deploymentnumber
-//                    )?.get(0))
-//                    println(test?.id)
-//                    println(deployment.deploymentnumber)
                 update(
                     "INSERT OR IGNORE INTO playlists(title, deployment_id) VALUES(?,"
                             + "(SELECT id FROM deployments WHERE deployment_number = ? LIMIT 1))",
@@ -128,8 +116,8 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
                 )
 
                 val acmPl = acmPlaylists.find {
-                    var name =  AudioUtils.undecoratedPlaylistName(it.name)
-                    if(name.endsWith("tlh")){
+                    var name = AudioUtils.undecoratedPlaylistName(it.name)
+                    if (name.endsWith("tlh")) {
                         name = name.replace("tlh", "", true).trim()
                     }
                     playlist.playlistTitle.trim().startsWith(name, true)
@@ -154,7 +142,6 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
                     val msg = playlist.messageSpecs.find { it.title == audio.title }
                     val title = audio?.title ?: msg?.title;
 
-//                    println(UIUtils.getCategoryNamesAsString(audio))
                     var audioType = "Message"
                     if (audio?.categoryList?.isNotEmpty() == true) {
                         audioType = when (UIUtils.getCategoryNamesAsString(audio)) {
@@ -168,11 +155,6 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
 
                     var playlistQuery = "(SELECT id FROM playlists WHERE title = '${playlist.playlistTitle}' LIMIT 1)"
                     if (audioType == "SystemPrompt") {
-//                        val key = "$title-${audio?.languageCode}"
-//                        if (prommptsTracker.contains(key)) {
-//                            continue
-//                        }
-//                        prommptsTracker.add(key)
                         playlistQuery = "null"
                     }
 
@@ -184,15 +166,10 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
         }
 
         // TODO: implement system prompts
-// Insert for playlist prompts & messages
+        // Insert for playlist prompts & messages
         for (audio in store.audioItems) {
             if (migratedAudioItems.contains(audio.id)) continue;
 
-//            val msg = playlist.messageSpecs.find { it.title == audio.title }
-//            val title = audio?.title ?: msg?.title;
-
-//            println(UIUtils.getCategoryNamesAsString(audio))
-//            var index = 0;
             // TODO: if playlist is not null, insert a new playlist record
             var audioType = "Message"
             if (audio.categoryList?.isNotEmpty() == true) {
@@ -205,19 +182,7 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
                 }
             }
 
-//            var playlistQuery = "(SELECT id FROM playlists WHERE title = '${playlist.playlistTitle}' LIMIT 1)"
-//            if (audioType == "SystemPrompt") {
-//                val key = "$title-${audio?.languageCode}"
-//                if (prommptsTracker.contains(key)) {
-//                    continue
-//                }
-//                prommptsTracker.add(key)
-//                playlistQuery = "null"
-//            }
-//            val playlistQuery = "null"
-
-
-             migrateAudioItem("null",audio. title, audio, null, 0, audioType)
+            migrateAudioItem("null", audio.title, audio, null, 0, audioType)
             migratedAudioItems.add(audio.id)
         }
         commit()
