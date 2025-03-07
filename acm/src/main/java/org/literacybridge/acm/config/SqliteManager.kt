@@ -28,13 +28,7 @@ class Deployment {
     var id by Delegates.notNull<Int>()
 }
 
-class AudioItemDto {
-    var id by Delegates.notNull<Int>()
-    lateinit var title: String
-    lateinit var language: String
-    lateinit var acm_id: String
-    lateinit var type: String
-}
+
 
 class SqliteManager(private val pathsProvider: PathsProvider) {
     @PublishedApi
