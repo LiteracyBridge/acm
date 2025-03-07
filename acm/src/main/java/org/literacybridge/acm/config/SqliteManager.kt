@@ -3,9 +3,15 @@ package org.literacybridge.acm.config
 import org.apache.commons.dbutils.QueryRunner
 import org.apache.commons.dbutils.ResultSetHandler
 import org.apache.commons.dbutils.handlers.BeanListHandler
+import org.literacybridge.acm.Constants
+import org.literacybridge.acm.gui.assistants.util.AudioUtils
 import org.literacybridge.acm.gui.util.UIUtils
+import org.literacybridge.acm.store.AudioItem
 import org.literacybridge.acm.store.MetadataSpecification
 import org.literacybridge.acm.store.MetadataStore
+import org.literacybridge.acm.store.Playlist
+import org.literacybridge.core.spec.ContentSpec
+import org.literacybridge.core.spec.ContentSpec.PlaylistSpec
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
@@ -13,6 +19,9 @@ import java.sql.SQLException
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.function.Function
+import java.util.regex.Pattern
+import java.util.stream.Collectors
 import kotlin.properties.Delegates
 
 class Deployment {
@@ -66,10 +75,6 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
         connection.rollback()
     }
 
-//    fun query(sql: String): PreparedStatement {
-//        return connection.prepareStatement(sql);
-//    }
-
     inline fun <reified T> query(sql: String, vararg params: Any): List<T>? {
         val h: ResultSetHandler<List<T>> = BeanListHandler<T>(T::class.java)
         return QueryRunner().query(connection, sql, h, *params)
@@ -84,6 +89,7 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
 
         val spec = ACMConfiguration.getInstance().currentDB.programSpec;
         val store: MetadataStore = ACMConfiguration.getInstance().currentDB.metadataStore;
+        val migratedAudioItems: ArrayList<String> = ArrayList()
 
         println("Messages count: ${store.audioItems.size}")
 
@@ -95,91 +101,171 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
                 false
             )
 
-            spec.contentSpec.deploymentSpecs.find { it.deploymentNumber == deployment.deploymentnumber }
-                ?.playlistSpecs?.forEach { playlist ->
+            // Import playlist
+            val acmPlaylists = getAcmDeploymentPlaylists(store, deployment.deploymentnumber)
+            val specPlaylist =
+                spec.contentSpec.deploymentSpecs.find { it.deploymentNumber == deployment.deploymentnumber }?.playlistSpecs
+                    ?: emptyList()
+
+//            val playlists: ArrayList<ContentSpec.PlaylistSpec> = ArrayList()
+            // 1. switch back to deployment
+//            spec.contentSpec.deploymentSpecs.find { it.deploymentNumber == deployment.deploymentnumber }
+//                ?.playlistSpecs?.forEach { playlist ->
+            for (playlist in specPlaylist) {
+                // 2. find acm playlist match (optional)
+                // 3. use playlist audio items instead.
 //                    val test = (select<Deployment>(
 //                        "SELECT id FROM deployments WHERE deployment_number = ?",
 //                        deployment.deploymentnumber
 //                    )?.get(0))
 //                    println(test?.id)
 //                    println(deployment.deploymentnumber)
-                    update(
-                        "INSERT OR IGNORE INTO playlists(title, deployment_id) VALUES(?,"
-                                + "(SELECT id FROM deployments WHERE deployment_number = ? LIMIT 1))",
-                        playlist.playlistTitle,
-                        deployment.deploymentnumber
-                    )
+                update(
+                    "INSERT OR IGNORE INTO playlists(title, deployment_id) VALUES(?,"
+                            + "(SELECT id FROM deployments WHERE deployment_number = ? LIMIT 1))",
+                    playlist.playlistTitle,
+                    deployment.deploymentnumber
+                )
 
-                    val prommptsTracker: ArrayList<String> = ArrayList()
-
-                    // Insert for playlist prompts & messages
-                    for (audio in store.audioItems) {
-//                    store.audioItems.forEach { audio ->
-                        val msg = playlist.messageSpecs.find { it.title == audio.title }
-                        val title = audio?.title ?: msg?.title;
-
-                        println(UIUtils.getCategoryNamesAsString(audio))
-                        var index = 0;
-                        var audioType = "Message"
-                        if (audio?.categoryList?.isNotEmpty() == true) {
-                            audioType = when (UIUtils.getCategoryNamesAsString(audio)) {
-                                "General Other" -> "Message"
-                                "TB System" -> "SystemPrompt"
-                                "TB Categories" -> "PlaylistPrompt"
-                                "Survey" -> "Survey"
-                                else -> "Message"
-                            }
-                        }
-
-                        var playlistQuery = "(SELECT id FROM playlists WHERE title = '${playlist.playlistTitle}' LIMIT 1)"
-                        if (audioType == "SystemPrompt"){
-                            val key = "$title-${audio?.languageCode}"
-                            if (prommptsTracker.contains(key)) {
-                                continue
-                            }
-                            prommptsTracker.add(key)
-                            playlistQuery="null"
-                        }
-
-
-                        update(
-                            "INSERT OR IGNORE INTO audio_items(title, language, duration, file_path, position," +
-                                    " format, default_category_code, variant, sdg_goal_id, key_points, created_at, status, " +
-                                    " volume, keywords,timing, primary_speaker, acm_id, related_id, transcription, " +
-                                    " note, beneficiary, category, type, committed, source, playlist_id)" +
-                                    " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
-                                    +  "$playlistQuery)",
-                            title,
-                            audio?.languageCode ?: msg?.languagecode,
-                            audio?.duration,
-                            null,
-                            ++index,
-                            audio?.metadata?.get(MetadataSpecification.LB_MESSAGE_FORMAT) ?: msg?.format,
-                            msg?.variant,
-                            msg?.sdg_goals,
-                            msg?.sdg_targets,
-                            msg?.keyPoints,
-                            Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT),
-                            audio?.metadata?.get(MetadataSpecification.LB_STATUS),
-                            audio?.metadata?.get(MetadataSpecification.LB_VOLUME),
-                            audio?.metadata?.get(MetadataSpecification.LB_KEYWORDS),
-                            audio?.metadata?.get(MetadataSpecification.LB_TIMING),
-                            audio?.metadata?.get(MetadataSpecification.LB_PRIMARY_SPEAKER),
-                            audio?.metadata?.get(MetadataSpecification.DC_IDENTIFIER),
-                            audio?.metadata?.get(MetadataSpecification.DC_RELATION),
-                            audio?.metadata?.get(MetadataSpecification.LB_ENGLISH_TRANSCRIPTION),
-                            audio?.metadata?.get(MetadataSpecification.LB_NOTES),
-                            audio?.metadata?.get(MetadataSpecification.LB_BENEFICIARY),
-                            audio?.categoryList?.joinToString(",") { it.categoryName },
-                            audioType,
-                            false,
-                            audio?.metadata?.get(MetadataSpecification.DC_SOURCE),
-                        )
+                val acmPl = acmPlaylists.find {
+                    var name =  AudioUtils.undecoratedPlaylistName(it.name)
+                    if(name.endsWith("tlh")){
+                        name = name.replace("tlh", "", true).trim()
                     }
+                    playlist.playlistTitle.trim().startsWith(name, true)
                 }
+
+
+                if (acmPl == null) {
+                    println(acmPl)
+                    println(playlist)
+                    continue
+                };
+
+                val audioItems = store.audioItems.filter {
+                    acmPl.audioItemList.contains(it.id)
+                }
+
+                // Import audio items//messages
+                val prommptsTracker: ArrayList<String> = ArrayList()
+
+                // Insert for playlist prompts & messages
+                for (audio in audioItems) {
+                    val msg = playlist.messageSpecs.find { it.title == audio.title }
+                    val title = audio?.title ?: msg?.title;
+
+//                    println(UIUtils.getCategoryNamesAsString(audio))
+                    var audioType = "Message"
+                    if (audio?.categoryList?.isNotEmpty() == true) {
+                        audioType = when (UIUtils.getCategoryNamesAsString(audio)) {
+                            "General Other" -> "Message"
+                            "TB System" -> "SystemPrompt"
+                            "TB Categories" -> "PlaylistPrompt"
+                            "Survey" -> "Survey"
+                            else -> "Message"
+                        }
+                    }
+
+                    var playlistQuery = "(SELECT id FROM playlists WHERE title = '${playlist.playlistTitle}' LIMIT 1)"
+                    if (audioType == "SystemPrompt") {
+//                        val key = "$title-${audio?.languageCode}"
+//                        if (prommptsTracker.contains(key)) {
+//                            continue
+//                        }
+//                        prommptsTracker.add(key)
+                        playlistQuery = "null"
+                    }
+
+
+                    migrateAudioItem(playlistQuery, title, audio, msg, 0, audioType)
+                    migratedAudioItems.add(audio.id)
+                }
+            }
         }
 
+        // TODO: implement system prompts
+// Insert for playlist prompts & messages
+        for (audio in store.audioItems) {
+            if (migratedAudioItems.contains(audio.id)) continue;
+
+//            val msg = playlist.messageSpecs.find { it.title == audio.title }
+//            val title = audio?.title ?: msg?.title;
+
+//            println(UIUtils.getCategoryNamesAsString(audio))
+//            var index = 0;
+            // TODO: if playlist is not null, insert a new playlist record
+            var audioType = "Message"
+            if (audio.categoryList?.isNotEmpty() == true) {
+                audioType = when (UIUtils.getCategoryNamesAsString(audio)) {
+                    "General Other" -> "Message"
+                    "TB System" -> "SystemPrompt"
+                    "TB Categories" -> "PlaylistPrompt"
+                    "Survey" -> "Survey"
+                    else -> "Message"
+                }
+            }
+
+//            var playlistQuery = "(SELECT id FROM playlists WHERE title = '${playlist.playlistTitle}' LIMIT 1)"
+//            if (audioType == "SystemPrompt") {
+//                val key = "$title-${audio?.languageCode}"
+//                if (prommptsTracker.contains(key)) {
+//                    continue
+//                }
+//                prommptsTracker.add(key)
+//                playlistQuery = "null"
+//            }
+//            val playlistQuery = "null"
+
+
+             migrateAudioItem("null",audio. title, audio, null, 0, audioType)
+            migratedAudioItems.add(audio.id)
+        }
         commit()
+    }
+
+    private fun migrateAudioItem(
+        playlistQuery: String,
+        title: String?,
+        audio: AudioItem,
+        msg: ContentSpec.MessageSpec?,
+        index: Int,
+        audioType: String
+    ): Int {
+        var index1 = index
+        update(
+            "INSERT OR IGNORE INTO audio_items(title, language, duration, file_path, position," +
+                    " format, default_category_code, variant, sdg_goal_id, key_points, created_at, status, " +
+                    " volume, keywords,timing, primary_speaker, acm_id, related_id, transcription, " +
+                    " note, beneficiary, category, type, committed, source, playlist_id)" +
+                    " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
+                    + "$playlistQuery)",
+            title,
+            audio?.languageCode ?: msg?.languagecode,
+            audio?.duration,
+            null,
+            ++index1,
+            audio?.metadata?.get(MetadataSpecification.LB_MESSAGE_FORMAT) ?: msg?.format,
+            msg?.variant,
+            msg?.sdg_goals,
+            msg?.sdg_targets,
+            msg?.keyPoints,
+            Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT),
+            audio?.metadata?.get(MetadataSpecification.LB_STATUS),
+            audio?.metadata?.get(MetadataSpecification.LB_VOLUME),
+            audio?.metadata?.get(MetadataSpecification.LB_KEYWORDS),
+            audio?.metadata?.get(MetadataSpecification.LB_TIMING),
+            audio?.metadata?.get(MetadataSpecification.LB_PRIMARY_SPEAKER),
+            audio?.metadata?.get(MetadataSpecification.DC_IDENTIFIER),
+            audio?.metadata?.get(MetadataSpecification.DC_RELATION),
+            audio?.metadata?.get(MetadataSpecification.LB_ENGLISH_TRANSCRIPTION),
+            audio?.metadata?.get(MetadataSpecification.LB_NOTES),
+            audio?.metadata?.get(MetadataSpecification.LB_BENEFICIARY),
+            audio?.categoryList?.joinToString(",") { it.categoryName },
+            audioType,
+            false,
+            audio?.metadata?.get(MetadataSpecification.DC_SOURCE),
+        )
+        return index1
     }
 
     private fun runMigrations() {
@@ -205,10 +291,6 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
     }
 
     private fun executeMigration(file: File) {
-//        for (q in file.readText().split(";")) {
-//            connection.createStatement().executeUpdate("$q;")
-//        }
-
         update(file.readText())
         update(
             "INSERT INTO migrations(timestamp, name) VALUES(?,?)",
@@ -218,4 +300,36 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
 
         println("Database migration executed successfully.")
     }
+
+    /**
+     * Gets the playlists defined in the ACM for a given Deployment. If all content was imported,
+     * and playlists were not manually edited, these will completely match the programSpec playlists.
+     * Additional playlists may be present, if there were any created with the pattern #-pl-lang.
+     *
+     * @param deploymentNo of the Deployment.
+     * @param languages    of all the Recipients in the Deployment.
+     * @return a map of { language : [ Playlist ] }
+     */
+    private fun getAcmDeploymentPlaylists(store: MetadataStore, deploymentNo: Int): ArrayList<Playlist> {
+        val acmPlaylists: ArrayList<Playlist> = ArrayList()
+        val playlists: Collection<Playlist> = store.getPlaylists()
+//        introMessageCategoryName = store.getCategory(C
+        // Look for anything matching the pattern, whether from the Program Spec or not.
+        val pattern = Pattern.compile(String.format("%d-.*", deploymentNo))
+        for (pl in playlists) {
+            val plMatcher = pattern.matcher(pl.name)
+            if (plMatcher.matches()) {
+                acmPlaylists.add(pl)
+//                    // Remember which playlists were "Intro Message" categories.
+//                    if (introMessageCategoryName == AudioUtils.undecoratedPlaylistName(pl.name)) {
+//                        introMessageCategories.add(pl)
+//                    }
+            }
+//            }
+
+        }
+        return acmPlaylists
+
+    }
+
 }
