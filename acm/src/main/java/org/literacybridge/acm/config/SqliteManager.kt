@@ -125,7 +125,32 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
                 };
 
                 val audioItems = store.audioItems.filter {
+                    var audioType = ""
+                    if (it?.categoryList?.isNotEmpty() == true) {
+                        audioType = when (UIUtils.getCategoryNamesAsString(it)) {
+                            "General Other" -> "Message"
+                            "TB System" -> "SystemPrompt"
+                            "TB Categories" -> "PlaylistPrompt"
+                            "Survey" -> "Survey"
+                            else -> "Message"
+                        }
+
+                        if (audioType == "PlaylistPrompt") {
+                            if (it.title.endsWith(
+                                    " - invitation",
+                                    true
+                                ) && playlist.playlistTitle.startsWith(it.title.replace(" - invitation", ""), true)
+                            ) {
+                                return@filter true;
+                            }
+
+                            if (playlist.playlistTitle.startsWith(it.title, true)) {
+                                return@filter true;
+                            }
+                        }
+                    }
                     acmPl.audioItemList.contains(it.id)
+
                 }
 
                 // Import audio items//messages
@@ -164,7 +189,7 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
         for (audio in store.audioItems) {
             if (migratedAudioItems.contains(audio.id)) continue;
 
-            // TODO: if playlist is not null, insert a new playlist record
+            // TODO: if name contains 'invitation' or matches a specific playlist name, then playlist prompt
             var audioType = "Message"
             if (audio.categoryList?.isNotEmpty() == true) {
                 audioType = when (UIUtils.getCategoryNamesAsString(audio)) {

@@ -160,6 +160,8 @@ class CreateForCompanionApp internal constructor(
 
         for (language in languages) {
             addMessageToPackage(language)
+            addPromptsToPackage(createDirs(File(language, "playlist-prompts")), language, "PlaylistPrompt")
+            addPromptsToPackage(createDirs(File(language, "system-prompts")), language, "SystemPrompt")
         }
 
         val languageVariants = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(
@@ -174,17 +176,11 @@ class CreateForCompanionApp internal constructor(
         for (rec in languageVariants) {
             if (rec.variant.isEmpty()) continue;
 
-            addMessageToPackage("${rec.language}-${rec.variant}")
+            val path = "${rec.language}-${rec.variant}"
+            addMessageToPackage(path)
+            addPromptsToPackage(createDirs(File(path, "playlist-prompts")), rec.language, "PlaylistPrompt")
+            addPromptsToPackage(createDirs(File(path, "system-prompts")), rec.language, "SystemPrompt")
         }
-//        addPlaylistContentToImage()
-//        createBaseDeployment1()
-
-//        modify this
-//        for (packageInfo in deploymentInfo.getPackages()) {
-//            addImageForPackage(packageInfo)
-//        }
-//        finalizeDeployment()
-//        exportMetadata()
     }
 
     private fun addMessageToPackage(language: String, variant: String? = null) {
@@ -198,46 +194,76 @@ class CreateForCompanionApp internal constructor(
         var sql = "SELECT a.id, a.title, a.acm_id, a.type FROM audio_items a\n" +
                 "INNER JOIN playlists p ON p.id = a.playlist_id\n" +
                 "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ?\n" +
-                "WHERE a.language = '${language}'"
+                "WHERE a.language = '${language}' AND type = 'Message' "
         sql += if (variant != null) {
-            "  AND a.variant = '$variant';"
+            "  AND a.variant = '$variant'"
         } else {
             "  AND (a.variant = '' OR a.variant IS NULL)"
         }
 
+        // Query messages and add them to the packages
         val audioItems = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(
             sql,
             builderContext.deploymentNo
         )!!
-
-//        val messagesDir = File(builderContext.stagedDeploymentDir, "messages")
         audioItems.forEach { audioItem ->
-            println(String.format("    Exporting audioitem %s to %s%n", audioItem.acm_id, messagesDir))
-            builderContext.reportStatus(
-                String.format(
-                    "    Exporting audioitem %s to %s%n",
-                    audioItem.acm_id,
-                    messagesDir
-                )
-            )
-
-            val audioRef = ACMConfiguration.getInstance().currentDB
-                .metadataStore.getAudioItem(audioItem.acm_id)
-            val filename: String = repository.getAudioFilename(audioRef, audioFormat)
-
-            // Export the audio file.
-            val exportFile = File(messagesDir, filename)
-            println(exportFile.path)
-            if (!exportFile.exists()) {
-                try {
-                    repository.exportAudioFileWithFormat(audioRef, exportFile, audioFormat)
-                } catch (ex: Exception) {
-                    builderContext.logException(ex)
-                }
-            }
+            addToPackage(audioItem, messagesDir)
             // Add audio item to the package_data.txt.
 //            val exportPath = makePath(File(messagesDir, filename))
 //            playlistData.addMessage(audioItem.title, exportPath)
+        }
+    }
+
+    private fun addPromptsToPackage(langDir: File, language: String, type: String) {
+        val dir = createDirs(File(langDir, type))
+
+        val messagesDir = createDirs(File(dir, "messages"))
+
+        var sql = "SELECT a.id, a.title, a.acm_id, a.type FROM audio_items a\n" +
+                "INNER JOIN playlists p ON p.id = a.playlist_id\n"
+        if (type == "PlaylistPrompt") {
+            sql += "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ?\n"
+        }
+        sql += "WHERE a.language = '${language}' AND type = '$type' "
+
+        var audioItems = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(
+            sql,
+            builderContext.deploymentNo
+        )!!
+
+        // Query messages and add them to the packages
+        ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(
+            sql, builderContext.deploymentNo
+        )!!.forEach { audioItem ->
+            addToPackage(audioItem, messagesDir)
+            // Add audio item to the package_data.txt.
+//            val exportPath = makePath(File(messagesDir, filename))
+//            playlistData.addMessage(audioItem.title, exportPath)
+        }
+    }
+
+    private fun addToPackage(audioItem: AudioItemModel, dest: File) {
+        println(String.format("    Exporting audioitem %s to %s%n", audioItem.acm_id, dest))
+        builderContext.reportStatus(
+            String.format(
+                "    Exporting audioitem %s to %s%n",
+                audioItem.acm_id,
+                dest
+            )
+        )
+
+        val audioRef = ACMConfiguration.getInstance().currentDB
+            .metadataStore.getAudioItem(audioItem.acm_id)
+        val filename: String = repository.getAudioFilename(audioRef, audioFormat)
+
+        // Export the audio file.
+        val exportFile = File(dest, filename)
+        if (!exportFile.exists()) {
+            try {
+                repository.exportAudioFileWithFormat(audioRef, exportFile, audioFormat)
+            } catch (ex: Exception) {
+                builderContext.logException(ex)
+            }
         }
     }
 
