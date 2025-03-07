@@ -29,7 +29,6 @@ class Deployment {
 }
 
 
-
 class SqliteManager(private val pathsProvider: PathsProvider) {
     @PublishedApi
     internal lateinit var connection: Connection
@@ -143,6 +142,13 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
                             ) {
                                 return@filter true;
                             }
+                            if (it.title.endsWith(
+                                    " : invitation",
+                                    true
+                                ) && playlist.playlistTitle.startsWith(it.title.replace(" : invitation", ""), true)
+                            ) {
+                                return@filter true;
+                            }
 
                             if (playlist.playlistTitle.startsWith(it.title, true)) {
                                 return@filter true;
@@ -176,7 +182,6 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
                     if (audioType == "SystemPrompt") {
                         playlistQuery = "null"
                     }
-
 
                     migrateAudioItem(playlistQuery, title, audio, msg, 0, audioType)
                     migratedAudioItems.add(audio.id)
@@ -216,6 +221,14 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
         audioType: String
     ): Int {
         var index1 = index
+        val variant = if(msg?.variant == null){
+             "null"
+        } else if (msg.variant.isEmpty()){
+            "null"
+        } else {
+            msg.variant
+        }
+
         update(
             "INSERT OR IGNORE INTO audio_items(title, language, duration, file_path, position," +
                     " format, default_category_code, variant, sdg_goal_id, key_points, created_at, status, " +
@@ -229,7 +242,7 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
             null,
             ++index1,
             audio?.metadata?.get(MetadataSpecification.LB_MESSAGE_FORMAT) ?: msg?.format,
-            msg?.variant,
+            variant,
             msg?.sdg_goals,
             msg?.sdg_targets,
             msg?.keyPoints,

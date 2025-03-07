@@ -160,8 +160,10 @@ class CreateForCompanionApp internal constructor(
 
         for (language in languages) {
             addMessageToPackage(language)
-            addPromptsToPackage(createDirs(File(language, "playlist-prompts")), language, "PlaylistPrompt")
-            addPromptsToPackage(createDirs(File(language, "system-prompts")), language, "SystemPrompt")
+
+            val path = File(baseDir, language)
+            addPromptsToPackage(createDirs(File(path, "playlist-prompts")), language, "PlaylistPrompt")
+            addPromptsToPackage(createDirs(File(path, "system-prompts")), language, "SystemPrompt")
         }
 
         val languageVariants = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(
@@ -178,8 +180,10 @@ class CreateForCompanionApp internal constructor(
 
             val path = "${rec.language}-${rec.variant}"
             addMessageToPackage(path)
-            addPromptsToPackage(createDirs(File(path, "playlist-prompts")), rec.language, "PlaylistPrompt")
-            addPromptsToPackage(createDirs(File(path, "system-prompts")), rec.language, "SystemPrompt")
+
+            val f = File(baseDir, path)
+            addPromptsToPackage(createDirs(File(f, "playlist-prompts")), rec.language, "PlaylistPrompt")
+            addPromptsToPackage(createDirs(File(f, "system-prompts")), rec.language, "SystemPrompt")
         }
     }
 
@@ -214,32 +218,34 @@ class CreateForCompanionApp internal constructor(
         }
     }
 
-    private fun addPromptsToPackage(langDir: File, language: String, type: String) {
-        val dir = createDirs(File(langDir, type))
-
-        val messagesDir = createDirs(File(dir, "messages"))
-
+    private fun addPromptsToPackage(destDir: File, language: String, type: String) {
         var sql = "SELECT a.id, a.title, a.acm_id, a.type FROM audio_items a\n" +
                 "INNER JOIN playlists p ON p.id = a.playlist_id\n"
         if (type == "PlaylistPrompt") {
-            sql += "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ?\n"
+            sql += "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ${builderContext.deploymentNo}\n"
         }
         sql += "WHERE a.language = '${language}' AND type = '$type' "
 
-        var audioItems = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(
-            sql,
-            builderContext.deploymentNo
-        )!!
+        var audioItems = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!
 
-        // Query messages and add them to the packages
-        ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(
-            sql, builderContext.deploymentNo
-        )!!.forEach { audioItem ->
-            addToPackage(audioItem, messagesDir)
+        // Query prompts and add them to the packages
+        ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!.forEach { audioItem ->
+            addToPackage(audioItem, destDir)
             // Add audio item to the package_data.txt.
 //            val exportPath = makePath(File(messagesDir, filename))
 //            playlistData.addMessage(audioItem.title, exportPath)
         }
+
+        // If playlist prompts, then and add talking book & user feedback prompts
+        if (type == "PlaylistPrompt") {
+            sql = "SELECT id, title, acm_id FROM audio_items " +
+                    "WHERE title IN ('user feedback - invitation', 'user feedback', 'talking book - invitation', 'talking book') " +
+                    " AND language = '$language'"
+            ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!.forEach { audioItem ->
+                addToPackage(audioItem, destDir)
+            }
+        }
+
     }
 
     private fun addToPackage(audioItem: AudioItemModel, dest: File) {
@@ -267,8 +273,10 @@ class CreateForCompanionApp internal constructor(
         }
     }
 
+
     private fun addPlaylistContentToImage() {
-        val messagesDir = File(File(System.getProperty("java.io.tmpdir"), builderContext.deploymentName), "messages")
+        val messagesDir =
+            File(File(System.getProperty("java.io.tmpdir"), builderContext.deploymentName), "messages")
 //        val messagesDir = File(builderContext.stagedDeploymentDir, "messages")
         audioItems.forEach { audioItem ->
             println(String.format("    Exporting audioitem %s to %s%n", audioItem.acm_id, messagesDir))
