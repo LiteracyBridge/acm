@@ -12,4 +12,5 @@ class AudioItemModel {
     lateinit var variant: String
     lateinit var acm_id: String
     lateinit var type: String
+    lateinit var playlist_title: String // NB: Only populated in join queries
 }
