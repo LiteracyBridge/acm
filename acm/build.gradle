@@ -134,7 +134,7 @@ clean.doLast {
 
 // Begin code to allow dynamically including the most up-to-date AWS libs.
 buildscript {
-    ext.kotlin_version = '1.9.0'
+    ext.kotlin_version = '2.1.10'
     repositories {
         maven {
             url "https://repo1.maven.org/maven2/"
@@ -144,9 +144,12 @@ buildscript {
     dependencies {
         classpath "io.spring.gradle:dependency-management-plugin:0.6.1.RELEASE"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
     }
 }
+
 apply plugin: "io.spring.dependency-management"
+apply plugin: 'kotlinx-serialization'
 //dependencyManagement {
 
 //    imports {
@@ -188,6 +191,8 @@ dependencies {
     implementation 'com.formdev:flatlaf:3.5.4'
     implementation 'org.xerial:sqlite-jdbc:3.49.1.0'
     implementation 'commons-dbutils:commons-dbutils:1.8.1'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0"
 
     // TODO: Merge projects.
     implementation files('../../S3Sync/CloudSync/build/libs/CloudSync-1.0.jar')
@@ -206,7 +211,6 @@ dependencies {
     testImplementation 'org.powermock:powermock-module-junit4-common:2.0.9'
     testImplementation 'org.powermock:powermock-module-junit4:2.0.9'
     testImplementation 'junit:junit:4.13.2'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
 
 // IntelliJ configuration

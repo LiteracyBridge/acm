@@ -3,7 +3,6 @@ package org.literacybridge.acm.config
 import org.apache.commons.dbutils.QueryRunner
 import org.apache.commons.dbutils.ResultSetHandler
 import org.apache.commons.dbutils.handlers.BeanListHandler
-import org.literacybridge.acm.Constants
 import org.literacybridge.acm.gui.assistants.util.AudioUtils
 import org.literacybridge.acm.gui.util.UIUtils
 import org.literacybridge.acm.store.AudioItem
@@ -11,7 +10,6 @@ import org.literacybridge.acm.store.MetadataSpecification
 import org.literacybridge.acm.store.MetadataStore
 import org.literacybridge.acm.store.Playlist
 import org.literacybridge.core.spec.ContentSpec
-import org.literacybridge.core.spec.ContentSpec.PlaylistSpec
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
@@ -19,9 +17,7 @@ import java.sql.SQLException
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.function.Function
 import java.util.regex.Pattern
-import java.util.stream.Collectors
 import kotlin.properties.Delegates
 
 class Deployment {
