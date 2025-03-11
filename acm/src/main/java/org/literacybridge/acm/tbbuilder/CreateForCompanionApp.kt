@@ -7,7 +7,9 @@ import org.literacybridge.acm.store.AudioItemModel
 import org.literacybridge.acm.store.PackageMetadata
 import org.literacybridge.acm.tbbuilder.TBBuilder.BuilderContext
 import java.io.*
-import java.nio.charset.Charset
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 /*
 * Builds a TBv1 deployment.
@@ -159,7 +161,7 @@ class CreateForCompanionApp internal constructor(
         )!!
 
         for (rec in languageVariants) {
-            if (rec.variant.isEmpty()) continue;
+            if (rec.variant == null || rec.variant!!.isEmpty()) continue;
 
             val content = PackageMetadata.PackageContent()
             val label = "${rec.language}-${rec.variant}"
@@ -183,6 +185,21 @@ class CreateForCompanionApp internal constructor(
         }
 
         // Write metadata to file
+        metadata.setDecription(
+            PackageMetadata.PackageDescription(
+                deployment = PackageMetadata.DeploymentDescription(
+                    name = builderContext.deploymentName,
+                    number = builderContext.deploymentNo
+                ),
+                revision = "TODO: get revision from build context",
+                createdAt =
+                    Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT),
+                computerName = "TODO: get computer name",
+                createdBy = "TODO: get user email",
+                size = baseDir.length(),
+                project = builderContext.project
+            )
+        )
         val metadataFile = File(baseDir, "metadata.json")
         metadataFile.writeText(metadata.toJson(), Charsets.UTF_8)
     }
@@ -240,54 +257,64 @@ class CreateForCompanionApp internal constructor(
         type: AudioItemModel.ItemType,
         content: PackageMetadata.PackageContent
     ) {
-        var sql = "SELECT a.id, a.title, a.acm_id, a.type FROM audio_items a\n"
+        var sql = "SELECT a.id, a.title, a.acm_id, a.type, a.language, a.variant FROM audio_items a\n"
         if (type.name == AudioItemModel.ItemType.PlaylistPrompt.name) {
             sql += "INNER JOIN playlists p ON p.id = a.playlist_id\n" +
                     "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ${builderContext.deploymentNo}\n"
         }
-        sql += "WHERE a.language = '${language}' AND type = '$type' "
+        sql += "WHERE a.language = '${language}' AND type = '$type' AND deleted_at IS NOT NULL"
 
         var audioItems = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!
 
         // Query prompts and add them to the packages
         ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!.forEach { audioItem ->
-            addToPackage(audioItem, destDir)
+            val file = addToPackage(audioItem, destDir)
+            if (type.name == AudioItemModel.ItemType.PlaylistPrompt.name) {
+                content.playlistPrompts.add(
+                    PackageMetadata.MessageContent(
+                        title = audioItem.title,
+                        contentId = audioItem.acm_id,
+                        language = audioItem.language,
+                        variant = audioItem.variant,
+                        path = file.path,
+                        playlist = audioItem.playlist_title,
+                        size = file.length()
+                    )
+                )
+            } else {
+                content.systemPrompts.add(
+                    PackageMetadata.SystemPromptContent(
+                        title = audioItem.title,
+                        contentId = audioItem.acm_id,
+                        language = audioItem.language,
+                        path = file.path,
+                        size = file.length()
+                    )
+                )
+            }
             // Add audio item to the package_data.txt.
 //            val exportPath = makePath(File(messagesDir, filename))
 //            playlistData.addMessage(audioItem.title, exportPath)
+
         }
 
         // If playlist prompts, then and add talking book & user feedback prompts
-        if (type.name == AudioItemModel.ItemType.PlaylistPrompt.name) {
-            sql = "SELECT id, title, acm_id FROM audio_items " +
+        if (type.name == AudioItemModel.ItemType.SystemPrompt.name) {
+            sql = "SELECT id, title, acm_id, language FROM audio_items " +
                     "WHERE title IN ('user feedback - invitation', 'user feedback', 'talking book - invitation', 'talking book') " +
                     " AND language = '$language'"
-            ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!.forEach { audioItem ->
-                val file = addToPackage(audioItem, destDir)
-                if (type.name == AudioItemModel.ItemType.PlaylistPrompt.name) {
-                    content.playlistPrompts.add(
-                        PackageMetadata.MessageContent(
-                            title = audioItem.title,
-                            contentId = audioItem.acm_id,
-                            language = audioItem.language,
-                            variant = audioItem.variant,
-                            path = file.path,
-                            playlist = audioItem.playlist_title,
-                            size = file.length()
-                        )
-                    )
-                } else {
-                    content.systemPrompts.add(
-                        PackageMetadata.SystemPromptContent(
-                            title = audioItem.title,
-                            contentId = audioItem.acm_id,
-                            language = audioItem.language,
-                            path = file.path,
-                            size = file.length()
-                        )
-                    )
-                }
-            }
+        }
+        ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!.forEach { audioItem ->
+            val file = addToPackage(audioItem, destDir)
+            content.systemPrompts.add(
+                PackageMetadata.SystemPromptContent(
+                    title = audioItem.title,
+                    contentId = audioItem.acm_id,
+                    language = audioItem.language,
+                    path = file.path,
+                    size = file.length()
+                )
+            )
         }
 
     }

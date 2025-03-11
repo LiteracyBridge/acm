@@ -44,7 +44,6 @@ CREATE TABLE "audio_items"
     "key_points"            TEXT,
     "sdg_target_id"         TEXT,
     "category"              TEXT,
-    "created_at"            TEXT,
     "status"                TEXT,
     "volume"                INTEGER          DEFAULT 100,
     "keywords"              TEXT,
@@ -59,10 +58,13 @@ CREATE TABLE "audio_items"
     "committed"             INTEGER NOT NULL DEFAULT 0, -- 0 = not committed, 1 = committed
     "type"                  TEXT,                       -- "SystemPrompt" or "Message" or "PlaylistPrompt"
     "source"                TEXT,
+    "created_at"            TEXT,
+    "deleted_at"            TEXT DEFAULT NULL,
+    "updated_at"            TEXT DEFAULT NULL,
     PRIMARY KEY ("id" AUTOINCREMENT),
     UNIQUE ("playlist_id", "title", "language"),
-    FOREIGN KEY ("playlist_id") REFERENCES "playlists" ("id") ON DELETE CASCADE,
-    FOREIGN KEY ("related_id") REFERENCES "audio_items" ("acm_id") ON DELETE SET NULL
+    FOREIGN KEY ("playlist_id") REFERENCES "playlists" ("id") ON DELETE CASCADE
+--     FOREIGN KEY ("related_id") REFERENCES "audio_items" ("acm_id") ON DELETE SET NULL
 );
 
 CREATE TABLE "packages"

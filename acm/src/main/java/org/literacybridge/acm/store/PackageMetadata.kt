@@ -1,8 +1,8 @@
 package org.literacybridge.acm.store
+
 import kotlinx.serialization.Serializable
 import java.util.*
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
 
 @Serializable
 class PackageMetadata {
@@ -13,12 +13,12 @@ class PackageMetadata {
         contents[languageOrVariant] = content
     }
 
-    fun setDecription(value: PackageDescription){
+    fun setDecription(value: PackageDescription) {
         description = value
     }
 
     fun toJson(): String {
-        return  Json.encodeToString(this)
+        return Json.encodeToString(this)
     }
 
     @Serializable
@@ -46,10 +46,10 @@ class PackageMetadata {
         val contentId: String,
         val path: String,
         val language: String,
-        val playlist: String,
+        val playlist: String?,
         val size: Long,
-        val variant: String
-    );
+        val variant: String?
+    )
 
     @Serializable
     data class SystemPromptContent(
@@ -63,9 +63,12 @@ class PackageMetadata {
     @Serializable
     data class PackageDescription(
         val deployment: DeploymentDescription,
-        val name: String, val createdAt: String,
+        val revision: String,
+        val createdAt: String,
         val createdBy: String,
-        val computerName: String, val size: Float, val project: String
+        val computerName: String,
+        val size: Long,
+        val project: String
     )
 
     @Serializable
