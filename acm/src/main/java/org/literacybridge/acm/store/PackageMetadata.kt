@@ -1,6 +1,8 @@
 package org.literacybridge.acm.store
 import kotlinx.serialization.Serializable
 import java.util.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 
 @Serializable
 class PackageMetadata {
@@ -8,11 +10,15 @@ class PackageMetadata {
     private lateinit var description: PackageDescription
 
     fun addMessage(languageOrVariant: String, content: PackageContent) {
-        contents.put(languageOrVariant, content)
+        contents[languageOrVariant] = content
     }
 
     fun setDecription(value: PackageDescription){
         description = value
+    }
+
+    fun toJson(): String {
+        return  Json.encodeToString(this)
     }
 
     @Serializable
@@ -31,18 +37,6 @@ class PackageMetadata {
 
         fun addSystemPrompt(value: SystemPromptContent) {
             systemPrompts.add(value)
-        }
-
-        fun toJson() {
-//            val json = buildJsonObject {
-//                put("booleanKey", true)
-//                putJsonArray("arrayKey") {
-//                    for (i in 1..10) add(i)
-//                }
-//                putJsonObject("objectKey") {
-//                    put("stringKey", "stringValue")
-//                }
-//            }
         }
     }
 

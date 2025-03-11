@@ -13,4 +13,10 @@ class AudioItemModel {
     lateinit var acm_id: String
     lateinit var type: String
     lateinit var playlist_title: String // NB: Only populated in join queries
+
+    enum class ItemType {
+        PlaylistPrompt,
+        SystemPrompt,
+        Message
+    }
 }
