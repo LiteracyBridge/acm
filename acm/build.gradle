@@ -14,8 +14,8 @@ allprojects {
             url = uri("https://maven.pkg.github.com/LiteracyBridge/CSMcompile")
 //            url = uri("file://Users/bill/git-package")
             credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("Akwasititus")
-                password = project.findProperty("gpr.read_key") ?: System.getenv("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")
+                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.read_key") ?: System.getenv("TOKEN")
             }
         }
         flatDir {
