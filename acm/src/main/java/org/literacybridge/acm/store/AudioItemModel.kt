@@ -9,10 +9,10 @@ class AudioItemModel {
     var id by Delegates.notNull<Int>()
     lateinit var title: String
     lateinit var language: String
-    lateinit var variant: String
+    var variant: String? = null
     lateinit var acm_id: String
     lateinit var type: String
-    lateinit var playlist_title: String // NB: Only populated in join queries
+    var playlist_title: String? = null // NB: Only populated in join queries
 
     enum class ItemType {
         PlaylistPrompt,
