@@ -145,6 +145,7 @@ public class TBLoaderUtils {
     public static String getImageForCommunity(final File deploymentDirectory, String community) {
         return getPackageForCommunity(deploymentDirectory, community);
     }
+
     public static String getPackageForCommunity(final File deploymentDirectory, String community) {
         if (community == null) {
             return null;

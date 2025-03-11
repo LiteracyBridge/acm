@@ -1,0 +1,3 @@
+package org.literacybridge.tbloaderandroid.models
+
+class DirectBeneficiariesAdditionalMap

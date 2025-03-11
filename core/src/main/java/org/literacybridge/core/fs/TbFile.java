@@ -46,6 +46,7 @@ public abstract class TbFile {
             out.write(buffer, 0, bytesRead);
         }
 
+        out.flush();
         out.close();
     }
 

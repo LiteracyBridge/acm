@@ -91,6 +91,7 @@ public class ZipUnzip {
     outFile.getParentFile().mkdirs();
     ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(outFile));
     zipper.addDirectory(zout, inDir, includeBaseDir, true);
+    zout.flush();
     zout.close();
     // System.out.println("Zip file has been created!");
   }

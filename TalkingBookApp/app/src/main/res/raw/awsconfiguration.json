@@ -1,0 +1,57 @@
+{
+    "UserAgent": "aws-amplify-cli/0.1.0",
+    "Version": "0.1.0",
+    "IdentityManager": {
+        "Default": {}
+    },
+    "CredentialsProvider": {
+        "CognitoIdentity": {
+            "Default": {
+                "PoolId": "us-west-2:c57e8e17-b2ab-404d-a4a2-29d3865e28f7",
+                "Region": "us-west-2"
+            }
+        }
+    },
+    "CognitoUserPool": {
+        "Default": {
+            "PoolId": "us-west-2_3evpQGyi5",
+            "AppClientId": "6blocf10ssb1vul860kkd3ohjb",
+            "Region": "us-west-2"
+        }
+    },
+    "Auth": {
+        "Default": {
+            "authenticationFlowType": "USER_SRP_AUTH",
+            "socialProviders": [],
+            "usernameAttributes": [
+                "EMAIL"
+            ],
+            "signupAttributes": [],
+            "passwordProtectionSettings": {
+                "passwordPolicyMinLength": 8,
+                "passwordPolicyCharacters": [
+                    "REQUIRES_LOWERCASE",
+                    "REQUIRES_UPPERCASE",
+                    "REQUIRES_NUMBERS"
+                ]
+            },
+            "mfaConfiguration": "OFF",
+            "mfaTypes": [],
+            "verificationMechanisms": [
+                "EMAIL"
+            ]
+        }
+    },
+    "S3TransferUtility": {
+        "Default": {
+            "Bucket": "amplio-program-content",
+            "Region": "us-west-2"
+        }
+    },
+    "Storage": {
+        "Default": {
+            "bucket": "amplio-program-content",
+            "region": "us-west-2"
+        }
+    }
+}
