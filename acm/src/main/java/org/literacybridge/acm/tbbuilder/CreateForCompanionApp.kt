@@ -185,21 +185,18 @@ class CreateForCompanionApp internal constructor(
         }
 
         // Write metadata to file
-        metadata.setDecription(
-            PackageMetadata.PackageDescription(
-                deployment = PackageMetadata.DeploymentDescription(
-                    name = builderContext.deploymentName,
-                    number = builderContext.deploymentNo
-                ),
-                revision = "TODO: get revision from build context",
-                createdAt =
-                    Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT),
-                computerName = "TODO: get computer name",
-                createdBy = "TODO: get user email",
-                size = baseDir.length(),
-                project = builderContext.project
-            )
+        metadata.deployment = PackageMetadata.DeploymentDescription(
+            name = builderContext.deploymentName,
+            number = builderContext.deploymentNo
         )
+        metadata.revision = "TODO: get revision from build context"
+        metadata.createdAt =
+            Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
+        metadata.computerName = "TODO: get computer name"
+        metadata.createdBy = "TODO: get user email"
+        metadata.size = baseDir.length()
+        metadata.project = builderContext.project
+
         val metadataFile = File(baseDir, "metadata.json")
         metadataFile.writeText(metadata.toJson(), Charsets.UTF_8)
     }
@@ -234,17 +231,7 @@ class CreateForCompanionApp internal constructor(
         )!!
         audioItems.forEach { audioItem ->
             val file = addToPackage(audioItem, messagesDir)
-            content.messages.add(
-                PackageMetadata.MessageContent(
-                    title = audioItem.title,
-                    contentId = audioItem.acm_id,
-                    language = audioItem.language,
-                    variant = audioItem.variant,
-                    path = file.path,
-                    playlist = audioItem.playlist_title,
-                    size = file.length()
-                )
-            )
+            content.addMessage(audioItem, file, baseDir)
             // Add audio item to the package_data.txt.
 //            val exportPath = makePath(File(messagesDir, filename))
 //            playlistData.addMessage(audioItem.title, exportPath)
@@ -262,35 +249,15 @@ class CreateForCompanionApp internal constructor(
             sql += "INNER JOIN playlists p ON p.id = a.playlist_id\n" +
                     "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ${builderContext.deploymentNo}\n"
         }
-        sql += "WHERE a.language = '${language}' AND type = '$type' AND deleted_at IS NOT NULL"
-
-        var audioItems = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!
+        sql += "WHERE a.language = '${language}' AND type = '$type' AND deleted_at IS NULL"
 
         // Query prompts and add them to the packages
         ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!.forEach { audioItem ->
             val file = addToPackage(audioItem, destDir)
             if (type.name == AudioItemModel.ItemType.PlaylistPrompt.name) {
-                content.playlistPrompts.add(
-                    PackageMetadata.MessageContent(
-                        title = audioItem.title,
-                        contentId = audioItem.acm_id,
-                        language = audioItem.language,
-                        variant = audioItem.variant,
-                        path = file.path,
-                        playlist = audioItem.playlist_title,
-                        size = file.length()
-                    )
-                )
+                content.addPlaylistPrompt(audioItem, file, baseDir)
             } else {
-                content.systemPrompts.add(
-                    PackageMetadata.SystemPromptContent(
-                        title = audioItem.title,
-                        contentId = audioItem.acm_id,
-                        language = audioItem.language,
-                        path = file.path,
-                        size = file.length()
-                    )
-                )
+                content.addSystemPrompt(audioItem, file, baseDir)
             }
             // Add audio item to the package_data.txt.
 //            val exportPath = makePath(File(messagesDir, filename))
@@ -303,18 +270,10 @@ class CreateForCompanionApp internal constructor(
             sql = "SELECT id, title, acm_id, language FROM audio_items " +
                     "WHERE title IN ('user feedback - invitation', 'user feedback', 'talking book - invitation', 'talking book') " +
                     " AND language = '$language'"
-        }
-        ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!.forEach { audioItem ->
-            val file = addToPackage(audioItem, destDir)
-            content.systemPrompts.add(
-                PackageMetadata.SystemPromptContent(
-                    title = audioItem.title,
-                    contentId = audioItem.acm_id,
-                    language = audioItem.language,
-                    path = file.path,
-                    size = file.length()
-                )
-            )
+            ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!.forEach { audioItem ->
+                val file = addToPackage(audioItem, destDir)
+                content.addSystemPrompt(audioItem, file, baseDir)
+            }
         }
 
     }
