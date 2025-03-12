@@ -2,8 +2,10 @@ package org.literacybridge.acm.store
 
 import kotlin.properties.Delegates
 
-enum class RGB { RED, GREEN, BLUE }
-
+enum class DeplomentPlatform {
+    TalkingBook,
+    CompanionApp
+}
 
 class AudioItemModel {
     var id by Delegates.notNull<Int>()
