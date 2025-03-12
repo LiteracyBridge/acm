@@ -3,6 +3,7 @@ package org.literacybridge.acm.gui.assistants.Deployment;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.assistants.common.AssistantContext;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
+import org.literacybridge.acm.store.DeplomentPlatform;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.deployment.DeploymentInfo;
 import org.literacybridge.core.spec.ContentSpec;
@@ -15,6 +16,7 @@ import java.util.Set;
 class DeploymentContext implements AssistantContext {
 
     int deploymentNo = -1;
+    DeplomentPlatform platform = DeplomentPlatform.TalkingBook;
     Set<String> languageCodes;
 
     // Map of {languagecode : [playlistspec, ...], ...}
