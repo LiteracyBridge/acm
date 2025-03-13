@@ -289,12 +289,13 @@ public class DBConfiguration {
     };
 
     public boolean hasChanges() {
-        return hasMetadataChange || store.hasChanges() || getSandbox().hasChanges();
+        return hasMetadataChange || store.hasChanges() || getSandbox().hasChanges() || db.getHasPendingCommit();
     }
 
     public void commitDbChanges() {
         AccessControlResolver.UpdateDbStatus closeResult;
-        if (hasMetadataChange || store.hasChanges()) {
+        if (hasMetadataChange || store.hasChanges() || db.getHasPendingCommit()) {
+            db.commit();
             closeResult = accessControl.commitDbChanges();
         } else {
             closeResult = accessControl.discardDbChanges();
@@ -317,6 +318,7 @@ public class DBConfiguration {
     }
 
     public void discardDbChanges() {
+        db.discard();
         accessControl.discardDbChanges();
         getSandbox().discard();
         deleteChangeMarkerFile();
