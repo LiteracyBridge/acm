@@ -400,6 +400,8 @@ public class AccessControl {
         String dbName = dbConfiguration.getProgramHomeDirName();
         String filename;
 
+        dbConfiguration.getDb().commit();
+
         filename = saveDbFromMirror();
         if (filename == null) {
             // If we couldn't save the file, ask the user whether to keep (and try later) or discard changes.
@@ -439,6 +441,7 @@ public class AccessControl {
 
     AccessControlResolver.UpdateDbStatus discardDbChanges() {
         AccessControlResolver.UpdateDbStatus status = AccessControlResolver.UpdateDbStatus.ok;
+        dbConfiguration.getDb().discard();
 
         if (!isSandboxed()) {
             String dbName = dbConfiguration.getProgramHomeDirName();

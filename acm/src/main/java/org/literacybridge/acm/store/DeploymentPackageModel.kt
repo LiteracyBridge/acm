@@ -6,9 +6,6 @@ import org.apache.commons.io.FilenameUtils
 import org.literacybridge.acm.config.ACMConfiguration
 import org.literacybridge.core.tbloader.TBLoaderConstants
 import java.io.File
-import java.time.Instant
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.properties.Delegates
 
@@ -23,7 +20,7 @@ class DeploymentPackageModel {
 
     companion object {
         // TODO: add function to push metadata to api server
-        
+
         fun create(pkg: PackageMetadata) {
             ACMConfiguration.getInstance().currentDB.db.update(
                 "INSERT INTO " +

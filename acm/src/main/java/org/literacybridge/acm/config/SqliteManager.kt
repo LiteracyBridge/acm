@@ -3,13 +3,6 @@ package org.literacybridge.acm.config
 import org.apache.commons.dbutils.QueryRunner
 import org.apache.commons.dbutils.ResultSetHandler
 import org.apache.commons.dbutils.handlers.BeanListHandler
-import org.literacybridge.acm.gui.assistants.util.AudioUtils
-import org.literacybridge.acm.gui.util.UIUtils
-import org.literacybridge.acm.store.AudioItem
-import org.literacybridge.acm.store.MetadataSpecification
-import org.literacybridge.acm.store.MetadataStore
-import org.literacybridge.acm.store.Playlist
-import org.literacybridge.core.spec.ContentSpec
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
@@ -17,7 +10,6 @@ import java.sql.SQLException
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.regex.Pattern
 import kotlin.properties.Delegates
 
 class Deployment {
@@ -28,6 +20,10 @@ class Deployment {
 class SqliteManager(private val pathsProvider: PathsProvider) {
     @PublishedApi
     internal lateinit var connection: Connection
+        private set
+
+    @PublishedApi
+    internal var hasPendingCommit: Boolean = false
         private set
 
     private val dbPath = "${this.pathsProvider.programHomeDir}/database.sqlite"
@@ -55,6 +51,7 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
      */
     fun commit() {
         connection.commit()
+        hasPendingCommit = false
     }
 
     /**
@@ -62,6 +59,7 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
      */
     fun discard() {
         connection.rollback()
+        hasPendingCommit = false
     }
 
     inline fun <reified T> query(sql: String, vararg params: Any): List<T>? {
@@ -70,6 +68,7 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
     }
 
     fun update(sql: String, vararg params: Any?): Int {
+        hasPendingCommit = true
         return QueryRunner().update(connection, sql, *params)
     }
 
@@ -92,7 +91,7 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
             }
         }
 
-        connection.commit()
+        commit()
     }
 
     private fun executeMigration(file: File) {
@@ -105,36 +104,4 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
 
         println("Database migration executed successfully.")
     }
-
-    /**
-     * Gets the playlists defined in the ACM for a given Deployment. If all content was imported,
-     * and playlists were not manually edited, these will completely match the programSpec playlists.
-     * Additional playlists may be present, if there were any created with the pattern #-pl-lang.
-     *
-     * @param deploymentNo of the Deployment.
-     * @param languages    of all the Recipients in the Deployment.
-     * @return a map of { language : [ Playlist ] }
-     */
-    private fun getAcmDeploymentPlaylists(store: MetadataStore, deploymentNo: Int): ArrayList<Playlist> {
-        val acmPlaylists: ArrayList<Playlist> = ArrayList()
-        val playlists: Collection<Playlist> = store.getPlaylists()
-//        introMessageCategoryName = store.getCategory(C
-        // Look for anything matching the pattern, whether from the Program Spec or not.
-        val pattern = Pattern.compile(String.format("%d-.*", deploymentNo))
-        for (pl in playlists) {
-            val plMatcher = pattern.matcher(pl.name)
-            if (plMatcher.matches()) {
-                acmPlaylists.add(pl)
-//                    // Remember which playlists were "Intro Message" categories.
-//                    if (introMessageCategoryName == AudioUtils.undecoratedPlaylistName(pl.name)) {
-//                        introMessageCategories.add(pl)
-//                    }
-            }
-//            }
-
-        }
-        return acmPlaylists
-
-    }
-
 }
