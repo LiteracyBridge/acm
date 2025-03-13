@@ -103,9 +103,9 @@ class CreateForCompanionApp internal constructor(
     tbBuilder: TBBuilder,
     private val builderContext: BuilderContext,
     private val deploymentInfo: DeploymentInfo,
-    private val playlistRootNode: AcmContent.AcmRootNode
+    playlistRootNode: AcmContent.AcmRootNode
 ) {
-    val audioFormat: AudioItemRepository.AudioFormat = AudioItemRepository.AudioFormat.MP3
+    private val audioFormat: AudioItemRepository.AudioFormat = AudioItemRepository.AudioFormat.MP3
     private val repository = ACMConfiguration.getInstance().currentDB.repository
 
     private val baseDir = File(System.getProperty("java.io.tmpdir"), builderContext.deploymentName)
@@ -114,7 +114,6 @@ class CreateForCompanionApp internal constructor(
 
     // {language: {playlistTitle: [audio_items]}}
     private val deploymentContents: HashMap<String, HashMap<String, List<String>>> = HashMap()
-//    private val playlists: ArrayList<String> = ArrayList()
 
     init {
 //        super(tbBuilder, builderContext, deploymentInfo);
@@ -148,7 +147,7 @@ class CreateForCompanionApp internal constructor(
         val languages =
             ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql, builderContext.deploymentNo)!!
                 .map { it.language }
-//        val languages = deploymentContents.keys
+
         for (language in languages) {
             val content = PackageMetadata.PackageContent()
             addMessagesToPackage(language, content)
