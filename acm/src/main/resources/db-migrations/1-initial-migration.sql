@@ -67,10 +67,10 @@ CREATE TABLE "audio_items"
 --     FOREIGN KEY ("related_id") REFERENCES "audio_items" ("acm_id") ON DELETE SET NULL
 );
 
-CREATE TABLE "packages"
+CREATE TABLE "deployment_packages"
 (
     "id"            INTEGER NOT NULL UNIQUE,
-    "name"          TEXT    NOT NULL,
+    "revision"          TEXT    NOT NULL,
     "platform"      TEXT    NOT NULL DEFAULT 'TalkingBook', -- TalkingBook or CompanionApp
     "created_at"    TEXT    NOT NULL,
     "published"     INTEGER NOT NULL,                       -- 0 = not published, 1 = published
@@ -79,13 +79,13 @@ CREATE TABLE "packages"
     FOREIGN KEY ("deployment_id") REFERENCES "deployments" ("id") ON DELETE CASCADE
 );
 
-CREATE TABLE "package_contents"
-(
-    "id"         INTEGER NOT NULL UNIQUE,
-    "package_id" INTEGER NOT NULL,
-    "path"       TEXT    NOT NULL,
-    "ref_id"     INTEGER,
-    PRIMARY KEY ("id" AUTOINCREMENT),
-    FOREIGN KEY ("package_id") REFERENCES "packages" ("id") ON DELETE CASCADE,
-    FOREIGN KEY ("ref_id") REFERENCES "audio_items" ("id")
-);
+-- CREATE TABLE "package_contents"
+-- (
+--     "id"         INTEGER NOT NULL UNIQUE,
+--     "package_id" INTEGER NOT NULL,
+--     "path"       TEXT    NOT NULL,
+--     "ref_id"     INTEGER,
+--     PRIMARY KEY ("id" AUTOINCREMENT),
+--     FOREIGN KEY ("package_id") REFERENCES "packages" ("id") ON DELETE CASCADE,
+--     FOREIGN KEY ("ref_id") REFERENCES "audio_items" ("id")
+-- );

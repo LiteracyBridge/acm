@@ -287,7 +287,7 @@ public class ACMConfiguration {
         //}
 
         if(ACMConfiguration.getInstance().getCurrentDB().getDb().isNewDb()){
-            ACMConfiguration.getInstance().getCurrentDB().getDb().migratContentsToSqlite();
+            new LuceneToSqliteMigration().go();
         }
         return initialized;
     }
