@@ -193,6 +193,7 @@ public class Application extends JXFrame {
           splashScreen.setProgressLabel("Shutting down...", SplashScreen.SPLASH_OPTIONS.ALWAYS_ON_TOP);
           splashScreen.makeNonTransparent();
           application.setVisible(false);
+
           try {
               ACMConfiguration.DB_CLOSE_DISPOSITION disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.COMMIT;
 
@@ -231,7 +232,7 @@ public class Application extends JXFrame {
           // here, it will, in fact, not ever be seen. (Swing aggressively prevents applications from being able
           // to "wait for the UI to settle".)
           splashScreen.setProgressLabel("Shutting down...", SplashScreen.SPLASH_OPTIONS.ALWAYS_ON_TOP);
-          splashScreen.makeTransparent();
+          splashScreen.dispose();
       }
   };
 
