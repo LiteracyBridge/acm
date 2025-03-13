@@ -32,7 +32,7 @@ class PackageMetadata {
         private val playlistPrompts: ArrayList<MessageContent> = ArrayList()
         private val systemPrompts: ArrayList<SystemPromptContent> = ArrayList()
 
-        fun addMessage(audioItem: AudioItemModel, file: File, baseDir: File) {
+        fun addMessage(audioItem: AudioItemModel, position: Int, file: File, baseDir: File) {
             messages.add(
                 MessageContent(
                     title = audioItem.title,
@@ -41,7 +41,8 @@ class PackageMetadata {
                     variant = audioItem.variant,
                     path = FilenameUtils.separatorsToUnix(file.toRelativeString(baseDir)),
                     playlist = audioItem.playlist_title,
-                    size = file.length()
+                    size = file.length(),
+                    position = position
                 )
             )
         }
@@ -55,7 +56,8 @@ class PackageMetadata {
                     variant = audioItem.variant,
                     path = FilenameUtils.separatorsToUnix(file.toRelativeString(baseDir)),
                     playlist = audioItem.playlist_title,
-                    size = file.length()
+                    size = file.length(),
+                    position = null
                 )
             )
         }
@@ -81,7 +83,8 @@ class PackageMetadata {
         val language: String,
         val playlist: String?,
         val size: Long,
-        val variant: String?
+        val variant: String?,
+        val position: Int?
     )
 
     @Serializable

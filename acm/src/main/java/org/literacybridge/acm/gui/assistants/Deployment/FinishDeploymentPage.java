@@ -299,7 +299,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             saveDeploymentInfoToProgramSpec(tbBuilder, pkgs);
 
             // New style, driven by deploymentInfo
-            tbBuilder.createDeployment(context.deploymentInfo);
+            tbBuilder.createDeployment(context.deploymentInfo, context.playlistRootNode);
 
             // Publish.
             if (context.isPublish() && errors.size() == 0) {
