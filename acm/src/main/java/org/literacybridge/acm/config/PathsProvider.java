@@ -84,7 +84,7 @@ public class PathsProvider {
     /**
      * The directory with TB-Loaders.
      *
-     * @return ~/Amplio/acm-dbs/${programId}
+     * @return ~/Amplio/acm-dbs/${programId}/TB-Loaders
      */
     public File getProgramTbLoadersDir() {
         return new File(programHomeDir, Constants.TBLoadersHomeDir);
