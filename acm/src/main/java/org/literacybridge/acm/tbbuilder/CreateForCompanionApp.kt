@@ -5,6 +5,8 @@ import org.literacybridge.acm.deployment.DeploymentInfo
 import org.literacybridge.acm.gui.assistants.util.AcmContent
 import org.literacybridge.acm.repository.AudioItemRepository
 import org.literacybridge.acm.store.AudioItemModel
+import org.literacybridge.acm.store.DeplomentPlatform
+import org.literacybridge.acm.store.DeploymentPackageModel
 import org.literacybridge.acm.store.PackageMetadata
 import org.literacybridge.acm.tbbuilder.TBBuilder.BuilderContext
 import java.io.*
@@ -120,6 +122,15 @@ class CreateForCompanionApp internal constructor(
 //        allPackagesData = PackagesData(builderContext.deploymentName)
 //        imagesDir = File(builderContext.stagedDeploymentDir, "")
 //        this.builderContext = builderContext
+        metadata.deployment = PackageMetadata.DeploymentDescription(
+            name = builderContext.deploymentName,
+            number = builderContext.deploymentNo
+        )
+        metadata.platform = DeplomentPlatform.CompanionApp.name
+        metadata.published = true // TODO: retreive this from deployment info
+        metadata.revision = DeploymentPackageModel.getNextRevision(deploymentInfo.name, deploymentInfo.deploymentNumber)
+        metadata.createdAt =
+            Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
 
         for (languageNode in playlistRootNode.languageNodes) {
             // playlistTitle: [audio items idss]
@@ -206,13 +217,6 @@ class CreateForCompanionApp internal constructor(
         }
 
         // Write metadata to file
-        metadata.deployment = PackageMetadata.DeploymentDescription(
-            name = builderContext.deploymentName,
-            number = builderContext.deploymentNo
-        )
-        metadata.revision = "TODO: get revision from build context"
-        metadata.createdAt =
-            Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
         metadata.computerName = "TODO: get computer name"
         metadata.createdBy = "TODO: get user email"
         metadata.size = baseDir.length()
@@ -220,6 +224,11 @@ class CreateForCompanionApp internal constructor(
 
         val metadataFile = File(baseDir, "metadata.json")
         metadataFile.writeText(metadata.toJson(), Charsets.UTF_8)
+
+        // Save to db
+        DeploymentPackageModel.create(metadata)
+        // TODO: fix non commit bug
+//        ACMConfiguration.getInstance().currentDB.db.commit()
     }
 
     private fun addMessagesToPackage(

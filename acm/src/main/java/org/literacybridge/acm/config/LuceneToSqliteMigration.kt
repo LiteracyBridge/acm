@@ -153,12 +153,12 @@ class LuceneToSqliteMigration {
             migratedAudioItems.add(audio.id)
         }
 
-        migrateTbLoader()
+        migrateTbLoaders()
 
         getDb().commit()
     }
 
-    private fun migrateTbLoader() {
+    private fun migrateTbLoaders() {
         val src = File(ACMConfiguration.getInstance().currentDB.programTbLoadersDir, "published")
         val revisionTracker: Set<String> = emptySet()
         var latest = ""

@@ -75,6 +75,7 @@ CREATE TABLE "deployment_packages"
     "created_at"    TEXT    NOT NULL,
     "published"     INTEGER NOT NULL,                       -- 0 = not published, 1 = published
     "deployment_id" INTEGER NOT NULL,
+    "metadata" TEXT,
     PRIMARY KEY ("id" AUTOINCREMENT),
     FOREIGN KEY ("deployment_id") REFERENCES "deployments" ("id") ON DELETE CASCADE
 );
