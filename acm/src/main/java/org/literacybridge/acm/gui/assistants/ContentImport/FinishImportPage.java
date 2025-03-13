@@ -12,13 +12,7 @@ import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.importexport.AudioImporter;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.MetadataSpecification;
-import org.literacybridge.acm.store.MetadataStore;
-import org.literacybridge.acm.store.MetadataValue;
-import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.store.Transaction;
+import org.literacybridge.acm.store.*;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.Version;
 import org.literacybridge.core.spec.ContentSpec;
@@ -324,6 +318,10 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
             if (!matchableItem.getLeft().isPlaylist()) {
                 ensureAudioInPlaylist(matchableItem.getLeft());
             }
+
+            // Update record in sqlite
+            AudioItemModel.Companion.create( AudioItemModel.ItemType.Message, matchableItem.getLeft());
+
             if (isUpdate) {
                 updateCount++;
                 UIUtils.setLabelText(updatedMessagesLabel, Integer.toString(updateCount));

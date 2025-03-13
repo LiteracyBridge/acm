@@ -232,6 +232,9 @@ public class AudioItemContextMenuDialog extends JDialog {
                   pl.removeAudioItem(item.getId());
                   transaction.add(pl);
                 });
+                // Remove from sqlite db
+                AudioItemModel.Companion.delete(item);
+
                 // Then remove the item itself.
                 item.delete();
                 transaction.add(item);
