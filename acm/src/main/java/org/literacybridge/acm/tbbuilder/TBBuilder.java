@@ -6,6 +6,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.config.PathsProvider;
 import org.literacybridge.acm.deployment.DeploymentInfo;
+import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.DeplomentPlatform;
 import org.literacybridge.core.spec.ProgramSpec;
@@ -213,7 +214,14 @@ public class TBBuilder {
      * @param exceptionLogger write exceptions here.
      * @throws Exception if an exception happens tha twe can't recover from.
      */
-    public TBBuilder(DBConfiguration dbConfig, int deploymentNo, String deploymentName, DeplomentPlatform platform, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) throws Exception {
+    public TBBuilder(
+            DBConfiguration dbConfig,
+            int deploymentNo,
+            String deploymentName,
+            DeplomentPlatform platform,
+            Consumer<String> statusWriter,
+            Consumer<Exception> exceptionLogger
+    ) throws Exception {
         builderContext = new BuilderContext(dbConfig, deploymentNo, deploymentName, statusWriter, exceptionLogger);
         utils = new Utils(this, builderContext);
         this.platform = platform;
@@ -287,7 +295,8 @@ public class TBBuilder {
         new Create(this, builderContext).createDeploymentWithPackages(packages);
     }
 
-    public void createDeployment(DeploymentInfo deploymentInfo) throws Exception {
+    // TODO: move platform here
+    public void createDeployment(DeploymentInfo deploymentInfo, AcmContent.AcmRootNode playlistRootNode) throws Exception {
         if (platform == DeplomentPlatform.TalkingBook) {
             // Was "v1-"
             BuilderContext bc1 = new BuilderContext("", builderContext);
@@ -303,7 +312,7 @@ public class TBBuilder {
             }
         } else {
             BuilderContext bc2 = new BuilderContext("", builderContext);
-            CreateForCompanionApp cfv2 = new CreateForCompanionApp(this, bc2, deploymentInfo);
+            CreateForCompanionApp cfv2 = new CreateForCompanionApp(this, bc2, deploymentInfo, playlistRootNode);
             cfv2.go();
         }
     }

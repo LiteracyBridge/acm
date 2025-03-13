@@ -2,6 +2,7 @@ package org.literacybridge.acm.tbbuilder
 
 import org.literacybridge.acm.config.ACMConfiguration
 import org.literacybridge.acm.deployment.DeploymentInfo
+import org.literacybridge.acm.gui.assistants.util.AcmContent
 import org.literacybridge.acm.repository.AudioItemRepository
 import org.literacybridge.acm.store.AudioItemModel
 import org.literacybridge.acm.store.PackageMetadata
@@ -101,7 +102,8 @@ resulting package sections
 class CreateForCompanionApp internal constructor(
     tbBuilder: TBBuilder,
     private val builderContext: BuilderContext,
-    private val deploymentInfo: DeploymentInfo?
+    private val deploymentInfo: DeploymentInfo,
+    private val playlistRootNode: AcmContent.AcmRootNode
 ) {
     val audioFormat: AudioItemRepository.AudioFormat = AudioItemRepository.AudioFormat.MP3
     private val repository = ACMConfiguration.getInstance().currentDB.repository
@@ -110,29 +112,46 @@ class CreateForCompanionApp internal constructor(
     private var audioItems: List<AudioItemModel> = emptyList()
     private val metadata: PackageMetadata = PackageMetadata()
 
+    // {language: {playlistTitle: [audio_items]}}
+    private val deploymentContents: HashMap<String, HashMap<String, List<String>>> = HashMap()
+//    private val playlists: ArrayList<String> = ArrayList()
+
     init {
 //        super(tbBuilder, builderContext, deploymentInfo);
 //        allPackagesData = PackagesData(builderContext.deploymentName)
 //        imagesDir = File(builderContext.stagedDeploymentDir, "")
 //        this.builderContext = builderContext
+
+        for (languageNode in playlistRootNode.languageNodes) {
+            // playlistTitle: [audio items idss]
+            val playlists: HashMap<String, List<String>> = HashMap()
+
+            for (playlistNode in languageNode.playlistNodes) {
+                playlists[playlistNode.title] = playlistNode.audioItemNodes.map { it.audioItem.id }
+            }
+
+            deploymentContents[languageNode.languageCode] = playlists
+        }
+
         createDirs(this.baseDir)
     }
 
     fun go() {
         // TODO: check for convertion errors
+        var sql = "SELECT language FROM audio_items aud\n" +
+                "INNER JOIN playlists p ON p.id = aud.playlist_id\n" +
+                "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ?\n" +
+                "WHERE type = 'Message' AND (aud.variant = '' OR aud.variant IS NULL) AND aud.language IN ("
+        sql += deploymentContents.keys.map { "'${it}'" }.joinToString(", ") + ")\n"
+        sql += "GROUP BY language;"
 
-        val languages = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(
-            "SELECT language FROM audio_items aud\n" +
-                    "INNER JOIN playlists p ON p.id = aud.playlist_id\n" +
-                    "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ?\n" +
-                    "WHERE type = 'Message' AND (aud.variant = '' OR aud.variant IS NULL)\n" +
-                    "GROUP BY language;",
-            builderContext.deploymentNo
-        )!!.map { it.language }
-
+        val languages =
+            ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql, builderContext.deploymentNo)!!
+                .map { it.language }
+//        val languages = deploymentContents.keys
         for (language in languages) {
             val content = PackageMetadata.PackageContent()
-            addMessageToPackage(language, content)
+            addMessagesToPackage(language, content)
 
             val path = File(baseDir, language)
             addPromptsToPackage(
@@ -151,13 +170,16 @@ class CreateForCompanionApp internal constructor(
             metadata.addMessage(language, content)
         }
 
+        sql = "SELECT language, variant FROM audio_items aud\n" +
+                "INNER JOIN playlists p ON p.id = aud.playlist_id\n" +
+                "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ?\n" +
+                "WHERE type = 'Message' AND (aud.variant != '' AND aud.variant IS NOT NULL)\n" +
+                " AND language IN ("
+        sql += languages.map { "'${it}'" }.joinToString(", ") + ")\n"
+        sql += "GROUP BY language, variant;";
+
         val languageVariants = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(
-            "SELECT language, variant FROM audio_items aud\n" +
-                    "INNER JOIN playlists p ON p.id = aud.playlist_id\n" +
-                    "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ?\n" +
-                    "WHERE type = 'Message' AND (aud.variant != '' AND aud.variant IS NOT NULL)\n" +
-                    "GROUP BY language, variant;",
-            builderContext.deploymentNo
+            sql, builderContext.deploymentNo
         )!!
 
         for (rec in languageVariants) {
@@ -165,7 +187,7 @@ class CreateForCompanionApp internal constructor(
 
             val content = PackageMetadata.PackageContent()
             val label = "${rec.language}-${rec.variant}"
-            addMessageToPackage(label, content)
+            addMessagesToPackage(label, content)
 
             val f = File(baseDir, label)
             addPromptsToPackage(
@@ -201,7 +223,7 @@ class CreateForCompanionApp internal constructor(
         metadataFile.writeText(metadata.toJson(), Charsets.UTF_8)
     }
 
-    private fun addMessageToPackage(
+    private fun addMessagesToPackage(
         language: String,
         content: PackageMetadata.PackageContent,
         variant: String? = null
@@ -212,12 +234,18 @@ class CreateForCompanionApp internal constructor(
             createDirs(File(baseDir, "$language-$variant"))
         }
         val messagesDir = createDirs(File(dir, "messages"))
+        val playlistsTitles = (deploymentContents[language]?.keys ?: emptyList())
 
         var sql =
             "SELECT a.id, a.title, a.acm_id, a.type, a.language, a.variant, p.title AS playlist_title FROM audio_items a\n" +
-                    "INNER JOIN playlists p ON p.id = a.playlist_id\n" +
-                    "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ?\n" +
-                    "WHERE a.language = '${language}' AND type = 'Message' "
+                    "INNER JOIN playlists p ON p.id = a.playlist_id AND p.title IN ("
+
+        // Filter by selected playlist titles
+        // ( 'title1', 'title2', ...)
+        sql += playlistsTitles.map { "'${it}'" }.joinToString(", ") + ")\n"
+
+        sql += "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ?\n" +
+                "WHERE a.language = '${language}' AND type = 'Message' "
         sql += if (variant != null) {
             "  AND a.variant = '$variant'"
         } else {
@@ -229,12 +257,17 @@ class CreateForCompanionApp internal constructor(
             sql,
             builderContext.deploymentNo
         )!!
-        audioItems.forEach { audioItem ->
-            val file = addToPackage(audioItem, messagesDir)
-            content.addMessage(audioItem, file, baseDir)
-            // Add audio item to the package_data.txt.
-//            val exportPath = makePath(File(messagesDir, filename))
-//            playlistData.addMessage(audioItem.title, exportPath)
+        playlistsTitles.forEach { playlistTitle ->
+            val audioIds = deploymentContents[language]?.get(playlistTitle) ?: emptyList()
+            // TODO: loop with playlist titles/mesage ids
+            // TODO: re-order results as originaly orderd by the user
+            for ((index, id) in audioIds.withIndex()) {
+                val audioItem = audioItems.find { it.acm_id == id }
+                audioItem?.let {
+                    val file = addToPackage(it, messagesDir)
+                    content.addMessage(audioItem, index, file, baseDir)
+                }
+            }
         }
     }
 
