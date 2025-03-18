@@ -11,10 +11,7 @@ import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.importexport.AudioImporter;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.MetadataSpecification;
-import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.*;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
 import org.literacybridge.acm.utils.Version;
@@ -151,8 +148,10 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                     matchable.getLeft().setItem(audioItem);
                     store.newAudioItem(audioItem);
                 }
+                AudioItemModel.Companion.insertSystemPrompt(audioItem);
+
             } catch (Exception e) {
-                //System.out.println(e.getMessage());
+                System.out.println(e.getMessage());
             }
         }
 

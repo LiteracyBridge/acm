@@ -2,8 +2,7 @@ package org.literacybridge.acm.store
 
 import org.literacybridge.acm.config.ACMConfiguration
 import org.literacybridge.acm.gui.assistants.ContentImport.AudioTarget
-import org.literacybridge.acm.gui.assistants.util.AudioUtils
-import org.literacybridge.core.spec.ContentSpec
+import org.literacybridge.acm.gui.assistants.PromptsImport.PromptTarget
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -31,7 +30,7 @@ class AudioItemModel {
     }
 
     companion object {
-        fun create(
+        fun insertMessageOrPlaylistPrompt(
             audioType: ItemType,
             audioTarget: AudioTarget
         ) {
@@ -93,6 +92,35 @@ class AudioItemModel {
                 audio?.metadata?.get(MetadataSpecification.LB_BENEFICIARY),
                 audio?.categoryList?.joinToString(",") { it.categoryName },
                 audioType,
+                false,
+                audio?.metadata?.get(MetadataSpecification.DC_SOURCE),
+            )
+        }
+
+        fun insertSystemPrompt(audio: AudioItem) {
+            ACMConfiguration.getInstance().currentDB.db.update(
+                "INSERT OR IGNORE INTO audio_items(title, language, duration, file_path, position," +
+                        " format, created_at, status, " +
+                        " volume, keywords,timing, primary_speaker, acm_id, related_id, transcription, " +
+                        " note, beneficiary, category, type, committed, source)" +
+                        " VALUES(?, ?, ?, null, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                audio.title,
+                audio?.languageCode,
+                audio?.duration,
+                audio?.metadata?.get(MetadataSpecification.LB_MESSAGE_FORMAT),
+                Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT),
+                audio?.metadata?.get(MetadataSpecification.LB_STATUS),
+                audio?.metadata?.get(MetadataSpecification.LB_VOLUME),
+                audio?.metadata?.get(MetadataSpecification.LB_KEYWORDS),
+                audio?.metadata?.get(MetadataSpecification.LB_TIMING),
+                audio?.metadata?.get(MetadataSpecification.LB_PRIMARY_SPEAKER),
+                audio?.metadata?.get(MetadataSpecification.DC_IDENTIFIER),
+                audio?.metadata?.get(MetadataSpecification.DC_RELATION),
+                audio?.metadata?.get(MetadataSpecification.LB_ENGLISH_TRANSCRIPTION),
+                audio?.metadata?.get(MetadataSpecification.LB_NOTES),
+                audio?.metadata?.get(MetadataSpecification.LB_BENEFICIARY),
+                audio?.categoryList?.joinToString(",") { it.categoryName },
+                ItemType.SystemPrompt.name,
                 false,
                 audio?.metadata?.get(MetadataSpecification.DC_SOURCE),
             )
