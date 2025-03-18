@@ -320,7 +320,11 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
             }
 
             // Update record in sqlite
-            AudioItemModel.Companion.create( AudioItemModel.ItemType.Message, matchableItem.getLeft());
+            if (!(matchableItem.getLeft() instanceof AudioMessageTarget)) {
+                AudioItemModel.Companion.create(AudioItemModel.ItemType.PlaylistPrompt, matchableItem.getLeft());
+            } else {
+                AudioItemModel.Companion.create( AudioItemModel.ItemType.Message, matchableItem.getLeft());
+            }
 
             if (isUpdate) {
                 updateCount++;
