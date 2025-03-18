@@ -166,10 +166,10 @@ public class AudioItem extends Committable {
 	}
 
   /**
-   * Audio is considered as corrupted if it has a negative or 00:00 or hour (h) duration
+   * Audio is considered as corrupted if it has a negative (-) in the duration
    */
   public Boolean isCorrupted() {
-  		return this.getDuration().matches( "(^-\\s?\\d\\d:\\d\\d\\s?\\w)|(00:00)|(\\d\\d:\\d\\d\\s+h)");
+  		return this.getDuration().contains( "-");
   }
 
   @Override
