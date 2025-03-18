@@ -40,9 +40,10 @@ class AudioItemModel {
             val msg = audioTarget.messageSpec
             val audio = audioTarget.item
             val playlistQuery = if (audioType != ItemType.SystemPrompt) {
-                "(SELECT p.id FROM playlists p WHERE p.title = '${audioTarget.playlistSpec.playlistTitle}'\n" +
+                "(SELECT p.id FROM playlists p" +
                         " INNER JOIN deployments d ON d.id = p.deployment_id " +
                         " AND d.deployment_number = ${msg.deploymentNumber} " +
+                        " WHERE p.title = '${audioTarget.playlistSpec.playlistTitle}'\n" +
                         " LIMIT 1)"
             } else {
                 "null"
