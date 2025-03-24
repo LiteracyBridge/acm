@@ -8,11 +8,13 @@ import org.literacybridge.acm.store.AudioItemModel
 import org.literacybridge.acm.store.DeplomentPlatform
 import org.literacybridge.acm.store.DeploymentPackageModel
 import org.literacybridge.acm.store.PackageMetadata
-import org.literacybridge.acm.tbbuilder.TBBuilder.BuilderContext
-import java.io.*
+import java.io.File
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.function.Consumer
+import kotlin.io.path.Path
+import kotlin.io.path.moveTo
 
 /*
 * Builds a TBv1 deployment.
@@ -101,16 +103,18 @@ resulting package sections
 
 *
 */
-class CreateForCompanionApp internal constructor(
-    tbBuilder: TBBuilder,
-    private val builderContext: BuilderContext,
+class CreateForCompanionApp(
     private val deploymentInfo: DeploymentInfo,
-    playlistRootNode: AcmContent.AcmRootNode
+    playlistRootNode: AcmContent.AcmRootNode,
+    private val exceptionLogger: Consumer<Exception>,
+    private val statusWriter: Consumer<String>,
+    isPublished: Boolean,
+    packagesDir: File
 ) {
     private val audioFormat: AudioItemRepository.AudioFormat = AudioItemRepository.AudioFormat.MP3
     private val repository = ACMConfiguration.getInstance().currentDB.repository
 
-    private val baseDir = File(System.getProperty("java.io.tmpdir"), builderContext.deploymentName)
+    private var baseDir: File
     private var audioItems: List<AudioItemModel> = emptyList()
     private val metadata: PackageMetadata = PackageMetadata()
 
@@ -118,20 +122,17 @@ class CreateForCompanionApp internal constructor(
     private val deploymentContents: HashMap<String, HashMap<String, List<String>>> = HashMap()
 
     init {
-//        super(tbBuilder, builderContext, deploymentInfo);
-//        allPackagesData = PackagesData(builderContext.deploymentName)
-//        imagesDir = File(builderContext.stagedDeploymentDir, "")
-//        this.builderContext = builderContext
         metadata.deployment = PackageMetadata.DeploymentDescription(
-            name = builderContext.deploymentName,
-            number = builderContext.deploymentNo
+            name = deploymentInfo.name,
+            number = deploymentInfo.deploymentNumber
         )
         metadata.platform = DeplomentPlatform.CompanionApp.name
-        metadata.published = true // TODO: retreive this from deployment info
+        metadata.published = isPublished
         metadata.revision = DeploymentPackageModel.getNextRevision(deploymentInfo.name, deploymentInfo.deploymentNumber)
         metadata.createdAt =
             Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
 
+        baseDir = File(packagesDir, metadata.revision)
         for (languageNode in playlistRootNode.languageNodes) {
             // playlistTitle: [audio items idss]
             val playlists: HashMap<String, List<String>> = HashMap()
@@ -146,8 +147,7 @@ class CreateForCompanionApp internal constructor(
         createDirs(this.baseDir)
     }
 
-    fun go() {
-        // TODO: check for convertion errors
+    fun go(): PackageMetadata {
         var sql = "SELECT language FROM audio_items aud\n" +
                 "INNER JOIN playlists p ON p.id = aud.playlist_id\n" +
                 "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ?\n" +
@@ -156,7 +156,7 @@ class CreateForCompanionApp internal constructor(
         sql += "GROUP BY language;"
 
         val languages =
-            ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql, builderContext.deploymentNo)!!
+            ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql, deploymentInfo.deploymentNumber)!!
                 .map { it.language }
 
         for (language in languages) {
@@ -189,7 +189,7 @@ class CreateForCompanionApp internal constructor(
         sql += "GROUP BY language, variant;";
 
         val languageVariants = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(
-            sql, builderContext.deploymentNo
+            sql, deploymentInfo.deploymentNumber
         )!!
 
         for (rec in languageVariants) {
@@ -220,15 +220,27 @@ class CreateForCompanionApp internal constructor(
         metadata.computerName = "TODO: get computer name"
         metadata.createdBy = "TODO: get user email"
         metadata.size = baseDir.length()
-        metadata.project = builderContext.project
+        metadata.project = deploymentInfo.programId
 
         val metadataFile = File(baseDir, "metadata.json")
         metadataFile.writeText(metadata.toJson(), Charsets.UTF_8)
 
         // Save to db
         DeploymentPackageModel.create(metadata)
-        // TODO: fix non commit bug
-//        ACMConfiguration.getInstance().currentDB.db.commit()
+
+        // Move package to "published" dir if it is not a test deployment
+        if (metadata.published) {
+            val dest = File(ACMConfiguration.getInstance().currentDB.programTbLoadersDir, "published")
+            if (!dest.exists()) {
+                dest.mkdirs()
+            }
+            Path(baseDir.path).moveTo(dest.toPath())
+        }
+        return metadata
+    }
+
+    private fun reportStatus(format: String, vararg args: Any?) {
+        statusWriter.accept(String.format(format, *args))
     }
 
     private fun addMessagesToPackage(
@@ -263,7 +275,7 @@ class CreateForCompanionApp internal constructor(
         // Query messages and add them to the packages
         val audioItems = ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(
             sql,
-            builderContext.deploymentNo
+            deploymentInfo.deploymentNumber
         )!!
         playlistsTitles.forEach { playlistTitle ->
             val audioIds = deploymentContents[language]?.get(playlistTitle) ?: emptyList()
@@ -288,7 +300,7 @@ class CreateForCompanionApp internal constructor(
         var sql = "SELECT a.id, a.title, a.acm_id, a.type, a.language, a.variant FROM audio_items a\n"
         if (type.name == AudioItemModel.ItemType.PlaylistPrompt.name) {
             sql += "INNER JOIN playlists p ON p.id = a.playlist_id\n" +
-                    "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ${builderContext.deploymentNo}\n"
+                    "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ${deploymentInfo.deploymentNumber}\n"
         }
         sql += "WHERE a.language = '${language}' AND type = '$type' AND deleted_at IS NULL"
 
@@ -321,7 +333,7 @@ class CreateForCompanionApp internal constructor(
 
     private fun addToPackage(audioItem: AudioItemModel, dest: File): File {
         println(String.format("    Exporting audioitem %s to %s%n", audioItem.acm_id, dest))
-        builderContext.reportStatus(
+        reportStatus(
             String.format(
                 "    Exporting audioitem %s to %s%n",
                 audioItem.acm_id,
@@ -340,7 +352,7 @@ class CreateForCompanionApp internal constructor(
                 repository.exportAudioFileWithFormat(audioRef, exportFile, audioFormat)
                 return exportFile
             } catch (ex: Exception) {
-                builderContext.logException(ex)
+                exceptionLogger.accept(ex)
             }
         }
         return exportFile
@@ -349,11 +361,11 @@ class CreateForCompanionApp internal constructor(
 
     private fun addPlaylistContentToImage() {
         val messagesDir =
-            File(File(System.getProperty("java.io.tmpdir"), builderContext.deploymentName), "messages")
+            File(File(System.getProperty("java.io.tmpdir"), deploymentInfo.name), "messages")
 //        val messagesDir = File(builderContext.stagedDeploymentDir, "messages")
         audioItems.forEach { audioItem ->
             println(String.format("    Exporting audioitem %s to %s%n", audioItem.acm_id, messagesDir))
-            builderContext.reportStatus(
+            reportStatus(
                 String.format(
                     "    Exporting audioitem %s to %s%n",
                     audioItem.acm_id,
@@ -372,7 +384,7 @@ class CreateForCompanionApp internal constructor(
                 try {
                     repository.exportAudioFileWithFormat(audioRef, exportFile, audioFormat)
                 } catch (ex: Exception) {
-                    builderContext.logException(ex)
+                    exceptionLogger.accept(ex)
                 }
             }
             // Add audio item to the package_data.txt.
@@ -381,13 +393,13 @@ class CreateForCompanionApp internal constructor(
         }
     }
 
-    private fun createDirs(dir: String): File {
-        val f = File(dir)
-        if (!f.exists()) {
-            f.mkdirs()
-        }
-        return f
-    }
+//    private fun createDirs(dir: String): File {
+//        val f = File(dir)
+//        if (!f.exists()) {
+//            f.mkdirs()
+//        }
+//        return f
+//    }
 
     private fun createDirs(f: File): File {
         if (!f.exists()) {
