@@ -296,7 +296,7 @@ public class TBBuilder {
     }
 
     // TODO: move platform here
-    public void createDeployment(DeploymentInfo deploymentInfo, AcmContent.AcmRootNode playlistRootNode) throws Exception {
+    public void createDeployment(DeploymentInfo deploymentInfo) throws Exception {
         // Was "v1-"
         BuilderContext bc1 = new BuilderContext("", builderContext);
         CreateForV1 cfv1 = new CreateForV1(this, bc1, deploymentInfo);

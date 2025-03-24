@@ -13,7 +13,6 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.function.Consumer
-import kotlin.io.path.Path
 import kotlin.io.path.moveTo
 
 /*
@@ -108,8 +107,7 @@ class CreateForCompanionApp(
     playlistRootNode: AcmContent.AcmRootNode,
     private val exceptionLogger: Consumer<Exception>,
     private val statusWriter: Consumer<String>,
-    isPublished: Boolean,
-    packagesDir: File
+    isPublished: Boolean
 ) {
     private val audioFormat: AudioItemRepository.AudioFormat = AudioItemRepository.AudioFormat.MP3
     private val repository = ACMConfiguration.getInstance().currentDB.repository
@@ -131,6 +129,13 @@ class CreateForCompanionApp(
         metadata.revision = DeploymentPackageModel.getNextRevision(deploymentInfo.name, deploymentInfo.deploymentNumber)
         metadata.createdAt =
             Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
+
+        val tbLoadersDir = ACMConfiguration.getInstance().currentDB.programTbLoadersDir
+        val packagesDir = File(tbLoadersDir, "published")
+
+        if (!packagesDir.exists()) {
+            packagesDir.mkdirs()
+        }
 
         baseDir = File(packagesDir, metadata.revision)
         for (languageNode in playlistRootNode.languageNodes) {
@@ -227,15 +232,6 @@ class CreateForCompanionApp(
 
         // Save to db
         DeploymentPackageModel.create(metadata)
-
-        // Move package to "published" dir if it is not a test deployment
-        if (metadata.published) {
-            val dest = File(ACMConfiguration.getInstance().currentDB.programTbLoadersDir, "published")
-            if (!dest.exists()) {
-                dest.mkdirs()
-            }
-            Path(baseDir.path).moveTo(dest.toPath())
-        }
         return metadata
     }
 

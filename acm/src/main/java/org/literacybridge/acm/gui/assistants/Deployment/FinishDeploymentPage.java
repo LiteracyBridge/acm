@@ -352,8 +352,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                     context.playlistRootNode,
                     this::logException,
                     this::reportState,
-                    context.isPublish(),
-                    packagesDir
+                    context.isPublish()
             );
             PackageMetadata result=creator.go();
 
