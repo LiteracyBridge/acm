@@ -46,6 +46,15 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
         }
     }
 
+    companion object {
+        /**
+         * Returns current date as an ISO formated string
+         */
+        fun now(): String {
+            return Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
+        }
+    }
+
     /**
      * Saves the changes made to the database
      */

@@ -1,11 +1,14 @@
 package org.literacybridge.acm.store
 
 import org.literacybridge.acm.config.ACMConfiguration
+import org.literacybridge.acm.config.SqliteManager
 import org.literacybridge.acm.gui.assistants.ContentImport.AudioTarget
-import org.literacybridge.acm.gui.assistants.PromptsImport.PromptTarget
+import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlin.properties.Delegates
 
 enum class DeplomentPlatform {
@@ -30,12 +33,41 @@ class AudioItemModel {
     }
 
     companion object {
+        const val TABLE = "audio_items"
+        private val logger: Logger = Logger.getLogger(AudioItemModel::class.java.name)
+
+        private fun columnNameFromMetadataField(field: MetadataField<String>): String {
+            return when (val col = field.name.replace("DC_", "").replace("LB_", "").lowercase()) {
+                "english_transcription" -> "transcription"
+                "message_format" -> "format"
+                "target_audience" -> "audience"
+                "date_recorded" -> "recorded_at"
+                "goal" -> "sdg_goals"
+                else -> col
+            }
+
+        }
+
+        fun update(field: MetadataField<String>, acmId: String, value: Any) {
+            val col = columnNameFromMetadataField(field)
+            return update(col, acmId, value)
+        }
+
+        fun update(column: String, acmId: String, value: Any) {
+            logger.log(Level.INFO, "Update '$column' of audo item '$acmId' to '$value'")
+
+            ACMConfiguration.getInstance().currentDB.db.update(
+                "UPDATE $TABLE SET $column = ?, updated_at = ? WHERE acm_id = ?",
+                value,
+                SqliteManager.now(),
+                acmId
+            )
+        }
+
         fun insertMessageOrPlaylistPrompt(
             audioType: ItemType,
             audioTarget: AudioTarget
         ) {
-            // Find message/playlist spec
-            // fill out remaing section
             val msg = audioTarget.messageSpec
             val audio = audioTarget.item
             val playlistQuery = if (audioType != ItemType.SystemPrompt) {
@@ -108,7 +140,7 @@ class AudioItemModel {
                 audio?.languageCode,
                 audio?.duration,
                 audio?.metadata?.get(MetadataSpecification.LB_MESSAGE_FORMAT),
-                Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT),
+                SqliteManager.now(),
                 audio?.metadata?.get(MetadataSpecification.LB_STATUS),
                 audio?.metadata?.get(MetadataSpecification.LB_VOLUME),
                 audio?.metadata?.get(MetadataSpecification.LB_KEYWORDS),
@@ -129,7 +161,7 @@ class AudioItemModel {
         fun delete(
             audioItem: AudioItem
         ) {
-            ACMConfiguration.getInstance().currentDB.db.update("DELETE FROM audio_items WHERE acm_id = ?", audioItem.id)
+            ACMConfiguration.getInstance().currentDB.db.update("DELETE FROM $TABLE WHERE acm_id = ?", audioItem.id)
         }
     }
 }

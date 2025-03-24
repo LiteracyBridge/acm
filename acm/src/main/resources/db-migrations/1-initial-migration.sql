@@ -40,7 +40,8 @@ CREATE TABLE "audio_items"
     "default_category_code" TEXT,
     "variant"               TEXT,
     "sdg_goal_id"           INTEGER,
-    "sdg_target"            TEXT,
+    "sdg_goals"             TEXT,
+    "sdg_targets"            TEXT,
     "key_points"            TEXT,
     "sdg_target_id"         TEXT,
     "category"              TEXT,
@@ -58,9 +59,13 @@ CREATE TABLE "audio_items"
     "committed"             INTEGER NOT NULL DEFAULT 0, -- 0 = not committed, 1 = committed
     "type"                  TEXT,                       -- "SystemPrompt" or "Message" or "PlaylistPrompt"
     "source"                TEXT,
+    "audience"              TEXT,
+    "publisher"             TEXT,
+    "dtb_revision"             TEXT,
+    "recorded_at"           TEXT,
     "created_at"            TEXT,
-    "deleted_at"            TEXT DEFAULT NULL,
-    "updated_at"            TEXT DEFAULT NULL,
+    "deleted_at"            TEXT             DEFAULT NULL,
+    "updated_at"            TEXT             DEFAULT NULL,
     PRIMARY KEY ("id" AUTOINCREMENT),
     UNIQUE ("playlist_id", "title", "language"),
     FOREIGN KEY ("playlist_id") REFERENCES "playlists" ("id") ON DELETE CASCADE
@@ -70,12 +75,12 @@ CREATE TABLE "audio_items"
 CREATE TABLE "deployment_packages"
 (
     "id"            INTEGER NOT NULL UNIQUE,
-    "revision"          TEXT    NOT NULL,
+    "revision"      TEXT    NOT NULL,
     "platform"      TEXT    NOT NULL DEFAULT 'TalkingBook', -- TalkingBook or CompanionApp
     "created_at"    TEXT    NOT NULL,
     "published"     INTEGER NOT NULL,                       -- 0 = not published, 1 = published
     "deployment_id" INTEGER NOT NULL,
-    "metadata" TEXT,
+    "metadata"      TEXT,
     PRIMARY KEY ("id" AUTOINCREMENT),
     FOREIGN KEY ("deployment_id") REFERENCES "deployments" ("id") ON DELETE CASCADE
 );
