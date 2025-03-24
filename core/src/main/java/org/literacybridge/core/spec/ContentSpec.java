@@ -133,6 +133,10 @@ public class ContentSpec {
             return playlistTitle;
         }
 
+        public Integer getDeploymentNumber() {
+            return deploymentNumber;
+        }
+
         public int getOrdinal() {
             int result = -1;
             DeploymentSpec deploymentSpec = getDeployment(this.deploymentNumber);
