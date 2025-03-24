@@ -19,13 +19,7 @@ import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Metadata;
-import org.literacybridge.acm.store.MetadataField;
-import org.literacybridge.acm.store.MetadataSpecification;
-import org.literacybridge.acm.store.MetadataStore;
-import org.literacybridge.acm.store.MetadataValue;
-import org.literacybridge.acm.store.RFC3066LanguageCode;
+import org.literacybridge.acm.store.*;
 
 import com.google.common.collect.Maps;
 
@@ -84,11 +78,13 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
             @Override
             public void setValue(AudioItem audioItem, Object newValue) {
+                Integer value = STATUS_VALUES_MAP.get(newValue.toString());
                 audioItem.getMetadata().putMetadataField(
-                        MetadataSpecification.LB_STATUS, new MetadataValue<Integer>(
-                                STATUS_VALUES_MAP.get(newValue.toString())));
+                        MetadataSpecification.LB_STATUS, new MetadataValue<Integer>(value));
+                AudioItemModel.Companion.update("status", audioItem.getId(), value);
             }
         });
+
         audioItemPropertiesObject
                 .add(new AudioItemProperty.MetadataProperty(DC_TITLE, true));
         // TODO: calculate duration of audio item
@@ -122,6 +118,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
                         // Update volume field if conversion completed successfully
                         audioItem.getMetadata().putMetadataField(
                                 LB_VOLUME, new MetadataValue<>(newValue.toString()));
+                        AudioItemModel.Companion.update("volume", audioItem.getId(), newValue.toString());
                     } catch (Exception e) {
                         // TODO: show a dialog of some sort.
                         e.printStackTrace();
@@ -143,9 +140,10 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
             @Override
             public void setValue(AudioItem audioItem, Object newValue) {
-                // not supported
+                AudioItemModel.Companion.update("volume", audioItem.getId(), newValue.toString());
             }
         });
+
         audioItemPropertiesObject.add(new AudioItemProperty(false, false) {
             @Override
             public String getName() {
@@ -367,6 +365,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
         } catch (IOException e) {
             LOG.log(Level.SEVERE,
                     "Unable to commit changes to AudioItem " + audioItem.getId(), e);
+            e.printStackTrace();
         }
     }
 
