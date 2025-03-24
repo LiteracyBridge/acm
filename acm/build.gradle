@@ -8,20 +8,20 @@ apply plugin: 'java'
 allprojects {
     apply plugin: 'idea'
 
-    repositories {
-        mavenCentral()
-        maven {
-            url = uri("https://maven.pkg.github.com/LiteracyBridge/CSMcompile")
-//            url = uri("file://Users/bill/git-package")
-            credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.read_key") ?: System.getenv("TOKEN")
-            }
-        }
-        flatDir {
-            dirs '../../CSMcompile/build/libs'
-        }
-    }
+//    repositories {
+//        mavenCentral()
+//        maven {
+//            url = uri("https://maven.pkg.github.com/LiteracyBridge/CSMcompile")
+////            url = uri("file://Users/bill/git-package")
+//            credentials {
+//                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+//                password = project.findProperty("gpr.read_key") ?: System.getenv("GITHUB_TOKEN")
+//            }
+//        }
+//        flatDir {
+//            dirs '../../CSMcompile/build/libs'
+//        }
+//    }
 }
 
 task updateVersion() {

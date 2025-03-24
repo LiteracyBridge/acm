@@ -1,5 +1,10 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.control.ComboBox;
+import javafx.scene.layout.StackPane;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
@@ -18,6 +23,9 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
     private final JComboBox<String> deploymentChooser;
 
     private DeploymentContext context;
+
+    /// JFXPanel allows embedding JavaFX components inside a Swing-based application.
+    private final JFXPanel jfxPanel;
 
     WelcomePage(PageHelper<DeploymentContext> listener) {
         super(listener);
@@ -45,8 +53,15 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
         deploymentChooser.addActionListener(this::onSelection);
         setComboWidth(deploymentChooser, "Choose...");
         deploymentChooser.setMaximumSize(deploymentChooser.getPreferredSize());
-
         hbox.add(deploymentChooser);
+
+
+        /// Initialize JFXPanel to embed JavaFX dropdown in Swing.
+        jfxPanel = new JFXPanel();
+        initializeJavaFXDropdown();
+
+        hbox.add(jfxPanel);
+
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
@@ -56,6 +71,26 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
         getProgramInformation();
     }
 
+   /// Sets up and embeds a JavaFX ComboBox inside the Swing JFXPanel.
+    private void initializeJavaFXDropdown() {
+        Platform.runLater(() -> {
+            ComboBox<String> fxComboBox = new ComboBox<>();
+            fxComboBox.getItems().addAll("Companion App", "Talking book");
+            fxComboBox.setPromptText("Choose from");
+
+            fxComboBox.getSelectionModel().select("Talking book");
+
+            fxComboBox.setOnAction(event -> {
+             String selectedValue =  fxComboBox.getSelectionModel().getSelectedItem();
+                System.out.println("Selected value: " + selectedValue);
+            });
+
+            // Set the scene with the JavaFX dropdown
+            StackPane root = new StackPane(fxComboBox);
+            Scene scene = new Scene(root);
+            jfxPanel.setScene(scene);
+        });
+    }
     /**
      * Called when a selection changes. Inspect the deployment and language
      * selections, and if both have a selection, enable the "Next" button.
