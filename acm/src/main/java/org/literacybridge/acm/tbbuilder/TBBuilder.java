@@ -297,22 +297,16 @@ public class TBBuilder {
 
     // TODO: move platform here
     public void createDeployment(DeploymentInfo deploymentInfo, AcmContent.AcmRootNode playlistRootNode) throws Exception {
-        if (platform == DeplomentPlatform.TalkingBook) {
-            // Was "v1-"
-            BuilderContext bc1 = new BuilderContext("", builderContext);
-            CreateForV1 cfv1 = new CreateForV1(this, bc1, deploymentInfo);
-            cfv1.go();
+        // Was "v1-"
+        BuilderContext bc1 = new BuilderContext("", builderContext);
+        CreateForV1 cfv1 = new CreateForV1(this, bc1, deploymentInfo);
+        cfv1.go();
 
-            // Was "v2-"
-            DBConfiguration dbConfig = ACMConfiguration.getInstance().getDbConfiguration(builderContext.project);
-            if (dbConfig.hasTbV2Devices()) {
-                BuilderContext bc2 = new BuilderContext("", builderContext);
-                CreateForV2 cfv2 = new CreateForV2(this, bc2, deploymentInfo);
-                cfv2.go();
-            }
-        } else {
+        // Was "v2-"
+        DBConfiguration dbConfig = ACMConfiguration.getInstance().getDbConfiguration(builderContext.project);
+        if (dbConfig.hasTbV2Devices()) {
             BuilderContext bc2 = new BuilderContext("", builderContext);
-            CreateForCompanionApp cfv2 = new CreateForCompanionApp(this, bc2, deploymentInfo, playlistRootNode);
+            CreateForV2 cfv2 = new CreateForV2(this, bc2, deploymentInfo);
             cfv2.go();
         }
     }

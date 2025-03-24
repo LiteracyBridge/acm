@@ -16,6 +16,9 @@ import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.DeplomentPlatform;
+import org.literacybridge.acm.store.PackageMetadata;
+import org.literacybridge.acm.tbbuilder.CreateForCompanionApp;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
@@ -169,7 +172,11 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                 summaryMessage.append(String.format("<h3>Created on %s</h3>", localDateFormatter.format(LocalDateTime.now())));
 
                 try {
-                    createDeployment();
+                    if(context.platform == DeplomentPlatform.CompanionApp){
+                        createDeploymentForCompanionApp();
+                    } else {
+                        createDeployment();
+                    }
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -276,12 +283,12 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
         try {
             TBBuilder tbBuilder = new TBBuilder(
-                ACMConfiguration.getInstance().getCurrentDB(),
-                context.deploymentNo,
-                deploymentName(),
-                context.platform,
-                this::reportState,
-                this::logException
+                    ACMConfiguration.getInstance().getCurrentDB(),
+                    context.deploymentNo,
+                    deploymentName(),
+                    context.platform,
+                    this::reportState,
+                    this::logException
             );
 
             // Create.
@@ -307,6 +314,52 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                 args.add(deploymentName());
                 tbBuilder.publishDeployment(args);
                 UIUtils.setLabelText(revisionText, String.format(" (revision '%s')", tbBuilder.getRevision()));
+                UIUtils.setVisible(revisionText, true);
+            } else {
+                if (context.isPublish()) {
+                    context.issues.add(Issues.Severity.FATAL, Issues.Area.DEPLOYMENT, "Deployment not published due to errors.", (Object) null);
+                    errors.add(new DeploymentException("Deployment not published due to errors.", null));
+                    publishNotification.setText(publishErrorNotificationText);
+                }
+                publishNotification.setVisible(true);
+            }
+        } catch (Exception e) {
+            errors.add(new DeploymentException("Exception creating deployment", e));
+            e.printStackTrace();
+        }
+
+        if (ACMConfiguration.isTestData()) {
+            // Fake error for testing.
+            errors.add(new DeploymentException("Simulated error for testing.", null));
+        }
+    }
+
+    /**
+     * Creates the Deployment, and publishes if configured to do so.
+     */
+    private void createDeploymentForCompanionApp() {
+        makeDeploymentReport();
+
+        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
+        File packagesDir = new File(tbLoadersDir, "packages");
+        if (!packagesDir.exists()) {
+            packagesDir.mkdirs();
+        }
+
+        try {
+            CreateForCompanionApp creator = new CreateForCompanionApp(
+                    context.deploymentInfo,
+                    context.playlistRootNode,
+                    this::logException,
+                    this::reportState,
+                    context.isPublish(),
+                    packagesDir
+            );
+            PackageMetadata result=creator.go();
+
+            // Publish
+            if (context.isPublish() && errors.isEmpty()) {
+                UIUtils.setLabelText(revisionText, String.format(" (revision '%s')", result.revision));
                 UIUtils.setVisible(revisionText, true);
             } else {
                 if (context.isPublish()) {
