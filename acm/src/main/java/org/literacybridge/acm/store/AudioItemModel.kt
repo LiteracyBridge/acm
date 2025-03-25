@@ -24,6 +24,20 @@ class AudioItemModel {
     lateinit var acm_id: String
     lateinit var type: String
     var playlist_title: String? = null // NB: Only populated in join queries
+    var publisher: String? = null
+    var source: String? = null
+    var related_id: String? = null
+    var dtb_revision: String? = null
+    var duration: String? = null
+    var recorded_at: String? = null
+    var keywords: String? = null
+    var timing: String? = null
+    var speaker: String? = null
+    var goal: String? = null
+    var transcription: String? = null
+    var notes: String? = null
+    var status: String? = null
+    var category: String?  = null
 
     enum class ItemType {
         PlaylistPrompt,
@@ -42,7 +56,6 @@ class AudioItemModel {
                 "message_format" -> "format"
                 "target_audience" -> "audience"
                 "date_recorded" -> "recorded_at"
-                "goal" -> "sdg_goals"
                 else -> col
             }
 
@@ -97,8 +110,8 @@ class AudioItemModel {
             ACMConfiguration.getInstance().currentDB.db.update(
                 "INSERT OR IGNORE INTO audio_items(title, language, duration, file_path, position," +
                         " format, default_category_code, variant, sdg_goal_id, key_points, created_at, status, " +
-                        " volume, keywords,timing, primary_speaker, acm_id, related_id, transcription, " +
-                        " note, beneficiary, category, type, committed, source, playlist_id)" +
+                        " volume, keywords,timing, speaker, acm_id, related_id, transcription, " +
+                        " notes, beneficiary, category, type, committed, source, playlist_id)" +
                         " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
                         + "$playlistQuery)",
                 title,
@@ -133,8 +146,8 @@ class AudioItemModel {
             ACMConfiguration.getInstance().currentDB.db.update(
                 "INSERT OR IGNORE INTO audio_items(title, language, duration, file_path, position," +
                         " format, created_at, status, " +
-                        " volume, keywords,timing, primary_speaker, acm_id, related_id, transcription, " +
-                        " note, beneficiary, category, type, committed, source)" +
+                        " volume, keywords,timing, speaker, acm_id, related_id, transcription, " +
+                        " notes, beneficiary, category, type, committed, source)" +
                         " VALUES(?, ?, ?, null, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 audio.title,
                 audio?.languageCode,

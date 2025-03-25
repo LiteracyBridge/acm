@@ -132,13 +132,27 @@ class PackageMetadata {
             messages.add(
                 MessageContent(
                     title = audioItem.title,
-                    contentId = audioItem.acm_id,
+                    acm_id = audioItem.acm_id,
                     language = audioItem.language,
                     variant = audioItem.variant,
                     path = FilenameUtils.separatorsToUnix(file.toRelativeString(baseDir)),
                     playlist = audioItem.playlist_title,
                     size = file.length(),
-                    position = position
+                    position = position,
+                    publisher = audioItem.publisher,
+                    source = audioItem.source,
+                    related_id = audioItem.related_id,
+                    dtb_revision = audioItem.dtb_revision,
+                    duration = audioItem.duration,
+                    recorded_at = audioItem.recorded_at,
+                    keywords = audioItem.keywords,
+                    timing = audioItem.timing,
+                    speaker = audioItem.speaker,
+                    goal = audioItem.goal,
+                    transcription = audioItem.transcription,
+                    notes = audioItem.notes,
+                    status = audioItem.status,
+                    category = audioItem.category,
                 )
             )
         }
@@ -147,13 +161,27 @@ class PackageMetadata {
             playlistPrompts.add(
                 MessageContent(
                     title = audioItem.title,
-                    contentId = audioItem.acm_id,
+                    acm_id = audioItem.acm_id,
                     language = audioItem.language,
                     variant = audioItem.variant,
                     path = FilenameUtils.separatorsToUnix(file.toRelativeString(baseDir)),
                     playlist = audioItem.playlist_title,
                     size = file.length(),
-                    position = null
+                    position = null,
+                    publisher = audioItem.publisher,
+                    source = audioItem.source,
+                    related_id = audioItem.related_id,
+                    dtb_revision = audioItem.dtb_revision,
+                    duration = audioItem.duration,
+                    recorded_at = audioItem.recorded_at,
+                    keywords = audioItem.keywords,
+                    timing = audioItem.timing,
+                    speaker = audioItem.speaker,
+                    goal = audioItem.goal,
+                    transcription = audioItem.transcription,
+                    notes = audioItem.notes,
+                    status = audioItem.status,
+                    category = audioItem.category,
                 )
             )
         }
@@ -174,13 +202,27 @@ class PackageMetadata {
     @Serializable
     data class MessageContent(
         val title: String,
-        val contentId: String,
+        val acm_id: String,
         val path: String,
         val language: String,
         val playlist: String?,
         val size: Long,
         val variant: String?,
-        val position: Int?
+        val position: Int?,
+        val publisher: String?,
+        val source: String?,
+        val related_id: String?,
+        val dtb_revision: String?,
+        val duration: String?,
+        val recorded_at: String?,
+        val keywords: String?,
+        val timing: String?,
+        val speaker: String?,
+        val goal: String?,
+        val transcription: String?,
+        val notes: String?,
+        val status: String?,
+        val category: String?
     )
 
     @Serializable
