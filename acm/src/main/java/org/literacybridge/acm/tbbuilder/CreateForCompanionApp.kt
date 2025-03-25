@@ -119,6 +119,13 @@ class CreateForCompanionApp(
     // {language: {playlistTitle: [audio_items]}}
     private val deploymentContents: HashMap<String, HashMap<String, List<String>>> = HashMap()
 
+    /**
+     * List of columns that will be selected from db in later queries
+     */
+    private val audioItemColumns = "a.id, a.title, a.acm_id, a.type, a.language, a.variant, a.publisher" +
+            ", a.source, a.related_id, a.dtb_revision, a.duration, a.recorded_at, a.keywords, a.timing" +
+            ", a.speaker, a.goal, a.transcription, a.notes, a.status, a.category"
+
     init {
         metadata.deployment = PackageMetadata.DeploymentDescription(
             name = deploymentInfo.name,
@@ -253,7 +260,7 @@ class CreateForCompanionApp(
         val playlistsTitles = (deploymentContents[language]?.keys ?: emptyList())
 
         var sql =
-            "SELECT a.id, a.title, a.acm_id, a.type, a.language, a.variant, p.title AS playlist_title FROM audio_items a\n" +
+            "SELECT $audioItemColumns, p.title AS playlist_title FROM audio_items a\n" +
                     "INNER JOIN playlists p ON p.id = a.playlist_id AND p.title IN ("
 
         // Filter by selected playlist titles
@@ -293,7 +300,7 @@ class CreateForCompanionApp(
         type: AudioItemModel.ItemType,
         content: PackageMetadata.PackageContent
     ) {
-        var sql = "SELECT a.id, a.title, a.acm_id, a.type, a.language, a.variant FROM audio_items a\n"
+        var sql = "SELECT $audioItemColumns FROM audio_items a\n"
         if (type.name == AudioItemModel.ItemType.PlaylistPrompt.name) {
             sql += "INNER JOIN playlists p ON p.id = a.playlist_id\n" +
                     "INNER JOIN deployments d ON d.id = p.deployment_id AND d.deployment_number = ${deploymentInfo.deploymentNumber}\n"
@@ -308,10 +315,6 @@ class CreateForCompanionApp(
             } else {
                 content.addSystemPrompt(audioItem, file, baseDir)
             }
-            // Add audio item to the package_data.txt.
-//            val exportPath = makePath(File(messagesDir, filename))
-//            playlistData.addMessage(audioItem.title, exportPath)
-
         }
 
         // If playlist prompts, then and add talking book & user feedback prompts

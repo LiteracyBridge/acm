@@ -214,8 +214,8 @@ class LuceneToSqliteMigration {
         getDb().update(
             "INSERT OR IGNORE INTO audio_items(title, language, duration, file_path, position," +
                     " format, default_category_code, variant, sdg_goal_id, key_points, created_at, status, " +
-                    " volume, keywords,timing, primary_speaker, acm_id, related_id, transcription, " +
-                    " note, beneficiary, category, type, committed, source, playlist_id)" +
+                    " volume, keywords,timing, speaker, acm_id, related_id, transcription, " +
+                    " notes, beneficiary, category, type, committed, source, playlist_id)" +
                     " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
                     + "$playlistQuery)",
             title,
