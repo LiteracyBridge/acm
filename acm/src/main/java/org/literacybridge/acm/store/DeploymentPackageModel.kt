@@ -31,7 +31,7 @@ class DeploymentPackageModel {
                 pkg.revision,
                 pkg.platform,
                 pkg.published,
-                pkg.createdAt,
+                pkg.created_at,
                 pkg.toJson(),
                 pkg.deployment.number,
             )
@@ -106,9 +106,9 @@ class PackageMetadata {
     lateinit var deployment: DeploymentDescription
     lateinit var platform: String
     lateinit var revision: String
-    lateinit var createdAt: String
-    lateinit var createdBy: String
-    lateinit var computerName: String
+    lateinit var created_at: String
+    lateinit var created_by: String
+    lateinit var computer_name: String
     var published by Delegates.notNull<Boolean>()
     var size by Delegates.notNull<Long>()
     lateinit var project: String
@@ -125,8 +125,8 @@ class PackageMetadata {
     @Serializable
     class PackageContent() {
         val messages: ArrayList<MessageContent> = ArrayList()
-        private val playlistPrompts: ArrayList<MessageContent> = ArrayList()
-        private val systemPrompts: ArrayList<SystemPromptContent> = ArrayList()
+        private val playlist_prompts: ArrayList<MessageContent> = ArrayList()
+        private val system_prompts: ArrayList<SystemPromptContent> = ArrayList()
 
         fun addMessage(audioItem: AudioItemModel, position: Int, file: File, baseDir: File) {
             messages.add(
@@ -158,7 +158,7 @@ class PackageMetadata {
         }
 
         fun addPlaylistPrompt(audioItem: AudioItemModel, file: File, baseDir: File) {
-            playlistPrompts.add(
+            playlist_prompts.add(
                 MessageContent(
                     title = audioItem.title,
                     acm_id = audioItem.acm_id,
@@ -187,7 +187,7 @@ class PackageMetadata {
         }
 
         fun addSystemPrompt(audioItem: AudioItemModel, file: File, baseDir: File) {
-            systemPrompts.add(
+            system_prompts.add(
                 SystemPromptContent(
                     title = audioItem.title,
                     contentId = audioItem.acm_id,
