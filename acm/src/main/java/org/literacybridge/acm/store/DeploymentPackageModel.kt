@@ -2,10 +2,20 @@ package org.literacybridge.acm.store
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import org.apache.commons.io.FilenameUtils
+import org.json.simple.JSONArray
+import org.json.simple.JSONAware
+import org.json.simple.JSONObject
+import org.literacybridge.acm.Constants
+import org.literacybridge.acm.cloud.Authenticator
 import org.literacybridge.acm.config.ACMConfiguration
+import org.literacybridge.acm.utils.EmailHelper
 import org.literacybridge.core.tbloader.TBLoaderConstants
 import java.io.File
+import java.net.InetAddress
+import java.net.UnknownHostException
 import java.util.*
 import kotlin.properties.Delegates
 
@@ -19,8 +29,6 @@ class DeploymentPackageModel {
     var published by Delegates.notNull<Boolean>()
 
     companion object {
-        // TODO: add function to push metadata to api server
-
         fun create(pkg: PackageMetadata) {
             ACMConfiguration.getInstance().currentDB.db.update(
                 "INSERT INTO " +
@@ -108,11 +116,22 @@ class PackageMetadata {
     lateinit var revision: String
     lateinit var created_at: String
     lateinit var created_by: String
-    lateinit var computer_name: String
+    var computer_name: String
     var published by Delegates.notNull<Boolean>()
     var size by Delegates.notNull<Long>()
     lateinit var project: String
     private val contents: HashMap<String, PackageContent> = HashMap()
+
+    init {
+        try {
+            created_by = ACMConfiguration.getInstance().userName
+            computer_name = InetAddress
+                .getLocalHost().hostName
+        } catch (e1: UnknownHostException) {
+            computer_name = "UNKNOWN"
+        }
+
+    }
 
     fun addMessage(languageOrVariant: String, content: PackageContent) {
         contents[languageOrVariant] = content
@@ -120,6 +139,39 @@ class PackageMetadata {
 
     fun toJson(): String {
         return Json.encodeToString(this)
+    }
+
+    fun save(packageDir: File) {
+        val metadataFile = File(packageDir, "metadata.json")
+        metadataFile.writeText(toJson(), Charsets.UTF_8)
+
+        // Save to db
+        DeploymentPackageModel.create(this)
+
+        if (published) {
+            uploadToServer()
+        }
+    }
+
+    private fun uploadToServer() {
+        val requestURL = Authenticator.ACCESS_CONTROL_API + "/deployment-metadata"
+        val requestBody = JSONObject(Json.encodeToJsonElement(this).jsonObject)
+
+        val jsonResponse = Authenticator.getInstance().awsInterface.authenticatedPostCall(requestURL, requestBody)
+        if (jsonResponse != null) {
+//            var o = jsonResponse["ResponseMetadata"]
+//            if (o is JSONObject) {
+//                o = (o as JSONObject)["HTTPStatusCode"]
+//            }
+//            if (o is Long) {
+//                status_aws = o == EmailHelper.EMAIL_SENT_RESPONSE.toLong()
+//            }
+//            EmailHelper.LOG.info(String.format("email: %s\n          %s\n", requestBody, jsonResponse))
+        }
+        // parse response
+        println(jsonResponse)
+
+//        return status_aws
     }
 
     @Serializable

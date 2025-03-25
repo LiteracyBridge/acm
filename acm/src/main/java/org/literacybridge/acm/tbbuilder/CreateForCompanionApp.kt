@@ -228,16 +228,15 @@ class CreateForCompanionApp(
         }
 
         // Write metadata to file
-        metadata.computer_name = "TODO: get computer name"
         metadata.created_by = "TODO: get user email"
         metadata.size = baseDir.length()
         metadata.project = deploymentInfo.programId
-
-        val metadataFile = File(baseDir, "metadata.json")
-        metadataFile.writeText(metadata.toJson(), Charsets.UTF_8)
-
-        // Save to db
-        DeploymentPackageModel.create(metadata)
+        metadata.save(baseDir)
+//        val metadataFile = File(baseDir, "metadata.json")
+//        metadataFile.writeText(metadata.toJson(), Charsets.UTF_8)
+//
+//        // Save to db
+//        DeploymentPackageModel.create(metadata)
         return metadata
     }
 
