@@ -131,7 +131,8 @@ class CreateForCompanionApp(
             number = deploymentInfo.deploymentNumber
         )
         metadata.platform = DeplomentPlatform.CompanionApp.name
-        metadata.published = isPublished
+        metadata.is_published = isPublished
+        metadata.published = isPublished.toString()
         metadata.revision = DeploymentPackageModel.getNextRevision(deploymentInfo.name, deploymentInfo.deploymentNumber)
         metadata.created_at =
             Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)

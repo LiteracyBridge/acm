@@ -5,13 +5,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import org.apache.commons.io.FilenameUtils
-import org.json.simple.JSONArray
-import org.json.simple.JSONAware
 import org.json.simple.JSONObject
-import org.literacybridge.acm.Constants
 import org.literacybridge.acm.cloud.Authenticator
 import org.literacybridge.acm.config.ACMConfiguration
-import org.literacybridge.acm.utils.EmailHelper
 import org.literacybridge.core.tbloader.TBLoaderConstants
 import java.io.File
 import java.net.InetAddress
@@ -38,7 +34,7 @@ class DeploymentPackageModel {
                         "(SELECT id FROM deployments WHERE deployment_number = ?))",
                 pkg.revision,
                 pkg.platform,
-                pkg.published,
+                pkg.is_published,
                 pkg.created_at,
                 pkg.toJson(),
                 pkg.deployment.number,
@@ -117,9 +113,16 @@ class PackageMetadata {
     lateinit var created_at: String
     lateinit var created_by: String
     var computer_name: String
-    var published by Delegates.notNull<Boolean>()
     var size by Delegates.notNull<Long>()
     lateinit var project: String
+    var is_published = false
+
+    /**
+     * Boolean property is serialized in the converted json string, kotlin bug :).
+     * This is a workaround. MUST have the same value as "is_published"
+     */
+    lateinit var published: String
+
     private val contents: HashMap<String, PackageContent> = HashMap()
 
     init {
@@ -137,6 +140,9 @@ class PackageMetadata {
         contents[languageOrVariant] = content
     }
 
+    /**
+     * Converts the
+     */
     fun toJson(): String {
         return Json.encodeToString(this)
     }
@@ -148,7 +154,7 @@ class PackageMetadata {
         // Save to db
         DeploymentPackageModel.create(this)
 
-        if (published) {
+        if (is_published) {
             uploadToServer()
         }
     }
@@ -168,10 +174,8 @@ class PackageMetadata {
 //            }
 //            EmailHelper.LOG.info(String.format("email: %s\n          %s\n", requestBody, jsonResponse))
         }
-        // parse response
         println(jsonResponse)
 
-//        return status_aws
     }
 
     @Serializable
