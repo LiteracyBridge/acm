@@ -13,7 +13,6 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.function.Consumer
-import kotlin.io.path.moveTo
 
 /*
 * Builds a TBv1 deployment.
@@ -134,7 +133,7 @@ class CreateForCompanionApp(
         metadata.platform = DeplomentPlatform.CompanionApp.name
         metadata.published = isPublished
         metadata.revision = DeploymentPackageModel.getNextRevision(deploymentInfo.name, deploymentInfo.deploymentNumber)
-        metadata.createdAt =
+        metadata.created_at =
             Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
 
         val tbLoadersDir = ACMConfiguration.getInstance().currentDB.programTbLoadersDir
@@ -229,8 +228,8 @@ class CreateForCompanionApp(
         }
 
         // Write metadata to file
-        metadata.computerName = "TODO: get computer name"
-        metadata.createdBy = "TODO: get user email"
+        metadata.computer_name = "TODO: get computer name"
+        metadata.created_by = "TODO: get user email"
         metadata.size = baseDir.length()
         metadata.project = deploymentInfo.programId
 
