@@ -145,6 +145,8 @@ class CreateForCompanionApp(
         }
 
         baseDir = File(packagesDir, metadata.revision)
+
+        // Gather playlist as ordered by the user
         for (languageNode in playlistRootNode.languageNodes) {
             // playlistTitle: [audio items idss]
             val playlists: HashMap<String, List<String>> = HashMap()
@@ -171,25 +173,30 @@ class CreateForCompanionApp(
             ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql, deploymentInfo.deploymentNumber)!!
                 .map { it.language }
 
-        for (language in languages) {
-            val content = PackageMetadata.PackageContent()
-            addMessagesToPackage(language, content)
+        val contentsDir = File(baseDir, "contents")
+        contentsDir.mkdirs()
 
-            val path = File(baseDir, language)
+        val systemPromptsDir = File(baseDir, "system-prompts")
+        systemPromptsDir.mkdirs()
+
+        for (language in languages) {
+            val contentMetadata = PackageMetadata.PackageContent()
+            addMessagesToPackage(contentsDir, language, contentMetadata)
+
             addPromptsToPackage(
-                createDirs(File(path, "playlist-prompts")),
+                createDirs(File(createDirs(File(contentsDir, language)), "playlist-prompts")),
                 language,
                 AudioItemModel.ItemType.PlaylistPrompt,
-                content
+                contentMetadata
             )
             addPromptsToPackage(
-                createDirs(File(path, "system-prompts")),
+                createDirs(File(systemPromptsDir, language)),
                 language,
                 AudioItemModel.ItemType.SystemPrompt,
-                content
+                contentMetadata
             )
 
-            metadata.addMessage(language, content)
+            metadata.addMessage(language, contentMetadata)
         }
 
         sql = "SELECT language, variant FROM audio_items aud\n" +
@@ -209,9 +216,9 @@ class CreateForCompanionApp(
 
             val content = PackageMetadata.PackageContent()
             val label = "${rec.language}-${rec.variant}"
-            addMessagesToPackage(label, content)
+            addMessagesToPackage(contentsDir, label, content)
 
-            val f = File(baseDir, label)
+            val f = File(contentsDir, label)
             addPromptsToPackage(
                 createDirs(File(f, "playlist-prompts")),
                 rec.language,
@@ -219,7 +226,7 @@ class CreateForCompanionApp(
                 content
             )
             addPromptsToPackage(
-                createDirs(File(f, "system-prompts")),
+                createDirs(File(systemPromptsDir, "system-prompts")),
                 rec.language,
                 AudioItemModel.ItemType.SystemPrompt,
                 content
@@ -229,15 +236,10 @@ class CreateForCompanionApp(
         }
 
         // Write metadata to file
-        metadata.created_by = "TODO: get user email"
+        metadata.created_by = ACMConfiguration.getInstance().userContact
         metadata.size = baseDir.length()
         metadata.project = deploymentInfo.programId
         metadata.save(baseDir)
-//        val metadataFile = File(baseDir, "metadata.json")
-//        metadataFile.writeText(metadata.toJson(), Charsets.UTF_8)
-//
-//        // Save to db
-//        DeploymentPackageModel.create(metadata)
         return metadata
     }
 
@@ -246,14 +248,15 @@ class CreateForCompanionApp(
     }
 
     private fun addMessagesToPackage(
+        contentsDir: File,
         language: String,
         content: PackageMetadata.PackageContent,
         variant: String? = null
     ) {
         val dir = if (variant == null) {
-            createDirs(File(baseDir, language))
+            createDirs(File(contentsDir, language))
         } else {
-            createDirs(File(baseDir, "$language-$variant"))
+            createDirs(File(contentsDir, "$language-$variant"))
         }
         val messagesDir = createDirs(File(dir, "messages"))
         val playlistsTitles = (deploymentContents[language]?.keys ?: emptyList())
@@ -312,7 +315,7 @@ class CreateForCompanionApp(
             if (type.name == AudioItemModel.ItemType.PlaylistPrompt.name) {
                 content.addPlaylistPrompt(audioItem, file, baseDir)
             } else {
-                content.addSystemPrompt(audioItem, file, baseDir)
+                metadata.addSystemPrompt(audioItem, file, baseDir)
             }
         }
 
@@ -323,7 +326,7 @@ class CreateForCompanionApp(
                     " AND language = '$language'"
             ACMConfiguration.getInstance().currentDB.db.query<AudioItemModel>(sql)!!.forEach { audioItem ->
                 val file = addToPackage(audioItem, destDir)
-                content.addSystemPrompt(audioItem, file, baseDir)
+                metadata.addSystemPrompt(audioItem, file, baseDir)
             }
         }
 

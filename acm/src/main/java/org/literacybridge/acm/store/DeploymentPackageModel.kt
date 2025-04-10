@@ -13,6 +13,7 @@ import java.io.File
 import java.net.InetAddress
 import java.net.UnknownHostException
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.properties.Delegates
 
 class DeploymentPackageModel {
@@ -118,12 +119,23 @@ class PackageMetadata {
     var is_published = false
 
     /**
+     * Messages and playlist prompts metadata
+     * {language}: {messages: [...], playlist_prompts: [...]}
+     */
+    private val contents: HashMap<String, PackageContent> = HashMap()
+
+    /**
+     * System prompts metadata
+     * {language}: [...]
+     */
+    private val system_prompts: HashMap<String, ArrayList<SystemPromptContent>> = HashMap()
+
+    /**
      * Boolean property is serialized in the converted json string, kotlin bug :).
      * This is a workaround. MUST have the same value as "is_published"
      */
     lateinit var published: String
 
-    private val contents: HashMap<String, PackageContent> = HashMap()
 
     init {
         try {
@@ -159,6 +171,22 @@ class PackageMetadata {
         }
     }
 
+    fun addSystemPrompt(audioItem: AudioItemModel, file: File, baseDir: File) {
+        if(system_prompts[audioItem.language] == null){
+            system_prompts[audioItem.language] = ArrayList()
+        }
+
+        system_prompts[audioItem.language]?.add(
+            SystemPromptContent(
+                title = audioItem.title,
+                contentId = audioItem.acm_id,
+                language = audioItem.language,
+                path = FilenameUtils.separatorsToUnix(file.toRelativeString(baseDir)),
+                size = file.length()
+            )
+        )
+    }
+
     private fun uploadToServer() {
         val requestURL = Authenticator.ACCESS_CONTROL_API + "/deployment-metadata"
         val requestBody = JSONObject(Json.encodeToJsonElement(this).jsonObject)
@@ -182,7 +210,6 @@ class PackageMetadata {
     class PackageContent() {
         val messages: ArrayList<MessageContent> = ArrayList()
         private val playlist_prompts: ArrayList<MessageContent> = ArrayList()
-        private val system_prompts: ArrayList<SystemPromptContent> = ArrayList()
 
         fun addMessage(audioItem: AudioItemModel, position: Int, file: File, baseDir: File) {
             messages.add(
@@ -238,18 +265,6 @@ class PackageMetadata {
                     notes = audioItem.notes,
                     status = audioItem.status,
                     category = audioItem.category,
-                )
-            )
-        }
-
-        fun addSystemPrompt(audioItem: AudioItemModel, file: File, baseDir: File) {
-            system_prompts.add(
-                SystemPromptContent(
-                    title = audioItem.title,
-                    contentId = audioItem.acm_id,
-                    language = audioItem.language,
-                    path = FilenameUtils.separatorsToUnix(file.toRelativeString(baseDir)),
-                    size = file.length()
                 )
             )
         }
