@@ -126,6 +126,13 @@ class CreateForCompanionApp(
             ", a.speaker, a.goal, a.transcription, a.notes, a.status, a.category"
 
     init {
+        val tbLoadersDir = ACMConfiguration.getInstance().currentDB.programTbLoadersDir
+        val packagesDir = File(tbLoadersDir, "published")
+
+        if (!packagesDir.exists()) {
+            packagesDir.mkdirs()
+        }
+
         metadata.deployment = PackageMetadata.DeploymentDescription(
             name = deploymentInfo.name,
             number = deploymentInfo.deploymentNumber
@@ -137,12 +144,6 @@ class CreateForCompanionApp(
         metadata.created_at =
             Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
 
-        val tbLoadersDir = ACMConfiguration.getInstance().currentDB.programTbLoadersDir
-        val packagesDir = File(tbLoadersDir, "published")
-
-        if (!packagesDir.exists()) {
-            packagesDir.mkdirs()
-        }
 
         baseDir = File(packagesDir, metadata.revision)
 
