@@ -8,12 +8,13 @@ import org.apache.commons.io.FilenameUtils
 import org.json.simple.JSONObject
 import org.literacybridge.acm.cloud.Authenticator
 import org.literacybridge.acm.config.ACMConfiguration
-import org.literacybridge.core.tbloader.TBLoaderConstants
 import java.io.File
 import java.net.InetAddress
 import java.net.UnknownHostException
 import java.util.*
+import java.util.regex.Pattern
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.properties.Delegates
 
 class DeploymentPackageModel {
@@ -59,19 +60,41 @@ class DeploymentPackageModel {
                 deploymentNo
             )?.firstOrNull()
 
-            var revision = "a"
+            var revision = 1
 
             // If we don't find anything higher, start with 'a'.
             if (latest == null) {
-                return "${deploymentName}-$revision"
+                return "${deploymentName}-r$revision"
             }
 
-            val deplMatcher = TBLoaderConstants.DEPLOYMENT_REVISION_PATTERN.matcher(latest.revision)
-            if (deplMatcher.matches()) {
-                revision = deplMatcher.group(2).lowercase(Locale.getDefault())
+            val revisionMatcher = Pattern.compile("r(\\d+)$").matcher(latest.revision)
+            if (revisionMatcher.find()) {
+                // Revision pattern uses new format "[deployment-name]-r[revision-number]". Increment the revision number
+                revision = revisionMatcher.group(1).toInt() + 1
+            } else {
+                // Old revision format. Count all past deployments and generate revision in the new format
+                val count = ACMConfiguration.getInstance().currentDB.db.query<DeploymentPackageModel>(
+                    "SELECT dp.* FROM deployment_packages dp \n" +
+                            " INNER JOIN deployments d ON d.deployment_number = ? AND d.id = dp.deployment_id",
+                    deploymentNo
+                )?.size ?: 0
+                revision = count + 1
             }
 
-            return "${deploymentName}-${incrementRevision(revision)}"
+            var name = "${deploymentName}-r${revision}"
+
+            // Revision dir may exist on disk if deployment was created in demo mode (hence not commit to db)
+            // Verify the generated revision is not a duplicate
+            val tbLoaderDir = ACMConfiguration.getInstance().currentDB.programTbLoadersDir
+            while (true) {
+                if (File(tbLoaderDir, "published/$name").exists()) {
+                    name = "${deploymentName}-r${revision + 1}"
+                } else {
+                    break
+                }
+            }
+
+            return name
         }
 
         /**
@@ -172,7 +195,7 @@ class PackageMetadata {
     }
 
     fun addSystemPrompt(audioItem: AudioItemModel, file: File, baseDir: File) {
-        if(system_prompts[audioItem.language] == null){
+        if (system_prompts[audioItem.language] == null) {
             system_prompts[audioItem.language] = ArrayList()
         }
 
