@@ -5,6 +5,7 @@ import org.literacybridge.acm.store.*;
 
 import static org.literacybridge.acm.Constants.*;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_DURATION;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -89,6 +90,34 @@ public class SystemPrompts {
         //}
 
         return promptItem;
+    }
+
+    public boolean isAudioVerified() {
+        // Get the audio duration and verify if it conforms with normal prompts data
+        // Should have a trailing '|', and the time should not be negative or over 20 seconds
+        String lbDuration = promptItem.getMetadata().getMetadataValue(LB_DURATION).getValue();
+        boolean ends = lbDuration.endsWith("l") || lbDuration.endsWith("h");
+        if (ends) {
+            lbDuration = lbDuration.substring(0, lbDuration.length() - 1);
+            String[] times = lbDuration.split(":");
+            int mins = Integer.parseInt(times[0]);
+            int secs = 0;
+            if (times[1].endsWith(" ")) {
+                String[] temp = times[1].split(" ");
+                secs = Integer.parseInt(temp[0]);
+            } else {
+                secs = Integer.parseInt(times[1]);
+            }
+
+            // Negative numbers are invalid.
+            // One or more minutes are invalid
+            if (mins != 0)
+                return false;
+
+            return secs <= 59 && secs > 0;
+        }
+
+        return false;
     }
 
     private void searchIgnoringUnderscores(List<Category> categoryList, List<Locale> localeList) {

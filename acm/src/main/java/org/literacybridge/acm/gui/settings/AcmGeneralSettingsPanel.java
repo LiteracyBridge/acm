@@ -62,7 +62,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         // Get values from the global configuration.
         threshold = ACMConfiguration.getInstance().getCurrentDB().getFuzzyThreshold();
         volumeStep = ACMConfiguration.getInstance().getCurrentDB().getVolumeStep();
-        if (volumeStep == null) volumeStep = 0;
+        if (volumeStep == null) volumeStep = 7;
         emailAddresses = String.join(", ",
                 ACMConfiguration.getInstance().getCurrentDB().getNotifyList());
         warnForMissingGreetings = ACMConfiguration.getInstance().getCurrentDB().getWarnForMissingGreetings();
@@ -182,6 +182,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         hasTbV2DevicesCB = new JCheckBox("There are Version-2 Talking Books in the program.", hasTbV2Devices);
         hasTbV2DevicesCB.setToolTipText(
                 "Some of the Talking Books in the program are the Version-2 devices.");
+        hasTbV2DevicesCB.setSelected(true);
         gridPanel.add(hasTbV2DevicesCB, gbcRight);
 
         gridPanel.add(new JLabel("Allow package override"), gbcLeft);
@@ -225,7 +226,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         email.setText(emailAddresses);
         fuzzyThreshold.setText(String.format("%d", threshold));
         if (volumeStep == null)
-            volumeStepTextField.setText("0");
+            volumeStepTextField.setText("7");
         else
             volumeStepTextField.setText(String.format("%d", volumeStep));
     }

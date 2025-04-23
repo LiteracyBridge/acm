@@ -22,6 +22,7 @@ import java.util.stream.StreamSupport;
 
 import static org.literacybridge.acm.Constants.CATEGORY_SURVEY;
 import static org.literacybridge.acm.Constants.CATEGORY_TB_CATEGORIES;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_DURATION;
 
 /**
  * Helper class to find the short and long prompts for a playlist. The prompts may be provided
@@ -278,6 +279,9 @@ public class PlaylistPrompts {
             }
         }
 
+        isShortAudioVerified();
+        isLongAudioVerified();
+
         /*if (longPromptItem == null || shortPromptItem == null) {
             searchIgnoringUnderscores(categoryList, localeList);
         }*/
@@ -335,7 +339,63 @@ public class PlaylistPrompts {
                 }
             }
         }
+    }
 
+    /*
+     *  Checks that all playlist prompts don't have weird values
+     *  Negative time values, long time values, corrupted file headers etc.
+     */
+    public boolean isShortAudioVerified() {
+        if (shortPromptItem == null)  return false;
 
+        String shortPromptDuration = shortPromptItem.getMetadata().getMetadataValue(LB_DURATION).getValue();
+        boolean ends = shortPromptDuration.endsWith("l") || shortPromptDuration.endsWith("h");
+        if (ends) {
+            shortPromptDuration = shortPromptDuration.substring(0, shortPromptDuration.length() - 1);
+            String[] times = shortPromptDuration.split(":");
+            int mins = Integer.parseInt(times[0]);
+            int secs = 0;
+            if (times[1].endsWith(" ")) {
+                String[] temp = times[1].split(" ");
+                secs = Integer.parseInt(temp[0]);
+            } else {
+                secs = Integer.parseInt(times[1]);
+            }
+
+            // Negative numbers are invalid.
+            // Five or more minutes are invalid
+            if (mins < 0 || mins > 5)
+                return false;
+
+            return secs <= 59 && secs > 0;
+        }
+        return false;
+    }
+
+    public boolean isLongAudioVerified() {
+        if (longPromptItem == null) return  false;
+
+        String longPromptDuration = longPromptItem.getMetadata().getMetadataValue(LB_DURATION).getValue();
+        boolean ends = longPromptDuration.endsWith("l") || longPromptDuration.endsWith("h");
+        if (ends) {
+            longPromptDuration = longPromptDuration.substring(0, longPromptDuration.length() - 1);
+            String[] times = longPromptDuration.split(":");
+            int mins = Integer.parseInt(times[0]);
+            int secs = 0;
+            if (times[1].endsWith(" ")) {
+                String[] temp = times[1].split(" ");
+                secs = Integer.parseInt(temp[0]);
+            } else {
+                secs = Integer.parseInt(times[1]);
+            }
+
+            // Negative numbers are invalid.
+            // Five or more minutes are invalid
+            if (mins < 0 || mins > 5)
+                return false;
+
+            return secs <= 59 && secs > 0;
+        }
+        return false;
     }
 }
