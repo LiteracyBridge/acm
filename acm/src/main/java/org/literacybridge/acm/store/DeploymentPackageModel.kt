@@ -1,9 +1,7 @@
 package org.literacybridge.acm.store
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.*
 import org.apache.commons.io.FilenameUtils
 import org.json.simple.JSONObject
 import org.literacybridge.acm.cloud.Authenticator
@@ -13,8 +11,6 @@ import java.net.InetAddress
 import java.net.UnknownHostException
 import java.util.*
 import java.util.regex.Pattern
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.properties.Delegates
 
 class DeploymentPackageModel {
@@ -127,11 +123,13 @@ class DeploymentPackageModel {
             return result
         }
     }
+
 }
 
 @Serializable
 class PackageMetadata {
     lateinit var deployment: DeploymentDescription
+    lateinit var metadata: Metadata
     lateinit var platform: String
     lateinit var revision: String
     lateinit var created_at: String
@@ -165,6 +163,7 @@ class PackageMetadata {
             created_by = ACMConfiguration.getInstance().userName
             computer_name = InetAddress
                 .getLocalHost().hostName
+            metadata = Metadata(project)
         } catch (e1: UnknownHostException) {
             computer_name = "UNKNOWN"
         }
@@ -227,6 +226,40 @@ class PackageMetadata {
         }
         println(jsonResponse)
 
+    }
+
+
+    @Serializable
+    class Metadata(val project: String) {
+        var categories: JsonArray
+
+        init {
+            // Generate categories list
+            val leaf = ACMConfiguration.getInstance().currentDB
+                .metadataStore.taxonomy.rootCategory
+
+            categories = buildJsonArray {
+                val gathered: ArrayList<Array<String>> = arrayListOf<Array<String>>()
+                for (item in getCategoryChildren(leaf, gathered)) {
+                    addJsonObject {
+                        put("child", item[0])
+                        put("name", item[1])
+                        put("project", project)
+                    }
+                }
+            }
+        }
+
+        private fun getCategoryChildren(cat: Category, gathered: ArrayList<Array<String>>): ArrayList<Array<String>> {
+            for (child in cat.sortedChildren) {
+                gathered.add(arrayOf(child.id, child.categoryName))
+                if (child.hasChildren()) {
+                    getCategoryChildren(child, gathered)
+                }
+            }
+
+            return gathered
+        }
     }
 
     @Serializable
