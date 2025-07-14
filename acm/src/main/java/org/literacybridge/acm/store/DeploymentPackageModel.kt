@@ -131,15 +131,9 @@ class PackageMetadata(val project: String) {
     lateinit var platform: String
     lateinit var revision: String
     lateinit var createdAt: String
-    val createdBy: String = ACMConfiguration.getInstance().userContact
+    var createdBy: String
+    var computerName: String
     var packages: MutableList<String> = mutableListOf() // [deployment-name-{language|variant}]
-    val computerName: String = try {
-        InetAddress
-            .getLocalHost().hostName
-    } catch (e1: UnknownHostException) {
-        "UNKNOWN"
-    }
-
     var size by Delegates.notNull<Long>()
     var categories: JsonArray
     var isPublished = false
@@ -164,6 +158,13 @@ class PackageMetadata(val project: String) {
 
 
     init {
+        createdBy = ACMConfiguration.getInstance().userContact
+        computerName = try {
+            InetAddress
+                .getLocalHost().hostName
+        } catch (e1: UnknownHostException) {
+            "UNKNOWN"
+        }
 
         // Generate categories list
         val leaf = ACMConfiguration.getInstance().currentDB
