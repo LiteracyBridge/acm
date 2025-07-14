@@ -17,9 +17,9 @@ class DeploymentPackageModel {
     var id by Delegates.notNull<Int>()
     lateinit var revision: String
     lateinit var platform: String
-    lateinit var created_at: String
+    lateinit var createdAt: String
     var metadata: String? = null
-    var deployment_id: Int? = null
+    var deploymentId: Int? = null
     var published by Delegates.notNull<Boolean>()
 
     companion object {
@@ -32,8 +32,8 @@ class DeploymentPackageModel {
                         "(SELECT id FROM deployments WHERE deployment_number = ?))",
                 pkg.revision,
                 pkg.platform,
-                pkg.is_published,
-                pkg.created_at,
+                pkg.isPublished,
+                pkg.createdAt,
                 pkg.toJson(),
                 pkg.deployment.number,
             )
@@ -43,8 +43,7 @@ class DeploymentPackageModel {
          * Given a TB-Loader "published" directory and a Deployment name, find the next revision
          * for the Deployment, and create a .rev file with that revision. Return the revision.
          *
-         * @param publishTbLoadersDir The directory in which the deployments are published.
-         * @param deployment          The Deployment (name) for which we want the next revision suffix.
+         * @param deploymentName          The Deployment (name) for which we want the next revision suffix.
          * @return the revision suffix as a String. Like "a", "b"... "aa"... "aaaaba", etc
          * @throws Exception if the new .rev file can't be created.
          */
@@ -131,14 +130,19 @@ class PackageMetadata(val project: String) {
     lateinit var deployment: DeploymentDescription
     lateinit var platform: String
     lateinit var revision: String
-    lateinit var created_at: String
-    lateinit var created_by: String
-    var computer_name: String
+    lateinit var createdAt: String
+    val createdBy: String = ACMConfiguration.getInstance().userContact
     var packages: MutableList<String> = mutableListOf() // [deployment-name-{language|variant}]
+    val computerName: String = try {
+        InetAddress
+            .getLocalHost().hostName
+    } catch (e1: UnknownHostException) {
+        "UNKNOWN"
+    }
 
     var size by Delegates.notNull<Long>()
-    lateinit var categories: JsonArray
-    var is_published = false
+    var categories: JsonArray
+    var isPublished = false
 
     /**
      * Messages and playlist prompts metadata
@@ -150,7 +154,7 @@ class PackageMetadata(val project: String) {
      * System prompts metadata
      * {language}: [...]
      */
-    private val system_prompts: HashMap<String, ArrayList<SystemPromptContent>> = HashMap()
+    private val systemPrompts: HashMap<String, ArrayList<SystemPromptContent>> = HashMap()
 
     /**
      * Boolean property is serialized in the converted json string, kotlin bug :).
@@ -160,13 +164,6 @@ class PackageMetadata(val project: String) {
 
 
     init {
-        created_by = ACMConfiguration.getInstance().userName
-        computer_name = try {
-            InetAddress
-                .getLocalHost().hostName
-        } catch (e1: UnknownHostException) {
-            "UNKNOWN"
-        }
 
         // Generate categories list
         val leaf = ACMConfiguration.getInstance().currentDB
@@ -187,7 +184,7 @@ class PackageMetadata(val project: String) {
     fun addMessage(languageOrVariant: String, content: PackageContent) {
         val pkg = "${deployment.name}-${languageOrVariant}"
         packages.add(pkg)
-        content.package_name = pkg
+        content.packageName = pkg
         contents[languageOrVariant] = content
 
     }
@@ -206,17 +203,17 @@ class PackageMetadata(val project: String) {
         // Save to db
         DeploymentPackageModel.create(this)
 
-        if (is_published) {
+        if (isPublished) {
             uploadToServer()
         }
     }
 
     fun addSystemPrompt(audioItem: AudioItemModel, file: File, baseDir: File) {
-        if (system_prompts[audioItem.language] == null) {
-            system_prompts[audioItem.language] = ArrayList()
+        if (systemPrompts[audioItem.language] == null) {
+            systemPrompts[audioItem.language] = ArrayList()
         }
 
-        system_prompts[audioItem.language]?.add(
+        systemPrompts[audioItem.language]?.add(
             SystemPromptContent(
                 title = audioItem.title,
                 contentId = audioItem.acm_id,
@@ -259,16 +256,16 @@ class PackageMetadata(val project: String) {
 
 
     @Serializable
-    class PackageContent() {
+    class PackageContent {
         val messages: ArrayList<MessageContent> = ArrayList()
-        private val playlist_prompts: ArrayList<MessageContent> = ArrayList()
-        var package_name: String = "" // deploymentName-{language|variant}
+        private val playlistPrompts: ArrayList<MessageContent> = ArrayList()
+        var packageName: String = "" // deploymentName-{language|variant}
 
         fun addMessage(audioItem: AudioItemModel, position: Int, file: File, baseDir: File) {
             messages.add(
                 MessageContent(
                     title = audioItem.title,
-                    acm_id = audioItem.acm_id,
+                    contentId = audioItem.acm_id,
                     language = audioItem.language,
                     variant = audioItem.variant,
                     path = FilenameUtils.separatorsToUnix(file.toRelativeString(baseDir)),
@@ -277,10 +274,10 @@ class PackageMetadata(val project: String) {
                     position = position,
                     publisher = audioItem.publisher,
                     source = audioItem.source,
-                    related_id = audioItem.related_id,
-                    dtb_revision = audioItem.dtb_revision,
+                    relatedId = audioItem.related_id,
+                    dtbRevision = audioItem.dtb_revision,
                     duration = audioItem.duration,
-                    recorded_at = audioItem.recorded_at,
+                    recordedAt = audioItem.recorded_at,
                     keywords = audioItem.keywords,
                     timing = audioItem.timing,
                     speaker = audioItem.speaker,
@@ -294,10 +291,10 @@ class PackageMetadata(val project: String) {
         }
 
         fun addPlaylistPrompt(audioItem: AudioItemModel, file: File, baseDir: File) {
-            playlist_prompts.add(
+            playlistPrompts.add(
                 MessageContent(
                     title = audioItem.title,
-                    acm_id = audioItem.acm_id,
+                    contentId = audioItem.acm_id,
                     language = audioItem.language,
                     variant = audioItem.variant,
                     path = FilenameUtils.separatorsToUnix(file.toRelativeString(baseDir)),
@@ -306,10 +303,10 @@ class PackageMetadata(val project: String) {
                     position = null,
                     publisher = audioItem.publisher,
                     source = audioItem.source,
-                    related_id = audioItem.related_id,
-                    dtb_revision = audioItem.dtb_revision,
+                    relatedId = audioItem.related_id,
+                    dtbRevision = audioItem.dtb_revision,
                     duration = audioItem.duration,
-                    recorded_at = audioItem.recorded_at,
+                    recordedAt = audioItem.recorded_at,
                     keywords = audioItem.keywords,
                     timing = audioItem.timing,
                     speaker = audioItem.speaker,
@@ -326,7 +323,7 @@ class PackageMetadata(val project: String) {
     @Serializable
     data class MessageContent(
         val title: String,
-        val acm_id: String,
+        val contentId: String,
         val path: String,
         val language: String,
         val playlist: String?,
@@ -335,10 +332,10 @@ class PackageMetadata(val project: String) {
         val position: Int?,
         val publisher: String?,
         val source: String?,
-        val related_id: String?,
-        val dtb_revision: String?,
+        val relatedId: String?,
+        val dtbRevision: String?,
         val duration: String?,
-        val recorded_at: String?,
+        val recordedAt: String?,
         val keywords: String?,
         val timing: String?,
         val speaker: String?,

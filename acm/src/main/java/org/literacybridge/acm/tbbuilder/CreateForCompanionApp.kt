@@ -138,10 +138,10 @@ class CreateForCompanionApp(
             number = deploymentInfo.deploymentNumber
         )
         metadata.platform = DeplomentPlatform.CompanionApp.name
-        metadata.is_published = isPublished
+        metadata.isPublished = isPublished
         metadata.published = isPublished.toString()
         metadata.revision = DeploymentPackageModel.getNextRevision(deploymentInfo.name, deploymentInfo.deploymentNumber)
-        metadata.created_at =
+        metadata.createdAt =
             Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
 
 
@@ -237,7 +237,6 @@ class CreateForCompanionApp(
         }
 
         // Write metadata to file
-        metadata.created_by = ACMConfiguration.getInstance().userContact
         metadata.size = baseDir.length()
 //        metadata.project = deploymentInfo.programId
         metadata.save(baseDir)
