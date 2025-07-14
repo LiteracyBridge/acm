@@ -127,16 +127,17 @@ class DeploymentPackageModel {
 }
 
 @Serializable
-class PackageMetadata {
+class PackageMetadata(val project: String) {
     lateinit var deployment: DeploymentDescription
-    lateinit var metadata: Metadata
     lateinit var platform: String
     lateinit var revision: String
     lateinit var created_at: String
     lateinit var created_by: String
     var computer_name: String
+//    lateinit var project: String
+
     var size by Delegates.notNull<Long>()
-    lateinit var project: String
+    lateinit var categories: JsonArray
     var is_published = false
 
     /**
@@ -159,15 +160,28 @@ class PackageMetadata {
 
 
     init {
-        try {
-            created_by = ACMConfiguration.getInstance().userName
-            computer_name = InetAddress
+        created_by = ACMConfiguration.getInstance().userName
+        computer_name = try {
+            InetAddress
                 .getLocalHost().hostName
-            metadata = Metadata(project)
         } catch (e1: UnknownHostException) {
-            computer_name = "UNKNOWN"
+            "UNKNOWN"
         }
 
+        // Generate categories list
+        val leaf = ACMConfiguration.getInstance().currentDB
+            .metadataStore.taxonomy.rootCategory
+
+        categories = buildJsonArray {
+            val gathered: ArrayList<Array<String>> = arrayListOf()
+            for (item in getCategoryChildren(leaf, gathered)) {
+                addJsonObject {
+                    put("id", item[0])
+                    put("name", item[1])
+                    put("project", project)
+                }
+            }
+        }
     }
 
     fun addMessage(languageOrVariant: String, content: PackageContent) {
@@ -228,39 +242,17 @@ class PackageMetadata {
 
     }
 
-
-    @Serializable
-    class Metadata(val project: String) {
-        var categories: JsonArray
-
-        init {
-            // Generate categories list
-            val leaf = ACMConfiguration.getInstance().currentDB
-                .metadataStore.taxonomy.rootCategory
-
-            categories = buildJsonArray {
-                val gathered: ArrayList<Array<String>> = arrayListOf<Array<String>>()
-                for (item in getCategoryChildren(leaf, gathered)) {
-                    addJsonObject {
-                        put("child", item[0])
-                        put("name", item[1])
-                        put("project", project)
-                    }
-                }
+    private fun getCategoryChildren(cat: Category, gathered: ArrayList<Array<String>>): ArrayList<Array<String>> {
+        for (child in cat.sortedChildren) {
+            gathered.add(arrayOf(child.id, child.categoryName))
+            if (child.hasChildren()) {
+                getCategoryChildren(child, gathered)
             }
         }
 
-        private fun getCategoryChildren(cat: Category, gathered: ArrayList<Array<String>>): ArrayList<Array<String>> {
-            for (child in cat.sortedChildren) {
-                gathered.add(arrayOf(child.id, child.categoryName))
-                if (child.hasChildren()) {
-                    getCategoryChildren(child, gathered)
-                }
-            }
-
-            return gathered
-        }
+        return gathered
     }
+
 
     @Serializable
     class PackageContent() {
@@ -291,7 +283,7 @@ class PackageMetadata {
                     transcription = audioItem.transcription,
                     notes = audioItem.notes,
                     status = audioItem.status,
-                    category = audioItem.category,
+                    category = audioItem.category?.split(',')?.first()?.trim(),
                 )
             )
         }
@@ -320,7 +312,7 @@ class PackageMetadata {
                     transcription = audioItem.transcription,
                     notes = audioItem.notes,
                     status = audioItem.status,
-                    category = audioItem.category,
+                    category = audioItem.category?.split(',')?.first()?.trim(),
                 )
             )
         }

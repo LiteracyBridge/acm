@@ -113,7 +113,7 @@ class CreateForCompanionApp(
 
     private var baseDir: File
     private var audioItems: List<AudioItemModel> = emptyList()
-    private val metadata: PackageMetadata = PackageMetadata()
+    private val metadata: PackageMetadata = PackageMetadata(deploymentInfo.programId)
 
     // {language: {playlistTitle: [audio_items]}}
     private val deploymentContents: HashMap<String, HashMap<String, List<String>>> = HashMap()
@@ -239,7 +239,7 @@ class CreateForCompanionApp(
         // Write metadata to file
         metadata.created_by = ACMConfiguration.getInstance().userContact
         metadata.size = baseDir.length()
-        metadata.project = deploymentInfo.programId
+//        metadata.project = deploymentInfo.programId
         metadata.save(baseDir)
         return metadata
     }
