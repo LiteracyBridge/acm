@@ -134,7 +134,7 @@ class PackageMetadata(val project: String) {
     lateinit var created_at: String
     lateinit var created_by: String
     var computer_name: String
-//    lateinit var project: String
+    var packages: MutableList<String> = mutableListOf() // [deployment-name-{language|variant}]
 
     var size by Delegates.notNull<Long>()
     lateinit var categories: JsonArray
@@ -185,7 +185,11 @@ class PackageMetadata(val project: String) {
     }
 
     fun addMessage(languageOrVariant: String, content: PackageContent) {
+        val pkg = "${deployment.name}-${languageOrVariant}"
+        packages.add(pkg)
+        content.package_name = pkg
         contents[languageOrVariant] = content
+
     }
 
     /**
@@ -258,6 +262,7 @@ class PackageMetadata(val project: String) {
     class PackageContent() {
         val messages: ArrayList<MessageContent> = ArrayList()
         private val playlist_prompts: ArrayList<MessageContent> = ArrayList()
+        var package_name: String = "" // deploymentName-{language|variant}
 
         fun addMessage(audioItem: AudioItemModel, position: Int, file: File, baseDir: File) {
             messages.add(
