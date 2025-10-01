@@ -82,11 +82,8 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
     }
 
     private fun runMigrations() {
-        val migrationsDir = this::class.java.getResource("/db-migrations").toURI().path
-
         if (isNewDb) {
-            val f = File("${migrationsDir}/1-initial-migration.sql")
-            executeMigration(f)
+            executeMigration(DatabaseMigrations().version1)
         }
         val resultSet = connection.prepareStatement("SELECT name FROM migrations").executeQuery()
         val results = mutableListOf<String>()
@@ -94,21 +91,19 @@ class SqliteManager(private val pathsProvider: PathsProvider) {
             results.add(resultSet.getString("name"))
         }
 
-        File(migrationsDir).listFiles()?.forEach { f ->
-            if (!results.any { it == f.name }) {
-                executeMigration(f)
-            }
-        }
-
+        // Add new migrations here
+//        executeMigration(DatabaseMigrations().version2)
+//        executeMigration(DatabaseMigrations().version3)
+        
         commit()
     }
 
-    private fun executeMigration(file: File) {
-        update(file.readText())
+    private fun executeMigration(m: Migration) {
+        update(m.sql)
         update(
             "INSERT INTO migrations(timestamp, name) VALUES(?,?)",
             Instant.now().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT),
-            file.name
+            m.name
         )
 
         println("Database migration executed successfully.")
