@@ -360,48 +360,6 @@ class CreateForCompanionApp(
     }
 
 
-    private fun addPlaylistContentToImage() {
-        val messagesDir =
-            File(File(System.getProperty("java.io.tmpdir"), deploymentInfo.name), "messages")
-//        val messagesDir = File(builderContext.stagedDeploymentDir, "messages")
-        audioItems.forEach { audioItem ->
-            println(String.format("    Exporting audioitem %s to %s%n", audioItem.acm_id, messagesDir))
-            reportStatus(
-                String.format(
-                    "    Exporting audioitem %s to %s%n",
-                    audioItem.acm_id,
-                    messagesDir
-                )
-            )
-
-            val audioRef = ACMConfiguration.getInstance().currentDB
-                .metadataStore.getAudioItem(audioItem.acm_id)
-            val filename: String = repository.getAudioFilename(audioRef, audioFormat)
-
-            // Export the audio file.
-            val exportFile = File(messagesDir, filename)
-            println(exportFile.path)
-            if (!exportFile.exists()) {
-                try {
-                    repository.exportAudioFileWithFormat(audioRef, exportFile, audioFormat)
-                } catch (ex: Exception) {
-                    exceptionLogger.accept(ex)
-                }
-            }
-            // Add audio item to the package_data.txt.
-//            val exportPath = makePath(File(messagesDir, filename))
-//            playlistData.addMessage(audioItem.title, exportPath)
-        }
-    }
-
-//    private fun createDirs(dir: String): File {
-//        val f = File(dir)
-//        if (!f.exists()) {
-//            f.mkdirs()
-//        }
-//        return f
-//    }
-
     private fun createDirs(f: File): File {
         if (!f.exists()) {
             f.mkdirs()

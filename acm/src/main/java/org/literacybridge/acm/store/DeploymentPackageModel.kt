@@ -226,7 +226,7 @@ class PackageMetadata(val project: String) {
     }
 
     private fun uploadToServer() {
-        val requestURL = Authenticator.ACCESS_CONTROL_API + "/deployment-metadata"
+        val requestURL = Authenticator.ACCESS_CONTROL_API + "/deployment-metadata?platform=app"
         val requestBody = JSONObject(Json.encodeToJsonElement(this).jsonObject)
 
         val jsonResponse = Authenticator.getInstance().awsInterface.authenticatedPostCall(requestURL, requestBody)
