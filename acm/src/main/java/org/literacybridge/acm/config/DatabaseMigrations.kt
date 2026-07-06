@@ -3,8 +3,8 @@ package org.literacybridge.acm.config
 data class Migration(val name: String, val sql: String)
 
 class DatabaseMigrations {
-    val version1: Migration = Migration("1-initial-migration", """" 
-        CREATE TABLE "migrations"
+    val version1: Migration = Migration("1-initial-migration", """ 
+    CREATE TABLE "migrations"
     (
         "id"        INTEGER NOT NULL UNIQUE,
         "timestamp" TEXT    NOT NULL,
