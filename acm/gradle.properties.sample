@@ -1,0 +1,11 @@
+# Copy to gradle.properties (which is git-ignored, being machine-specific).
+#
+# The ACM UI is being migrated from Swing to JavaFX. JavaFX 8 is bundled inside the JDK, and
+# not every JDK 8 bundles it -- Oracle JDK 8 does, stock OpenJDK / Temurin / Zulu (non-FX) and
+# most Corretto builds do not. The build fails with an explanation if the JDK it runs on lacks
+# JavaFX. Point it at one that has it:
+#
+#   org.gradle.java.home=C:/Program Files/Java/jdk1.8.0_202
+#
+# Use forward slashes even on Windows. To check a candidate JDK:
+#   ls "<jdk>/jre/lib/ext/jfxrt.jar"

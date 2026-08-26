@@ -154,8 +154,50 @@ apply plugin: "io.spring.dependency-management"
 //}
 // End code to allow dynamically including the most up-to-date AWS libs
 
+// ---- JavaFX 8 ----
+// The UI is being migrated from Swing to JavaFX. JavaFX 8 lives inside the JDK itself, as
+// jre/lib/ext/jfxrt.jar, so the extension classloader puts it on the compile classpath with no
+// help from us -- but only on a JDK 8 that actually bundles it. Oracle JDK 8 does. Stock
+// OpenJDK, Temurin, Zulu (non-FX) and most Corretto builds do not.
+//
+// The build JDK must have JavaFX, because the app is also run from that JDK during development;
+// compiling against someone else's jfxrt.jar would only move the failure to run time. So pin a
+// JavaFX-capable JDK 8 via org.gradle.java.home in gradle.properties (see gradle.properties.sample).
+ext.javafxJar = {
+    if (project.hasProperty('javafx.jar')) {
+        def override = new File(project.property('javafx.jar').toString())
+        if (!override.exists()) {
+            throw new GradleException("-Pjavafx.jar does not point at an existing file: " + override)
+        }
+        return override
+    }
+    return [
+        new File(System.getProperty("java.home"), "lib/ext/jfxrt.jar"),
+        new File(System.getProperty("java.home"), "jre/lib/ext/jfxrt.jar")
+    ].find { it.exists() }
+}()
+
+compileJava.doFirst {
+    if (javafxJar == null) {
+        throw new GradleException(
+            "JavaFX 8 (jfxrt.jar) is not present in the JDK running this build:\n" +
+            "    " + System.getProperty("java.home") + "\n" +
+            "\n" +
+            "The ACM user interface requires JavaFX. Point the build at a JDK 8 that bundles it:\n" +
+            "  - gradle.properties:  org.gradle.java.home=C:/path/to/jdk-with-javafx\n" +
+            "  - IntelliJ:           Settings > Build, Execution, Deployment > Build Tools >\n" +
+            "                        Gradle > 'Gradle JVM'  (name it explicitly; the generic\n" +
+            "                        '1.8' entry may resolve to a JDK without JavaFX)\n" +
+            "  - one-off override:   -Pjavafx.jar=/path/to/jfxrt.jar")
+    }
+}
+
 dependencies {
     implementation project(':core')
+
+    // JavaFX 8, from the JDK. compileOnly: the Oracle JRE supplies it at run time, so it must
+    // not be copied into dist/lib by the copyLibs task.
+    compileOnly files(javafxJar != null ? [javafxJar] : [])
 
     implementation 'org.apache.lucene:lucene-core:5.5.0'
     implementation 'org.apache.lucene:lucene-facet:5.5.0'

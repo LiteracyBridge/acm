@@ -1,0 +1,120 @@
+/*
+ * Styling for LoginPane. No -fx-font-family is set anywhere, so every control inherits the
+ * platform's default UI font, matching the rest of the (still Swing) application.
+ */
+
+.login-pane {
+    /* Keep -amplio-green in sync with Constants.AMPLIO_GREEN_R/G/B (40, 154, 106). */
+    -amplio-green: #289a6a;
+    -border-grey: #d0d5dd;
+    -text-dark: #101828;
+    -text-muted: #667085;
+
+    -fx-background-color: white;
+    /* No horizontal padding: WelcomeDialog's cardsContainer already insets the card by 26px. */
+    -fx-padding: 24 0 18 0;
+    -fx-spacing: 14;
+}
+
+.logo {
+    /* ImageView sizing is done in Java; nothing to add here beyond the selector's existence. */
+}
+
+.title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.form {
+    -fx-spacing: 4;
+}
+
+/* Labels sitting above each input. */
+.field-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+    -fx-padding: 8 0 2 0;
+}
+
+.field {
+    -fx-font-size: 13px;
+    -fx-pref-height: 36px;
+    -fx-background-color: white;
+    -fx-border-color: -border-grey;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 0 10 0 10;
+    -fx-prompt-text-fill: #98a2b3;
+}
+
+.field:focused {
+    -fx-border-color: -amplio-green;
+}
+
+/* The eye toggle floats over the right edge of the password field, so it must be transparent
+   and must not paint the usual ToggleButton pressed/selected background. */
+.reveal-button,
+.reveal-button:selected,
+.reveal-button:hover,
+.reveal-button:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0 8 0 0;
+    -fx-cursor: hand;
+}
+
+.reveal-button:disabled {
+    -fx-opacity: 0.35;
+}
+
+.options-row {
+    -fx-padding: 6 0 0 0;
+}
+
+.remember-me {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.link {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+    -fx-underline: true;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+
+.link:hover {
+    -fx-text-fill: -amplio-green;
+}
+
+.login-button {
+    -fx-font-size: 13px;
+    -fx-text-fill: white;
+    -fx-background-color: -amplio-green;
+    -fx-background-radius: 4;
+    -fx-pref-width: 120px;
+    -fx-pref-height: 38px;
+    -fx-cursor: hand;
+}
+
+.login-button:hover {
+    -fx-background-color: derive(-amplio-green, -12%);
+}
+
+.login-button:disabled {
+    -fx-opacity: 0.45;
+}
+
+.signup-row {
+    -fx-padding: 4 0 0 0;
+    -fx-spacing: 4;
+}
+
+.signup-prompt {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
