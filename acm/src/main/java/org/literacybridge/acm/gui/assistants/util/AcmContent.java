@@ -17,11 +17,11 @@ import java.util.Locale;
 public class AcmContent {
     public static class AcmRootNode extends DefaultMutableTreeNode {
         @SuppressWarnings("unchecked")
-        public Enumeration<LanguageNode> children() {
-            return (Enumeration<LanguageNode>)super.children();
+        public Enumeration<LanguageNode> languageChildren() {
+            return (Enumeration<LanguageNode>)(Enumeration<?>) super.children();
         }
         public LanguageNode find(String languagecode) {
-            Enumeration<LanguageNode> children = children();
+            Enumeration<LanguageNode> children = languageChildren();
             while (children.hasMoreElements()) {
                 LanguageNode languageNode = children.nextElement();
                 if (languageNode.getLanguageCode().equals(languagecode))
@@ -35,7 +35,7 @@ public class AcmContent {
                 return new ArrayList<>();
             } else {
                 //noinspection unchecked
-                return (List<LanguageNode>)super.children;
+                return (List<LanguageNode>)(List<?>) super.children;
             }
         }
 
@@ -67,11 +67,11 @@ public class AcmContent {
         }
 
         @SuppressWarnings("unchecked")
-        public Enumeration<PlaylistNode> children() {
-            return (Enumeration<PlaylistNode>)super.children();
+        public Enumeration<PlaylistNode> playlistChildren() {
+            return (Enumeration<PlaylistNode>)(Enumeration<?>) super.children();
         }
         public PlaylistNode find(String title) {
-            Enumeration<PlaylistNode> children = children();
+            Enumeration<PlaylistNode> children = playlistChildren();
             while (children.hasMoreElements()) {
                 PlaylistNode playlistNode = children.nextElement();
                 if (playlistNode.getTitle().equals(title))
@@ -85,7 +85,7 @@ public class AcmContent {
                 return new ArrayList<>();
             } else {
                 //noinspection unchecked
-                return (List<PlaylistNode>)super.children;
+                return (List<PlaylistNode>)(List<?>)super.children;
             }
         }
     }
@@ -112,8 +112,8 @@ public class AcmContent {
         }
 
         @SuppressWarnings("unchecked")
-        public Enumeration<AudioItemNode> children() {
-            return (Enumeration<AudioItemNode>)super.children();
+        public Enumeration<AudioItemNode> playlistChildren() {
+            return (Enumeration<AudioItemNode>)(Enumeration<?>) super.children();
         }
 
         public List<AudioItemNode> getAudioItemNodes() {
@@ -121,7 +121,7 @@ public class AcmContent {
                 return new ArrayList<>();
             } else {
                 //noinspection unchecked
-                return (List<AudioItemNode>)super.children;
+                return (List<AudioItemNode>)(List<?>) super.children;
             }
         }
     }

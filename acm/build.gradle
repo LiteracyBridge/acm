@@ -10,6 +10,7 @@ allprojects {
 
     repositories {
         mavenCentral()
+        gradlePluginPortal()
         maven {
             url = uri("https://maven.pkg.github.com/LiteracyBridge/CSMcompile")
 //            url = uri("file://Users/bill/git-package")
@@ -73,8 +74,10 @@ project(':core') {
 }
 
 compileJava {
-    targetCompatibility = '1.8'
-    sourceCompatibility = '1.8'
+    // JavaFX (org.openjfx.javafxplugin) requires Java 11+; JavaFX 8's bundled jfxrt.jar
+    // approach has been retired in favor of the OpenJFX modules pulled in below.
+    targetCompatibility = '11'
+    sourceCompatibility = '11'
     //options.compilerArgs += ["-Xlint:deprecation", "-Xlint:unchecked", "-nowarn"]
 }
 
@@ -140,12 +143,15 @@ buildscript {
             url "https://repo1.maven.org/maven2/"
         }
         mavenCentral()
+        gradlePluginPortal()
     }
     dependencies {
-        classpath "io.spring.gradle:dependency-management-plugin:0.6.1.RELEASE"
+        // OpenJFX Gradle plugin: resolves the right javafx-* platform jars
+        // (win/mac/linux) for the modules declared in the `javafx { }` block below.
+        classpath "org.openjfx:javafx-plugin:0.1.0"
     }
 }
-apply plugin: "io.spring.dependency-management"
+
 //dependencyManagement {
 
 //    imports {
@@ -154,50 +160,19 @@ apply plugin: "io.spring.dependency-management"
 //}
 // End code to allow dynamically including the most up-to-date AWS libs
 
-// ---- JavaFX 8 ----
-// The UI is being migrated from Swing to JavaFX. JavaFX 8 lives inside the JDK itself, as
-// jre/lib/ext/jfxrt.jar, so the extension classloader puts it on the compile classpath with no
-// help from us -- but only on a JDK 8 that actually bundles it. Oracle JDK 8 does. Stock
-// OpenJDK, Temurin, Zulu (non-FX) and most Corretto builds do not.
-//
-// The build JDK must have JavaFX, because the app is also run from that JDK during development;
-// compiling against someone else's jfxrt.jar would only move the failure to run time. So pin a
-// JavaFX-capable JDK 8 via org.gradle.java.home in gradle.properties (see gradle.properties.sample).
-ext.javafxJar = {
-    if (project.hasProperty('javafx.jar')) {
-        def override = new File(project.property('javafx.jar').toString())
-        if (!override.exists()) {
-            throw new GradleException("-Pjavafx.jar does not point at an existing file: " + override)
-        }
-        return override
-    }
-    return [
-        new File(System.getProperty("java.home"), "lib/ext/jfxrt.jar"),
-        new File(System.getProperty("java.home"), "jre/lib/ext/jfxrt.jar")
-    ].find { it.exists() }
-}()
+// ---- JavaFX (OpenJFX) ----
+// Starting with Java 11, JavaFX is no longer bundled in the JDK. The org.openjfx.javafxplugin
+// pulls in the platform-appropriate javafx-* jars as regular dependencies and adds the
+// required --module-path/--add-modules args to compile/run/test tasks automatically.
+apply plugin: 'org.openjfx.javafxplugin'
 
-compileJava.doFirst {
-    if (javafxJar == null) {
-        throw new GradleException(
-            "JavaFX 8 (jfxrt.jar) is not present in the JDK running this build:\n" +
-            "    " + System.getProperty("java.home") + "\n" +
-            "\n" +
-            "The ACM user interface requires JavaFX. Point the build at a JDK 8 that bundles it:\n" +
-            "  - gradle.properties:  org.gradle.java.home=C:/path/to/jdk-with-javafx\n" +
-            "  - IntelliJ:           Settings > Build, Execution, Deployment > Build Tools >\n" +
-            "                        Gradle > 'Gradle JVM'  (name it explicitly; the generic\n" +
-            "                        '1.8' entry may resolve to a JDK without JavaFX)\n" +
-            "  - one-off override:   -Pjavafx.jar=/path/to/jfxrt.jar")
-    }
+javafx {
+    version = '17.0.9'
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing', 'javafx.media']
 }
 
 dependencies {
     implementation project(':core')
-
-    // JavaFX 8, from the JDK. compileOnly: the Oracle JRE supplies it at run time, so it must
-    // not be copied into dist/lib by the copyLibs task.
-    compileOnly files(javafxJar != null ? [javafxJar] : [])
 
     implementation 'org.apache.lucene:lucene-core:5.5.0'
     implementation 'org.apache.lucene:lucene-facet:5.5.0'
@@ -254,40 +229,7 @@ idea {
         downloadSources = true
         downloadJavadoc = true
     }
-
-//    project {
-//        languageLevel = javaLanguageLevel
-//
-//        ipr {
-//            withXml { xmlProvider ->
-//                // Get root node.
-//                def project = xmlProvider.asNode()
-//                customizeIdeaCodeSyle project
-//            }
-//        }
-//    }
 }
-
-
-// =========== IntelliJ settings ===========
-//def customizeIdeaCodeSyle(project) {
-//    //codeStyleDir="$projectDir/../codeStyle"
-//    println "codeStyleDir: $codeStyleDir"
-//    println "customizeIdeaCodeStyle($project)"
-//
-//    project.appendNode('component', [name: 'ProjectCodeStyleSettingsManager'])
-//    def codeStyleNode = findComponent(project, 'ProjectCodeStyleSettingsManager')
-//
-//    codeStyleNode.appendNode('option', [name: 'USE_PER_PROJECT_SETTINGS', value: 'true'])
-//    def projectSettingsNode = codeStyleNode.appendNode('option', [name: 'PER_PROJECT_SETTINGS']).appendNode('value')
-//
-//    def codeStyleUrl = rootProject.file("$codeStyleDir/idea_code_style_prefs.xml").toURI().toURL()
-//
-//    def codeStyleXml = new XmlParser().parseText(codeStyleUrl.text)
-//    codeStyleXml.children().each { option ->
-//        codeStyleNode.append(option)
-//    }
-//}
 
 // Search component with given name
 static def findComponent(project, name) {
