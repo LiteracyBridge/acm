@@ -74,8 +74,6 @@ project(':core') {
 }
 
 compileJava {
-    // JavaFX (org.openjfx.javafxplugin) requires Java 11+; JavaFX 8's bundled jfxrt.jar
-    // approach has been retired in favor of the OpenJFX modules pulled in below.
     targetCompatibility = '11'
     sourceCompatibility = '11'
     //options.compilerArgs += ["-Xlint:deprecation", "-Xlint:unchecked", "-nowarn"]
@@ -146,57 +144,27 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        // OpenJFX Gradle plugin: resolves the right javafx-* platform jars
-        // (win/mac/linux) for the modules declared in the `javafx { }` block below.
         classpath "org.openjfx:javafx-plugin:0.1.0"
-
-        // Badass Runtime plugin: builds a custom jlink runtime image containing only
-        // the modules this app needs, so we control exactly which modules ship (e.g.
-        // jdk.unsupported.desktop, needed by JavaFX's Swing interop and previously
-        // missing when relying on a generic vendor-trimmed JRE). Pinned to the 1.x line
-        // since 2.x requires a Java 17 Gradle daemon; see badass-runtime-plugin docs.
         classpath "org.beryx.runtime:org.beryx.runtime.gradle.plugin:1.13.1"
     }
 }
 
-//dependencyManagement {
 
-//    imports {
-//        mavenBom 'com.amazonaws:aws-java-sdk-bom:1.10.47'
-//    }
-//}
-// End code to allow dynamically including the most up-to-date AWS libs
-
-// ---- JavaFX (OpenJFX) ----
-// Starting with Java 11, JavaFX is no longer bundled in the JDK. The org.openjfx.javafxplugin
-// pulls in the platform-appropriate javafx-* jars as regular dependencies and adds the
-// required --module-path/--add-modules args to compile/run/test tasks automatically.
 apply plugin: 'org.openjfx.javafxplugin'
-
 javafx {
     version = '17.0.9'
     modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing', 'javafx.media']
 }
 
-// ---- Badass Runtime plugin ----
-// Applying this implicitly applies Gradle's 'application' plugin, which requires
-// mainClass to be set (used to build the installDist layout the 'runtime' task starts
-// from). This is separate from the existing 'dist' task above; it produces its own
-// self-contained image (with a bundled custom JRE) under build/image.
+// Produces its own self-contained image (with a bundled custom JRE) under build/image.
 apply plugin: 'org.beryx.runtime'
-
 application {
     mainClass = 'org.literacybridge.acm.gui.Application'
 }
 
 runtime {
     options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
-
-    // Let the plugin auto-detect required modules (javafx.*, java.desktop, etc. via
-    // jdeps-style scanning of the actual classpath) and just add the one module that
-    // detection can't see, since it's an internal JavaFX dependency rather than
-    // something your own bytecode references directly.
-    modules = ['jdk.unsupported.desktop']
+    modules = ['jdk.unsupported.desktop'] // Fixes missing swing interlop modules at runtime
     additive = true
 }
 
