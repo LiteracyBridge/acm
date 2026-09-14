@@ -44,11 +44,11 @@ build_acm:
     cd ../S3Sync/ctrl && ./gradlew clean && ./gradlew dist
 
     # Build acm
-    cd acm && ./gradlew clean && ./gradlew dist
+    cd acm && ./gradlew clean && ./gradlew build runtime && ./gradlew dist
 
 [doc("Creates ACM/TB Loader installer")]
 build_acm_installer: build_acm
-    cd installer && sh ./build_dist.sh && sh ./build_inst.sh
+    just build_acm && cd installer && sh ./build_dist.sh && sh ./build_inst.sh
 
 [doc("Uploads new ACM installer to S3 buckets")]
 release_acm: build_acm_installer
