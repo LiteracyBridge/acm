@@ -145,7 +145,6 @@ buildscript {
     }
     dependencies {
         classpath "org.openjfx:javafx-plugin:0.1.0"
-        classpath "org.beryx.runtime:org.beryx.runtime.gradle.plugin:1.13.1"
     }
 }
 
@@ -156,17 +155,6 @@ javafx {
     modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing', 'javafx.media']
 }
 
-// Produces its own self-contained image (with a bundled custom JRE) under build/image.
-apply plugin: 'org.beryx.runtime'
-application {
-    mainClass = 'org.literacybridge.acm.gui.Application'
-}
-
-runtime {
-    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
-    modules = ['jdk.unsupported.desktop'] // Fixes missing swing interlop modules at runtime
-    additive = true
-}
 
 dependencies {
     implementation project(':core')
