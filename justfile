@@ -44,7 +44,7 @@ build_acm:
     cd ../S3Sync/ctrl && ./gradlew clean && ./gradlew dist
 
     # Build acm
-    cd acm && ./gradlew clean && ./gradlew build runtime && ./gradlew dist
+    cd acm && ./gradlew clean && ./gradlew dist
 
 [doc("Creates ACM/TB Loader installer")]
 build_acm_installer: build_acm

@@ -5,32 +5,48 @@ import javafx.embed.swing.JFXPanel;
 
 import javax.swing.SwingUtilities;
 
-/**
- * Swing/JavaFX interop helpers, shared by every JavaFX screen we add while the UI is migrated
- * away from Swing.
- *
- * <p>Swing and JavaFX each own a thread -- the AWT event dispatch thread (EDT) and the JavaFX
- * application thread -- and a control may only be touched from its own. Everything here exists
- * to make crossing that line explicit at the call site.
- */
 public final class FxBridge {
     private FxBridge() {}
 
     private static boolean toolkitStarted = false;
 
     /**
-     * Creates the JFXPanel that hosts a JavaFX scene inside a Swing container. Constructing the
-     * first JFXPanel is what boots the JavaFX toolkit, so this doubles as our initialization.
+     * Starts the JavaFX toolkit without creating a JFXPanel, so callers that only ever show
+     * JavaFX content in its own Stage never pull in javafx.swing (and therefore never need the
+     * jdk.unsupported.desktop module JFXPanel unconditionally requires).
+     *
+     * <p>Safe to call even if some other, not-yet-migrated screen elsewhere in the app still
+     * uses {@link #createHostPanel()} (JFXPanel) -- whichever of the two runs first wins, and
+     * the other becomes a no-op.
      *
      * <p>Must be called on the EDT.
      */
+    public static synchronized void startToolkit() {
+        if (toolkitStarted) return;
+        toolkitStarted = true;
+        try {
+            Platform.startup(() -> Platform.setImplicitExit(false));
+        } catch (IllegalStateException alreadyRunning) {
+            // A JFXPanel elsewhere already booted the toolkit first. Nothing more to do; just
+            // make sure implicit exit is off, same as createHostPanel() below does.
+            Platform.runLater(() -> Platform.setImplicitExit(false));
+        }
+    }
+
+    /**
+     * Creates the JFXPanel that hosts a JavaFX scene inside a Swing container.
+     *
+     * @deprecated Requires the jdk.unsupported.desktop JDK module at runtime (see
+     * JDK-8210092 -- javafx.swing has no fallback that avoids this). Screens being newly
+     * migrated should use {@link #startToolkit()} plus their own {@code javafx.stage.Stage}
+     * instead, as {@code LoginCard} now does. Left in place only for screens not yet migrated
+     * off JFXPanel.
+     */
+    @Deprecated
     public static JFXPanel createHostPanel() {
         JFXPanel host = new JFXPanel();
         if (!toolkitStarted) {
             toolkitStarted = true;
-            // The JavaFX toolkit shuts down for good when the last FX window closes, and it can
-            // not be restarted in the same process. Our FX scenes live inside Swing windows that
-            // open and close repeatedly, so implicit exit has to be off.
             Platform.setImplicitExit(false);
         }
         return host;
