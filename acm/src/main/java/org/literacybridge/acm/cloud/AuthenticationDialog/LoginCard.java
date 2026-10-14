@@ -1,7 +1,9 @@
 package org.literacybridge.acm.cloud.AuthenticationDialog;
 
-import org.literacybridge.acm.cloud.AuthenticationDialog.fx.LoginPane;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import org.literacybridge.acm.gui.fx.FxBridge;
+import org.literacybridge.acm.gui.fx.LoginController;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 
@@ -19,12 +21,13 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.NO_WAIT;
 import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 
 /**
- * The login card. The form itself is JavaFX ({@link LoginPane}); this class is the Swing shell
+ * The login card. The form itself is JavaFX, loaded from FXML; this class is the Swing shell
  * that positions it and owns everything that talks to the rest of the dialog.
  *
  * <p>Unlike the JFXPanel-based version this replaced, the JavaFX form is NOT embedded inside a
@@ -39,18 +42,18 @@ import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
  * {@code WelcomeDialog}, {@code CardContent} and {@code Authenticator} are unchanged.
  *
  * <p>Threading: constructor, {@code onShown} and {@code onEnter} arrive on the Swing EDT; the
- * {@link LoginPane.Handler} callbacks arrive on the JavaFX thread. Each hops to the other side
+ * {@link LoginController.Handler} callbacks arrive on the JavaFX thread. Each hops to the other side
  * through {@link FxBridge} rather than touching foreign controls directly.
  */
-public class LoginCard extends CardContent implements LoginPane.Handler {
+public class LoginCard extends CardContent implements LoginController.Handler {
     private static final String DIALOG_TITLE = "Login to %s";
 
     protected static final int CARD_HEIGHT = 470;
 
     /** Built on, and only ever touched from, the JavaFX thread. */
-    private volatile LoginPane loginPane;
+    private volatile LoginController loginController;
 
-    /** The overlay window hosting {@link #loginPane}. Only ever touched from the FX thread. */
+    /** The overlay window hosting {@link #loginController}. Only ever touched from the FX thread. */
     private volatile Stage stage;
 
     private volatile boolean rememberMeSelected = true;
@@ -69,17 +72,23 @@ public class LoginCard extends CardContent implements LoginPane.Handler {
         setOpaque(false);
         setPreferredSize(new Dimension(0, CARD_HEIGHT));
 
-        final String applicationName = welcomeDialog.applicationName;
         FxBridge.startToolkit();
+
         FxBridge.onFx(() -> {
-            loginPane = new LoginPane(applicationName, this);
-            stage = new Stage(StageStyle.TRANSPARENT);
-            stage.setScene(new Scene(loginPane, Color.TRANSPARENT));
-            // No AWT Window can "own" an FX Stage, so there is no built-in way to keep this
-            // layered above WelcomeDialog the way an owned window would be. Always-on-top is a
-            // blunt substitute for that -- note it floats above *all* windows, not just this
-            // app's, while visible.
-            stage.setAlwaysOnTop(true);
+            try {
+                FXMLLoader loader = new FXMLLoader(
+                        LoginCard.class.getResource("/loginscreen.fxml"));
+                Parent root = loader.load();
+
+                loginController = loader.getController();
+                loginController.setHandler(this);
+
+                stage = new Stage(StageStyle.UNDECORATED);
+                stage.setScene(new Scene(root, Color.RED));
+                stage.setAlwaysOnTop(true);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not load loginscreen.fxml", e);
+            }
         });
 
         addComponentListener(cardVisibilityAdapter);
@@ -174,28 +183,28 @@ public class LoginCard extends CardContent implements LoginPane.Handler {
         final boolean noWait = welcomeDialog.options.contains(NO_WAIT);
 
         FxBridge.onFx(() -> {
-            loginPane.setEmail(email);
-            loginPane.setPassword(password);
-            loginPane.setRevealPasswordEnabled(!savedPassword);
-            loginPane.focusEmail();
-            if (noWait) loginPane.triggerLogin();
+            loginController.setEmail(email);
+            loginController.setPassword(password);
+            loginController.setRevealPasswordEnabled(!savedPassword);
+            loginController.focusEmail();
+            if (noWait) loginController.triggerLogin();
         });
     }
 
     @Override
     void onEnter() {
-        FxBridge.onFx(() -> loginPane.triggerLogin());
+        FxBridge.onFx(() -> loginController.triggerLogin());
     }
 
     public boolean isRememberMeSelected() {
         return rememberMeSelected;
     }
 
-    // ---- LoginPane.Handler, called on the JavaFX thread ----
+    // ---- LoginController.Handler, called on the JavaFX thread ----
 
     @Override
     public void onLogin(String email, String password) {
-        rememberMeSelected = loginPane.isRememberMeSelected();
+        rememberMeSelected = loginController.isRememberMeSelected();
         FxBridge.onSwing(() -> doLogin(email, password));
     }
 
