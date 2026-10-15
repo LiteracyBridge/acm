@@ -48,6 +48,7 @@ public class ApplicationV2 extends Application {
             .getLogger(ApplicationV2.class.getName());
     private static SplashScreen splashScreen;
     private static Image iconImage;
+    private static ApplicationV2 instance;
 
     static {
         System.out.printf("Java version: %s, data model: %s\n",
@@ -99,10 +100,13 @@ public class ApplicationV2 extends Application {
     }
 
     // application instance
-    private static ApplicationV2 application;
+//    private static ApplicationV2 application;
 
     public static ApplicationV2 getApplication() {
-        return application;
+        if (instance == null) {
+            throw new IllegalStateException("Application has not been started yet!");
+        }
+        return instance;
     }
 
     public static Image getImageIcon() {
@@ -113,65 +117,11 @@ public class ApplicationV2 extends Application {
 
 
     public ApplicationV2() {
-//        super();
-//        splashScreen.setProgressLabel("Initializing UI...");
-//        this.backgroundColor = getBackground();
-//        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//
-//        addWindowListener(shutdownListener);
-//
-//        if (ACMConfiguration.getInstance().isDevo()) {
-//            JMenuBar menuBar = new JMenuBar();
-//            JMenu menu = new JMenu("Developer");
-//            menuBar.add(menu);
-//            JMenuItem menuItem = new JMenuItem("Access Control...");
-//            menu.add(menuItem);
-//            menuItem.addActionListener(e -> new AcmCheckoutTest(this).setVisible(true));
-//            menuItem = new JMenuItem("UI Defaults...");
-//            menu.add(menuItem);
-//            menuItem.addActionListener(e -> new LafTester(this).setVisible(true));
-//            setJMenuBar(menuBar);
-//        }
-//
-//        Authenticator authInstance = Authenticator.getInstance();
-//        String greeting = authInstance.getUserSelfName();
-//        if (StringUtils.isEmpty(greeting)) {
-//            greeting = String.format("Hello, %s", authInstance.getUserEmail());
-//        }
-//        String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
-//                                "  --  CHANGES WILL *NOT* BE SAVED!" : "";
-//        String layoutIndicator = AmplioHome.isOldStyleHomeDirectory()
-//                                 ? (OsUtils.WINDOWS ? "v1" : "∅")
-//                                 : (OsUtils.WINDOWS ? "v2" : "✓");
-//
-//        String dbVersion = "v" +
-//            ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion();
-//        String programTitle = String.format(LabelProvider.getLabel("APPLICATION_TITLE_FORMAT"),
-//            LabelProvider.getLabel("ACM_PROGRAM_NAME"));
-//        String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
-//            greeting,
-//            programTitle,
-//            Constants.ACM_VERSION,
-//            layoutIndicator,
-//            ACMConfiguration.getInstance().getTitle(),
-//            dbVersion,
-//            sandboxWarning);
-//
-//        setTitle(title);
-//        // toolbar view on top
-//        mainView = new MainView();
-//        ToolbarView toolbarView = new ToolbarView(mainView.audioItemView);
-//        add(toolbarView, BorderLayout.PAGE_START);
-//        add(mainView, BorderLayout.CENTER);
-//
-//        statusBar = new ACMStatusBar();
-//        setStatusBar(statusBar);
-//        taskManager = new BackgroundTaskManager(statusBar);
-//
-//        // starts file system monitor after UI has been initialized
-//        fileSystemMonitor
-//            .addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());
-//        fileSystemMonitor.start();
+        synchronized (ApplicationV2.class) {
+            if (instance == null) {
+                instance = this;
+            }
+        }
     }
 
 
@@ -353,6 +303,26 @@ public class ApplicationV2 extends Application {
         openAcmDb(params.sharedACM);
 
         // Initialize application
+
+        //        splashScreen.setProgressLabel("Initializing UI...");
+//        this.backgroundColor = getBackground();
+//        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//
+//        addWindowListener(shutdownListener);
+//
+//        if (ACMConfiguration.getInstance().isDevo()) {
+//            JMenuBar menuBar = new JMenuBar();
+//            JMenu menu = new JMenu("Developer");
+//            menuBar.add(menu);
+//            JMenuItem menuItem = new JMenuItem("Access Control...");
+//            menu.add(menuItem);
+//            menuItem.addActionListener(e -> new AcmCheckoutTest(this).setVisible(true));
+//            menuItem = new JMenuItem("UI Defaults...");
+//            menu.add(menuItem);
+//            menuItem.addActionListener(e -> new LafTester(this).setVisible(true));
+//            setJMenuBar(menuBar);
+//        }
+//
         Authenticator authInstance = Authenticator.getInstance();
         String greeting = authInstance.getUserSelfName();
         if (StringUtils.isEmpty(greeting)) {
