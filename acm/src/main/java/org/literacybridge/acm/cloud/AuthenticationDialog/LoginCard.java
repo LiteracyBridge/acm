@@ -1,257 +1,226 @@
 package org.literacybridge.acm.cloud.AuthenticationDialog;
 
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import org.literacybridge.acm.gui.fx.FxBridge;
-import org.literacybridge.acm.gui.fx.LoginController;
+import org.literacybridge.acm.cloud.ActionLabel;
+import org.literacybridge.acm.gui.Assistant.FlexTextField;
+import org.literacybridge.acm.gui.Assistant.GBC;
+import org.literacybridge.acm.gui.Assistant.PanelButton;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 
-import javafx.scene.Scene;
-import javafx.scene.paint.Color;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-
-import javax.swing.SwingUtilities;
-import java.awt.Dimension;
-import java.awt.Point;
-import java.awt.Window;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.IOException;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
+import static java.awt.GridBagConstraints.CENTER;
+import static java.awt.GridBagConstraints.EAST;
+import static java.awt.GridBagConstraints.NONE;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.NO_WAIT;
+import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 
-/**
- * The login card. The form itself is JavaFX, loaded from FXML; this class is the Swing shell
- * that positions it and owns everything that talks to the rest of the dialog.
- *
- * <p>Unlike the JFXPanel-based version this replaced, the JavaFX form is NOT embedded inside a
- * Swing component. {@code javafx.swing} (JFXPanel/SwingNode) unconditionally requires the
- * {@code jdk.unsupported.desktop} JDK module (JDK-8210092 removed the old implementation that
- * didn't), and some deployed JRE builds don't ship it. To avoid that dependency, this card shows
- * the JavaFX form as a separate, undecorated, always-on-top {@link Stage} that is manually kept
- * positioned directly over this (otherwise invisible) placeholder panel, tracking the host
- * dialog's position, size, and visibility.
- *
- * <p>It is still a JPanel with the same public methods as the JFXPanel version it replaced, so
- * {@code WelcomeDialog}, {@code CardContent} and {@code Authenticator} are unchanged.
- *
- * <p>Threading: constructor, {@code onShown} and {@code onEnter} arrive on the Swing EDT; the
- * {@link LoginController.Handler} callbacks arrive on the JavaFX thread. Each hops to the other side
- * through {@link FxBridge} rather than touching foreign controls directly.
- */
-public class LoginCard extends CardContent implements LoginController.Handler {
+public class LoginCard extends CardContent {
     private static final String DIALOG_TITLE = "Login to %s";
+    protected static final int CARD_HEIGHT = 275;
 
-    protected static final int CARD_HEIGHT = 470;
-
-    /** Built on, and only ever touched from, the JavaFX thread. */
-    private volatile LoginController loginController;
-
-    /** The overlay window hosting {@link #loginController}. Only ever touched from the FX thread. */
-    private volatile Stage stage;
-
-    private volatile boolean rememberMeSelected = true;
-
-    /** The dialog (or other top-level window) this card is showing inside. */
-    private Window hostWindow;
+    private final PanelButton login;
+    private final FlexTextField emailField;
+    private final FlexTextField passwordField;
+    private final JCheckBox rememberMe;
 
     public LoginCard(WelcomeDialog welcomeDialog, WelcomeDialog.Cards panel) {
         super(welcomeDialog, String.format(DIALOG_TITLE, welcomeDialog.applicationName), panel);
+        JPanel dialogPanel = this;
+        // The GUI
+        dialogPanel.setLayout(new GridBagLayout());
+        GBC gbc = new GBC(getGBC()).withAnchor(CENTER);
+        gbc.insets.bottom = 12; // tighter bottom spacing.
 
-        getScaledLogo();
+        // Amplio logo
+        addScaledLogo();
 
-        // Empty placeholder: reserves the same layout space the JFXPanel host used to, so
-        // WelcomeDialog's existing sizing/layout logic is unaffected. It is never painted --
-        // the overlay Stage sits directly on top of it and does all the drawing.
-        setOpaque(false);
-        setPreferredSize(new Dimension(0, CARD_HEIGHT));
+        // Email
+        emailField = new FlexTextField();
+        emailField.setFont(getTextFont());
+        emailField.setIcon(getPersonIcon());
+        emailField.setPlaceholder("Enter your email address");
+        emailField.addKeyListener(textKeyListener);
+        emailField.getDocument().addDocumentListener(textDocumentListener);
+        dialogPanel.add(emailField, gbc);
 
-        FxBridge.startToolkit();
+        // Password
+        passwordField = new FlexTextField();
+        passwordField.setFont(getTextFont());
+        passwordField.setIsPassword(true);
+        passwordField.setPlaceholder("Enter your password");
+        passwordField.addKeyListener(textKeyListener);
+        passwordField.getDocument().addDocumentListener(textDocumentListener);
+        dialogPanel.add(passwordField, gbc);
 
-        FxBridge.onFx(() -> {
-            try {
-                FXMLLoader loader = new FXMLLoader(
-                        LoginCard.class.getResource("/loginscreen.fxml"));
-                Parent root = loader.load();
+        // Option checkboxes, and forgot password link.
+        rememberMe = new JCheckBox("Remember me", true);
 
-                loginController = loader.getController();
-                loginController.setHandler(this);
+        ActionLabel forgotPassword = new ActionLabel("Forgot your password?");
+        forgotPassword.addActionListener(this::onForgotPassword);
+        dialogPanel.add(forgotPassword, gbc.withAnchor(EAST).withFill(NONE));
 
-                stage = new Stage(StageStyle.UNDECORATED);
-                stage.setScene(new Scene(root, Color.RED));
-                stage.setAlwaysOnTop(true);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not load loginscreen.fxml", e);
-            }
-        });
+        // Consume all vertical space here.
+        dialogPanel.add(new JLabel(""), gbc.withWeighty(1.0));
 
-        addComponentListener(cardVisibilityAdapter);
+        // Login button.
+        login = new PanelButton("Login");
+        login.setFont(getTextFont());
+        login.setBgColorPalette(AMPLIO_GREEN);
+        login.addActionListener(this::onLogin);
+        login.setEnabled(false);
+        dialogPanel.add(login, gbc.withFill(NONE));
+
+        // Sign-up link.
+        ActionLabel signUp = new ActionLabel("Not registered yet? Click here!");
+        signUp.addActionListener(this::onSignUp);
+        dialogPanel.add(signUp, gbc.withFill(NONE));
+
+        addComponentListener(componentAdapter);
     }
-
-    @Override
-    public void addNotify() {
-        super.addNotify();
-        hostWindow = SwingUtilities.getWindowAncestor(this);
-        if (hostWindow != null) {
-            hostWindow.addComponentListener(hostWindowAdapter);
-            hostWindow.addWindowListener(hostWindowStateAdapter);
-        }
-    }
-
-    @Override
-    public void removeNotify() {
-        if (hostWindow != null) {
-            hostWindow.removeComponentListener(hostWindowAdapter);
-            hostWindow.removeWindowListener(hostWindowStateAdapter);
-            hostWindow = null;
-        }
-        hideOverlay();
-        super.removeNotify();
-    }
-
-    // ---- Overlay positioning. All Swing-side; hops to FX thread for the actual Stage calls. ----
-
-    private void syncOverlayBounds() {
-        if (!isShowing()) return;
-        Point loc = getLocationOnScreen();
-        int w = getWidth();
-        int h = getHeight();
-        FxBridge.onFx(() -> {
-            if (stage == null) return;
-            stage.setX(loc.x);
-            stage.setY(loc.y);
-            stage.setWidth(w);
-            stage.setHeight(h);
-        });
-    }
-
-    private void showOverlay() {
-        syncOverlayBounds();
-        FxBridge.onFx(() -> {
-            if (stage != null) stage.show();
-        });
-    }
-
-    private void hideOverlay() {
-        FxBridge.onFx(() -> {
-            if (stage != null) stage.hide();
-        });
-    }
-
-    /**
-     * Standard java.awt.CardLayout shows/hides cards by calling setVisible() on each child, so
-     * this fires exactly when WelcomeDialog switches to or away from this card -- no separate
-     * hook into WelcomeDialog/CardContent is needed. If WelcomeDialog does its own card
-     * switching some other way (not java.awt.CardLayout), this assumption doesn't hold and
-     * these calls will need to move to wherever cards are actually swapped.
-     */
-    private final ComponentAdapter cardVisibilityAdapter = new ComponentAdapter() {
-        @Override public void componentShown(ComponentEvent e) { showOverlay(); }
-        @Override public void componentHidden(ComponentEvent e) { hideOverlay(); }
-        @Override public void componentResized(ComponentEvent e) { syncOverlayBounds(); }
-        @Override public void componentMoved(ComponentEvent e) { syncOverlayBounds(); }
-    };
-
-    private final ComponentAdapter hostWindowAdapter = new ComponentAdapter() {
-        @Override public void componentMoved(ComponentEvent e) { syncOverlayBounds(); }
-        @Override public void componentResized(ComponentEvent e) { syncOverlayBounds(); }
-    };
-
-    private final WindowAdapter hostWindowStateAdapter = new WindowAdapter() {
-        @Override public void windowIconified(WindowEvent e) { hideOverlay(); }
-        @Override public void windowDeiconified(WindowEvent e) { if (isShowing()) showOverlay(); }
-        @Override public void windowActivated(WindowEvent e) {
-            if (isShowing()) FxBridge.onFx(() -> { if (stage != null) stage.toFront(); });
-        }
-        @Override public void windowClosing(WindowEvent e) { hideOverlay(); }
-    };
-
-    // ---- Called by WelcomeDialog, on the EDT ----
 
     @Override
     void onShown(ActionEvent actionEvent) {
         super.onShown(actionEvent);
-        final String email = welcomeDialog.getEmail();
-        final String password = welcomeDialog.getPassword();
-        final boolean savedPassword = welcomeDialog.isSavedPassword();
-        final boolean noWait = welcomeDialog.options.contains(NO_WAIT);
+        emailField.setText(welcomeDialog.getEmail());
+        passwordField.setText(welcomeDialog.getPassword());
+        passwordField.setPasswordRevealed(false);
+        passwordField.setText(welcomeDialog.getPassword());
+        passwordField.setRevealPasswordEnabled(!welcomeDialog.isSavedPassword());
+        emailField.setRequestFocusEnabled(true);
+        emailField.requestFocusInWindow();
 
-        FxBridge.onFx(() -> {
-            loginController.setEmail(email);
-            loginController.setPassword(password);
-            loginController.setRevealPasswordEnabled(!savedPassword);
-            loginController.focusEmail();
-            if (noWait) loginController.triggerLogin();
-        });
+        // If no_wait is specified, and we have everything we need, go!
+        if (welcomeDialog.options.contains(NO_WAIT) && login.isEnabled()) onLogin(null);
+    }
+
+    public boolean isRememberMeSelected() {
+        return rememberMe.isSelected();
     }
 
     @Override
     void onEnter() {
-        FxBridge.onFx(() -> loginController.triggerLogin());
+        if (login.isEnabled()) onLogin(null);
     }
 
-    public boolean isRememberMeSelected() {
-        return rememberMeSelected;
+    /**
+     * User clicked on the "No user id? Click here!" link.
+     * @param actionEvent is ignored.
+     */
+    private void onSignUp(ActionEvent actionEvent) {
+
+        welcomeDialog.gotoSignUpCard(actionEvent);
     }
 
-    // ---- LoginController.Handler, called on the JavaFX thread ----
-
-    @Override
-    public void onLogin(String email, String password) {
-        rememberMeSelected = loginController.isRememberMeSelected();
-        FxBridge.onSwing(() -> doLogin(email, password));
+    /**
+     * User clicked on the "Forgot password" link.
+     * @param actionEvent is ignored.
+     */
+    private void onForgotPassword(ActionEvent actionEvent) {
+        welcomeDialog.setEmail(emailField.getText());
+        welcomeDialog.clearMessage();
+        welcomeDialog.gotoForgotPasswordCard();
     }
 
-    @Override
-    public void onForgotPassword(String email) {
-        FxBridge.onSwing(() -> {
-            welcomeDialog.setEmail(email);
-            welcomeDialog.clearMessage();
-            welcomeDialog.gotoForgotPasswordCard();
-        });
-    }
-
-    @Override
-    public void onSignUp() {
-        FxBridge.onSwing(() -> welcomeDialog.gotoSignUpCard(null));
-    }
-
-    // ---- Authentication, on the EDT ----
-
-    private void doLogin(String email, String password) {
+    /**
+     * User clicked "Login" or pressed enter.
+     * @param actionEvent is ignored.
+     */
+    private void onLogin(ActionEvent actionEvent) {
         welcomeDialog.clearMessage();
         String text = LabelProvider.getLabel("Logging In");
         UIUtils.runWithWaitSpinner(text, welcomeDialog,
-                () -> welcomeDialog.cognitoInterface.authenticate(email, password),
-                () -> onLoginReturned(email, password),
+                () -> welcomeDialog.cognitoInterface.authenticate(emailField.getText(), passwordField.getText()),
+                this::onLoginReturned,
                 TOP_THIRD);
     }
 
-    private void onLoginReturned(String email, String password) {
+    /**
+     * Called after the "authenticate" call returns.
+     */
+    private void onLoginReturned() {
+        // ok and cancel do the same thing, but one succeeded and one failed, so it is best to
+        // keep them separate, in case this semantic changes in the future.
         if (welcomeDialog.cognitoInterface.isAuthenticated()) {
-            if (rememberMeSelected) {
-                welcomeDialog.setPassword(password);
+            // Authenticated with Cognito.
+            if (rememberMe.isSelected()) {
+                welcomeDialog.setPassword(passwordField.getText());
             }
             ok();
-        } else if (welcomeDialog.cognitoInterface.isPasswordResetRequired()) {
-            welcomeDialog.setEmail(email);
+        } else if(welcomeDialog.cognitoInterface.isPasswordResetRequired()) {
+            // The password has been reset. Prompt user for new password.
+            welcomeDialog.setEmail(emailField.getText());
             welcomeDialog.gotoResetCard();
             welcomeDialog.setMessage("Your password has been reset. Please choose a new password.");
-        } else if (welcomeDialog.cognitoInterface.isNotAuthorizedException()) {
+        } else if(welcomeDialog.cognitoInterface.isNotAuthorizedException()) {
+            // Probably bad user / password. Inform user, let them try again.
             welcomeDialog.setMessage(welcomeDialog.cognitoInterface.getAuthMessage());
-        } else if (welcomeDialog.cognitoInterface.isSdkClientException()) {
+        } else if(welcomeDialog.cognitoInterface.isSdkClientException()) {
+            // No connectivity. Can't login with Cognito.
             welcomeDialog.SdkClientException(this);
-        } else if (welcomeDialog.cognitoInterface.isNewPasswordRequired()) {
-            welcomeDialog.setEmail(email);
+        } else if(welcomeDialog.cognitoInterface.isNewPasswordRequired()) {
+            // Server requires user to reset password.
+            welcomeDialog.setEmail(emailField.getText());
             welcomeDialog.gotoNewPasswordRequiredCard();
         } else {
+            // Probably bad user / password. Inform user, let them try again.
             welcomeDialog.setMessage(welcomeDialog.cognitoInterface.getAuthMessage());
         }
     }
+
+    /**
+     * Sets the enabled state of controls, based on which other controls have contents.
+     */
+    private void enableControls() {
+        boolean enableLogin = (
+                emailField.getText().length() > 0 && passwordField.getText().length() > 0);
+        login.setEnabled(enableLogin);
+        if (passwordField.getText().length() == 0) {
+            passwordField.setRevealPasswordEnabled(true);
+        }
+    }
+
+    @SuppressWarnings("FieldCanBeLocal")
+    private final KeyListener textKeyListener = new KeyAdapter() {
+        @Override
+        public void keyTyped(KeyEvent e) {
+            super.keyTyped(e);
+            enableControls();
+        }
+    };
+
+    /**
+     * We don't enable "showPassword" for saved passwords, so when a saved password is used,
+     * the control is disabled. If the old password is deleted, we re-enable the control.
+     *
+     * Also used to enable the sign-in button if a user id or password is pasted into the
+     * corresponding field (because we're not listening to that key, we'd otherwise miss the
+     * presence of the user id or password).
+     */
+    @SuppressWarnings("FieldCanBeLocal")
+    private final DocumentListener textDocumentListener = new DocumentListener() {
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            enableControls();
+        }
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            enableControls();
+        }
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            enableControls();
+        }
+    };
+
 }
