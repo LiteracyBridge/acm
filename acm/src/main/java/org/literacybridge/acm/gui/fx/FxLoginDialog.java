@@ -19,7 +19,7 @@ public class FxLoginDialog {
     // build the screen and controller
     public void showAndWait() throws IOException {
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/loginscreen.fxml")
+                getClass().getResource("/org/literacybridge/acm/gui/loginscreen.fxml")
         );
 
         Parent root = loader.load();
