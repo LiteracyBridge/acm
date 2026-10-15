@@ -112,7 +112,7 @@ public class ApplicationV2 extends Application {
     private final SimpleSoundPlayer player = new SimpleSoundPlayer();
 
 
-//    private ApplicationV2() {
+    public ApplicationV2() {
 //        super();
 //        splashScreen.setProgressLabel("Initializing UI...");
 //        this.backgroundColor = getBackground();
@@ -172,7 +172,7 @@ public class ApplicationV2 extends Application {
 //        fileSystemMonitor
 //            .addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());
 //        fileSystemMonitor.start();
-//    }
+    }
 
 
     @Override
@@ -183,12 +183,13 @@ public class ApplicationV2 extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        System.out.println("ApplicationV2 constructor");
-        Authenticator authInstance = Authenticator.getInstance();
-        String greeting = authInstance.getUserSelfName();
-        if (StringUtils.isEmpty(greeting)) {
-            greeting = String.format("Hello, %s", authInstance.getUserEmail());
-        }
+
+//        System.out.println("ApplicationV2 constructor");
+//        Authenticator authInstance = Authenticator.getInstance();
+//        String greeting = authInstance.getUserSelfName();
+//        if (StringUtils.isEmpty(greeting)) {
+//            greeting = String.format("Hello, %s", authInstance.getUserEmail());
+//        }
 
 //        String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
 //                "  --  CHANGES WILL *NOT* BE SAVED!" : "";
@@ -308,19 +309,21 @@ public class ApplicationV2 extends Application {
             return;
         }
 
-        launch(args);
-//    startUp(params);
+//        launch(args);
+        startUp(params, args);
 //
         if (params.cleanUnreferenced) {
             ACMConfiguration.getInstance().getCurrentDB().cleanUnreferencedFiles();
         }
     }
 
-//    private static void startUp(CommandLineParams params) throws Exception {
+    private static void startUp(CommandLineParams params, String[] args) throws Exception {
+
 //        preRunChecks();
-//        URL iconURL = ApplicationV2.class.getResource("/tb.png");
-//        assert iconURL != null;
-//        iconImage = new ImageIcon(iconURL).getImage();
+
+        URL iconURL = ApplicationV2.class.getResource("/tb.png");
+        assert iconURL != null;
+        iconImage = new ImageIcon(iconURL).getImage();
 //
 //        splashScreen = new SplashScreen();
 //        splashScreen.showSplashScreen();
@@ -333,20 +336,64 @@ public class ApplicationV2 extends Application {
 //        // set look & feel; we use FlatLaf by default.
 //        SwingUtils.setLookAndFeel(params.nimbus ? "nimbus" : "");
 //
-//        params.update = true; // may be overridden later.
-//        ACMConfiguration.initialize(params);
-//
+        params.update = true; // may be overridden later.
+        ACMConfiguration.initialize(params);
+
+        launch(args);
+
+
 //        authenticateAndChooseProgram(params);
-//
-//        if (isEmpty(params.sharedACM)) {
+
+        if (isEmpty(params.sharedACM)) {
 //            JOptionPane.showMessageDialog(null,
 //                "No ACM chosen Can not continue.");
-//            System.exit(1);
-//        }
+            System.exit(1);
+        }
+
+        openAcmDb(params.sharedACM);
+
+        // Initialize application
+        Authenticator authInstance = Authenticator.getInstance();
+        String greeting = authInstance.getUserSelfName();
+        if (StringUtils.isEmpty(greeting)) {
+            greeting = String.format("Hello, %s", authInstance.getUserEmail());
+        }
+        String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
+                "  --  CHANGES WILL *NOT* BE SAVED!" : "";
+        String layoutIndicator = AmplioHome.isOldStyleHomeDirectory()
+                ? (OsUtils.WINDOWS ? "v1" : "∅")
+                : (OsUtils.WINDOWS ? "v2" : "✓");
+
+        String dbVersion = "v" +
+                ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion();
+        String programTitle = String.format(LabelProvider.getLabel("APPLICATION_TITLE_FORMAT"),
+                LabelProvider.getLabel("ACM_PROGRAM_NAME"));
+        String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
+                greeting,
+                programTitle,
+                Constants.ACM_VERSION,
+                layoutIndicator,
+                ACMConfiguration.getInstance().getTitle(),
+                dbVersion,
+                sandboxWarning);
 //
-//        openAcmDb(params.sharedACM);
+        //        setTitle(title);
+//        // toolbar view on top
+//        mainView = new MainView();
+//        ToolbarView toolbarView = new ToolbarView(mainView.audioItemView);
+//        add(toolbarView, BorderLayout.PAGE_START);
+//        add(mainView, BorderLayout.CENTER);
 //
-//        application = new ApplicationV2();
+//        statusBar = new ACMStatusBar();
+//        setStatusBar(statusBar);
+//        taskManager = new BackgroundTaskManager(statusBar);
+//
+        // starts file system monitor after UI has been initialized
+        fileSystemMonitor
+                .addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());
+        fileSystemMonitor.start();
+
+//        application = new ApplicationV2(); TODO: replaced with the code above since applicationv2() constructor crashes on startup
 //        OsUtils.enableOSXFullscreen(application);
 //        if (!OsUtils.MAC_OS) {
 //            application.setIconImage(iconImage);
@@ -357,17 +404,18 @@ public class ApplicationV2 extends Application {
 //        application.setVisible(true);
 //        application.toFront();
 //
-//        LOG.log(Level.INFO, "ACM successfully started.");
-//        ACMConfiguration.getInstance().getCurrentDB().setupWavCaching(sizeMB -> {
+        LOG.log(Level.INFO, "ACM successfully started.");
+        ACMConfiguration.getInstance().getCurrentDB().setupWavCaching(sizeMB -> {
 //            int answer = JOptionPane.showOptionDialog(null,
 //                "The WAV cache is currently using " + sizeMB
 //                    + " MB disk space and a cleanup is recommended. Perform cleanup?",
 //                "WAV Cache", JOptionPane.YES_NO_OPTION,
 //                JOptionPane.QUESTION_MESSAGE, null, null, JOptionPane.YES_OPTION);
 //            return (answer == JOptionPane.YES_OPTION);
-//        });
+            return true;
+        });
 //        application.mainView.audioItemView.requestFocusInWindow();
-//    }
+    }
 
     /**
      * Opens the ACM database. If the ACM is in S3, performs a sync. If the ACM has never been downloaded, that
