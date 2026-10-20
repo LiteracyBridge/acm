@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-class IdentityPersistence {
+public class IdentityPersistence {
     private static final String DEFAULT_CREDENTIALS_NAME = "credentials.info";
 
     private final File credentialsFile;
@@ -110,7 +110,7 @@ class IdentityPersistence {
      * THAT stringent.
      * @return a Pair, consisting of the user id and password.
      */
-    LoginDetails retrieveLoginDetails() {
+    public LoginDetails retrieveLoginDetails() {
         LoginDetails result = null;
         Properties credentialProps = readPropertiesFile();
         if (credentialProps != null) {

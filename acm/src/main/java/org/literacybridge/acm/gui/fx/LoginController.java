@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.fx;
 
+import com.amazonaws.services.cognitoidentity.model.Credentials;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
@@ -10,14 +11,45 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
+import org.apache.commons.lang3.StringUtils;
+import org.json.simple.JSONObject;
+import org.literacybridge.acm.cloud.Authenticator;
+import org.literacybridge.acm.cloud.IdentityPersistence;
+import org.literacybridge.acm.cloud.cognito.AuthenticationHelper;
+import org.literacybridge.acm.cloud.cognito.CognitoHelper;
+import org.literacybridge.acm.cloud.cognito.CognitoJWTParser;
+import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.AccessControl;
+import org.literacybridge.acm.config.AmplioHome;
+import org.literacybridge.acm.gui.ApplicationV2;
+import org.literacybridge.acm.gui.CommandLineParams;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+
+import javax.swing.*;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.*;
+import static org.literacybridge.acm.cloud.Authenticator.PROGRAMS_INFO_API;
 
 public class LoginController {
 
-    public interface Handler {
-        void onLogin(String email, String password);
-        void onForgotPassword(String email);
-        void onSignUp();
-    }
+    private final String applicationName;
+    private String computerName;
+    private final IdentityPersistence identityPersistence;
+    private final CognitoHelper cognitoHelper;
+//    Authenticator.CognitoInterface cognitoInterface = new Authenticator.CognitoInterface();
+
+
+    @FXML
+    private Pane rootPane;
 
     @FXML
     private TextField emailField;
@@ -39,6 +71,27 @@ public class LoginController {
     private Runnable onLogin;
     private Handler handler;
     private ChangeListener<String> savedPasswordListener;
+    private Map<String, String> authenticationInfo;
+    private Credentials credentials;
+    private Authenticator.AwsInterface awsInterface;
+
+    public LoginController() {
+        try {
+            computerName = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException ignored) {
+        }
+        this.identityPersistence = new IdentityPersistence(AmplioHome.getDirectory());
+        applicationName = ACMConfiguration.cannonicalProjectName(ApplicationV2.cliParams.sharedACM);
+        cognitoHelper = new CognitoHelper();
+    }
+
+    public interface Handler {
+        void onLogin(String email, String password);
+
+        void onForgotPassword(String email);
+
+        void onSignUp();
+    }
 
     public void setEmail(String email) {
         emailField.setText(email == null ? "" : email);
@@ -100,6 +153,36 @@ public class LoginController {
         }
 
         messageLabel.setText("");
+        Map<String, String> userMetadata = new HashMap<>();
+        userMetadata.put("Application", "applicationName");
+        if (StringUtils.isNotBlank(computerName)) {
+            userMetadata.put("Computer", computerName);
+        }
+        AuthenticationHelper.AuthenticationResult validationResult = cognitoHelper.ValidateUser(email, password, userMetadata);
+
+        String jwtToken = validationResult.getJwtToken();
+        if (jwtToken != null) {
+            JSONObject payload = CognitoJWTParser.getPayload(jwtToken);
+            @SuppressWarnings("unchecked")
+            Set<Map.Entry<Object, Object>> payloadEntries = payload.entrySet();
+            authenticationInfo = payloadEntries.stream().collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
+
+            String provider = authenticationInfo.get("iss").replace("https://", "");
+            credentials = cognitoHelper.GetCredentials(provider, jwtToken);
+
+
+            JSONObject jsonResponse = awsInterface.authenticatedGetCall(PROGRAMS_INFO_API);
+            try {
+                JSONObject programsInfo = (JSONObject) jsonResponse.get("result");
+                System.out.println(programsInfo);
+//                parseProgramsInfoJSON(programsInfo);
+//                writeProgramsInfoJSON(programsInfo);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                DailogHelpers.errorDailog(getState(), "Authentication Failure", "Authentication is required to use the ACM.", false);
+            }
+        }
+
         if (handler != null) {
             handler.onLogin(email, password);
         } else if (onLogin != null) {
@@ -123,7 +206,14 @@ public class LoginController {
 
     @FXML
     private void initialize() {
-        // Keep the masked and visible password fields synchronized.
+//        try {
+//            computerName = InetAddress.getLocalHost().getHostName();
+//        } catch (UnknownHostException ignored) {
+//        }
+//        this.identityPersistence = new IdentityPersistence(AmplioHome.getDirectory());
+//        cognitoHelper = new CognitoHelper();
+
+
         visiblePasswordField.textProperty().bindBidirectional(passwordField.textProperty());
         visiblePasswordField.visibleProperty().bind(passwordVisibilityButton.selectedProperty());
         visiblePasswordField.managedProperty().bind(visiblePasswordField.visibleProperty());
@@ -134,6 +224,36 @@ public class LoginController {
                 emailField.textProperty().isEmpty()
                         .or(passwordField.textProperty().isEmpty())
         );
+
+        IdentityPersistence.LoginDetails savedLoginDetails = identityPersistence.retrieveLoginDetails();
+        setPassword(savedLoginDetails.secret);
+        setEmail(savedLoginDetails.email);
+
+        if (!AccessControl.isOnline()) {
+            passwordField.setDisable(true);
+        }
+
+//        CommandLineParams params = ApplicationV2.cliParams;
+//        Authenticator authInstance = Authenticator.getInstance();
+//        authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs());
+//        Authenticator.LoginOptions okRepoOption = AmplioHome.isOldStyleHomeDirectory() || params.noS3Dbs ? LOCAL_DATA_ONLY : LOCAL_OR_S3;
+//        Authenticator.LoginResult result = authInstance.authenticateAndChooseProgram(null,
+//                LabelProvider.getLabel("ACM_PROGRAM_NAME"),
+//                ACMConfiguration.cannonicalProjectName(params.sharedACM),
+//                OFFLINE_EMAIL_CHOICE,
+//                CHOOSE_PROGRAM,
+//                okRepoOption,
+//                params.noFoundDbs ? NOP : INCLUDE_FOUND_ACMS,
+//                params.sandbox ? SUGGEST_DEMO_MODE : OFFER_DEMO_MODE, // vs no demo mode at all
+//                INCLUDE_FB_ACMS,
+//                params.go ? NO_WAIT : NOP);
+//        if (result == Authenticator.LoginResult.FAILURE) {
+//            JOptionPane.showMessageDialog(null,
+//                    "Authentication is required to use the ACM.",
+//                    "Authentication Failure",
+//                    JOptionPane.ERROR_MESSAGE);
+//            System.exit(13);
+//        }
     }
 
     @FXML
@@ -158,5 +278,9 @@ public class LoginController {
 
     public boolean isRememberMeSelected() {
         return rememberMeCheckBox.isSelected();
+    }
+
+    private Stage getState() {
+        return (Stage) rootPane.getScene().getWindow();
     }
 }

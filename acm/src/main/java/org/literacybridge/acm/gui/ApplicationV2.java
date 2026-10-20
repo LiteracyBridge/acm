@@ -21,6 +21,7 @@ import org.literacybridge.acm.gui.MainWindow.ToolbarView;
 import org.literacybridge.acm.gui.dialogs.AcmCheckoutTest;
 import org.literacybridge.acm.gui.dialogs.LafTester;
 import org.literacybridge.acm.gui.dialogs.S3SyncDialog;
+import org.literacybridge.acm.gui.fx.DailogHelpers;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.FilterState;
@@ -54,7 +55,7 @@ public class ApplicationV2 extends Application {
     private static Image iconImage;
     private static ApplicationV2 instance;
     private Stage primaryStage;
-    private static CommandLineParams cliParams;
+    public static CommandLineParams cliParams;
 
     static {
         System.out.printf("Java version: %s, data model: %s\n",
@@ -172,67 +173,63 @@ public class ApplicationV2 extends Application {
         cliParams.update = true; // may be overridden later.
         ACMConfiguration.initialize(cliParams);
 
-        authenticateAndChooseProgram(cliParams);
+//        authenticateAndChooseProgram(cliParams);
 
 
         if (isEmpty(cliParams.sharedACM)) {
-            System.out.println("No ACM chosen Can not continue.");
-////            JOptionPane.showMessageDialog(null,
-////                "No ACM chosen Can not continue.");
+            DailogHelpers.errorDailog(primaryStage, "No ACM Selected", "No ACM chosen Can not continue.", true);
             System.exit(1);
         }
 
+        primaryStage.show();
 
-//        FIXME: Crashes application if sharedACM args is empty
-//        if (!isEmpty(cliParams.sharedACM)) {
-        openAcmDb(cliParams.sharedACM, primaryStage);
+//        openAcmDb(cliParams.sharedACM, primaryStage);
+//
+//        Authenticator authInstance = Authenticator.getInstance();
+//        String greeting = authInstance.getUserSelfName();
+//        if (StringUtils.isEmpty(greeting)) {
+//            greeting = String.format("Hello, %s", authInstance.getUserEmail());
 //        }
-
-        Authenticator authInstance = Authenticator.getInstance();
-        String greeting = authInstance.getUserSelfName();
-        if (StringUtils.isEmpty(greeting)) {
-            greeting = String.format("Hello, %s", authInstance.getUserEmail());
-        }
-        String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
-                "  --  CHANGES WILL *NOT* BE SAVED!" : "";
-        String layoutIndicator = AmplioHome.isOldStyleHomeDirectory()
-                ? (OsUtils.WINDOWS ? "v1" : "∅")
-                : (OsUtils.WINDOWS ? "v2" : "✓");
-
-        String dbVersion = "v" +
-                ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion();
-        String programTitle = String.format(LabelProvider.getLabel("APPLICATION_TITLE_FORMAT"),
-                LabelProvider.getLabel("ACM_PROGRAM_NAME"));
-        String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
-                greeting,
-                programTitle,
-                Constants.ACM_VERSION,
-                layoutIndicator,
-                ACMConfiguration.getInstance().getTitle(),
-                dbVersion,
-                sandboxWarning);
-
-        if (cliParams.cleanUnreferenced) {
-            ACMConfiguration.getInstance().getCurrentDB().cleanUnreferencedFiles();
-        }
-
-
-        LOG.log(Level.INFO, "ACM successfully started.");
-        ACMConfiguration.getInstance().getCurrentDB().setupWavCaching(sizeMB -> {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("WAV Cache");
-            alert.setHeaderText(null);
-            alert.setContentText("The WAV cache is currently using " + sizeMB
-                    + " MB disk space and a cleanup is recommended. Perform cleanup?");
-            alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
-            alert.initOwner(primaryStage);
-
-            Optional<ButtonType> result = alert.showAndWait();
-            return result.isPresent() && result.get() == ButtonType.YES;
-        });
+//        String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
+//                "  --  CHANGES WILL *NOT* BE SAVED!" : "";
+//        String layoutIndicator = AmplioHome.isOldStyleHomeDirectory()
+//                ? (OsUtils.WINDOWS ? "v1" : "∅")
+//                : (OsUtils.WINDOWS ? "v2" : "✓");
+//
+//        String dbVersion = "v" +
+//                ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion();
+//        String programTitle = String.format(LabelProvider.getLabel("APPLICATION_TITLE_FORMAT"),
+//                LabelProvider.getLabel("ACM_PROGRAM_NAME"));
+//        String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
+//                greeting,
+//                programTitle,
+//                Constants.ACM_VERSION,
+//                layoutIndicator,
+//                ACMConfiguration.getInstance().getTitle(),
+//                dbVersion,
+//                sandboxWarning);
+//
+//        if (cliParams.cleanUnreferenced) {
+//            ACMConfiguration.getInstance().getCurrentDB().cleanUnreferencedFiles();
+//        }
+//
+//
+//        LOG.log(Level.INFO, "ACM successfully started.");
+//        ACMConfiguration.getInstance().getCurrentDB().setupWavCaching(sizeMB -> {
+//            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+//            alert.setTitle("WAV Cache");
+//            alert.setHeaderText(null);
+//            alert.setContentText("The WAV cache is currently using " + sizeMB
+//                    + " MB disk space and a cleanup is recommended. Perform cleanup?");
+//            alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+//            alert.initOwner(primaryStage);
+//
+//            Optional<ButtonType> result = alert.showAndWait();
+//            return result.isPresent() && result.get() == ButtonType.YES;
+//        });
         // END: Initialize application
 
-        primaryStage.show();
+//        primaryStage.show();
 //        System.out.println(cliParams);
 
 //        System.out.println("ApplicationV2 constructor");
