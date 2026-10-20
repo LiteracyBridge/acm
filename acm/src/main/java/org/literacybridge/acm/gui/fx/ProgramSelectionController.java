@@ -58,19 +58,22 @@ public class ProgramSelectionController {
 
         comboBox.getItems().addAll(programNames.values().stream().sorted().collect(Collectors.toList()));
         openProgramBtn.setDisable(false);
+        openProgramBtn.disableProperty().bind(comboBox.selectionModelProperty().isNull());
     }
 
     @FXML
     private void openProgram() {
         Stage stage = (Stage) rootPane.getScene().getWindow();
         String selected = comboBox.getValue();
-        Optional<String> code = programNames.entrySet().stream()
+        String code = (programNames.entrySet().stream()
                 .filter(entry -> selected.equals(entry.getValue()))
                 .map(Map.Entry::getKey)
-                .findFirst();
+                .findFirst()).orElseThrow();
+
+        ApplicationV2.cliParams.sharedACM = code;
 
         System.out.println("Currently selected: " + code);
-        code.ifPresent(s -> openAcmDb(s, stage));
+        openAcmDb(code, stage);
 
         try {
             if (ApplicationV2.cliParams.cleanUnreferenced) {
@@ -93,6 +96,24 @@ public class ProgramSelectionController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+    }
+
+    public boolean isProgramS3(String program) {
+        return s3RepositoryList != null && s3RepositoryList.contains(program);
+    }
+
+    /**
+     * Gets a list of the programs that can be opened locally, ie, with no internet connection.
+     * NOTE: Filters out programs that happen to be locally in Dropbox, but have been converted to S3
+     * in the cloud.
+     *
+     * @return a list of programs that can be opened locally.
+     */
+    public List<String> getLocallyAvailablePrograms() {
+        return locallyAvailablePrograms.keySet().stream()
+                .filter(this::isProgramS3)
+                .collect(Collectors.toList());
 
     }
 
@@ -174,7 +195,7 @@ public class ProgramSelectionController {
         PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);
         // Uncomment lines to debug opening from S3.
 //      System.out.printf("Opening database '%s' in %s\n", sharedACM,
-        if (Authenticator.getInstance().isProgramS3(sharedACM)) {
+        if (isProgramS3(sharedACM)) {
 //            splashScreen.setProgressLabel("Synchronizing content database...");
             if (pathsProvider == null || !pathsProvider.getProgramHomeDir().exists() || pathsProvider.getProgramHomeDir().listFiles().length == 0) {
 //              System.out.println("pathsProvider is null");
