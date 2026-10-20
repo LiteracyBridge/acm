@@ -12,7 +12,7 @@
             <VBox.margin>
                 <Insets bottom="20.0" top="14.0" />
             </VBox.margin>
-            <Image url="@images/amplio-logo.png" />
+            <Image url="@../../../../images/amplio-logo.png" />
         </ImageView>
 
         <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #111827;" text="Enter verification code" />
