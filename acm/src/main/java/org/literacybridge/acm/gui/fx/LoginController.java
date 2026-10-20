@@ -13,6 +13,9 @@ import com.amazonaws.services.s3.model.S3Object;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Hyperlink;
@@ -62,7 +65,7 @@ public class LoginController {
     private Map<String, String> authenticationInfo;
     private Credentials credentials;
     private AuthenticationHelper.AuthenticationResult authenticationResult;
-    private  Map<String, String> programsAndRolesForUser;
+    private Map<String, String> programsAndRolesForUser;
     private List<String> s3RepositoryList;
     private Map<String, String> programNames;
     public static final String FIELD_OFFICER_ROLE_STRING = "FO";
@@ -234,27 +237,6 @@ public class LoginController {
             passwordField.setDisable(true);
         }
 
-//        CommandLineParams params = ApplicationV2.cliParams;
-//        Authenticator authInstance = Authenticator.getInstance();
-//        authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs());
-//        Authenticator.LoginOptions okRepoOption = AmplioHome.isOldStyleHomeDirectory() || params.noS3Dbs ? LOCAL_DATA_ONLY : LOCAL_OR_S3;
-//        Authenticator.LoginResult result = authInstance.authenticateAndChooseProgram(null,
-//                LabelProvider.getLabel("ACM_PROGRAM_NAME"),
-//                ACMConfiguration.cannonicalProjectName(params.sharedACM),
-//                OFFLINE_EMAIL_CHOICE,
-//                CHOOSE_PROGRAM,
-//                okRepoOption,
-//                params.noFoundDbs ? NOP : INCLUDE_FOUND_ACMS,
-//                params.sandbox ? SUGGEST_DEMO_MODE : OFFER_DEMO_MODE, // vs no demo mode at all
-//                INCLUDE_FB_ACMS,
-//                params.go ? NO_WAIT : NOP);
-//        if (result == Authenticator.LoginResult.FAILURE) {
-//            JOptionPane.showMessageDialog(null,
-//                    "Authentication is required to use the ACM.",
-//                    "Authentication Failure",
-//                    JOptionPane.ERROR_MESSAGE);
-//            System.exit(13);
-//        }
     }
 
     @FXML
@@ -287,12 +269,13 @@ public class LoginController {
 
     /**
      * Writes a JSONObject to the ~/Amplio/programs.info file or ~/LiteracyBridge/programs.info.
+     *
      * @param programsInfo to be written.
      */
     private void writeProgramsInfoJSON(JSONObject programsInfo) {
         String resultString = programsInfo.toJSONString();
         JSONObject parsedString = (JSONObject) JSONValue.parse(resultString);
-        assert(parsedString.equals(programsInfo));
+        assert (parsedString.equals(programsInfo));
 
         File programsInfoFile = new File(AmplioHome.getDirectory(), PROGRAMS_INFO_FILE);
         try (FileWriter fw = new FileWriter(programsInfoFile)) {
@@ -304,31 +287,32 @@ public class LoginController {
 
     /**
      * Parses a JSONObject of programs info. Populates 'userProgramsAndRoles', 's3RepositoryList', and 'programNames'
+     *
      * @param programsInfo to be parsed.
      */
     @SuppressWarnings("unchecked")
     private void parseProgramsInfoJSON(JSONObject programsInfo) {
         String defaultProgram = "0";
-        Map<String,Map<String,String>> programs_info = new HashMap<>();
+        Map<String, Map<String, String>> programs_info = new HashMap<>();
         String implicit_repository = programsInfo.getOrDefault("implicit_repository", "dbx").toString();
         ((JSONObject) programsInfo.get("programs")).forEach((key, value) -> {
-            Set<Map.Entry<Object,Object>> valueEntries = ((JSONObject)value).entrySet();
-            Map<String,String> program_info = valueEntries.stream()
-                    .collect(Collectors.toMap(e->e.getKey().toString(), e->e.getValue().toString()));
+            Set<Map.Entry<Object, Object>> valueEntries = ((JSONObject) value).entrySet();
+            Map<String, String> program_info = valueEntries.stream()
+                    .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
             programs_info.put(key.toString(), program_info);
         });
 
         // Build map of {programid: "role,role"}
         programsAndRolesForUser = programs_info.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e->e.getValue().get("roles")));
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get("roles")));
         // Build a list of [programid] of those programs with s3 as repository.
         s3RepositoryList = programs_info.entrySet().stream()
-                .filter(e->e.getValue().getOrDefault("repository", implicit_repository).equalsIgnoreCase("s3"))
+                .filter(e -> e.getValue().getOrDefault("repository", implicit_repository).equalsIgnoreCase("s3"))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
         // Extract the friendly names as {programid: "name"}
         programNames = programs_info.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e->e.getValue().getOrDefault("name", e.getKey())));
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getOrDefault("name", e.getKey())));
 
         // If the "defaultProgram" is not an S3 program, then it is strictly local to the user's computer.
         // If the defaultProgram is not configured (on the server) for this user, simulate a FO
@@ -343,21 +327,21 @@ public class LoginController {
         }
 
 //        if (loginOptions.contains(Authenticator.LoginOptions.INCLUDE_FOUND_ACMS)) {
-            // Add any locally available programs that werern't in the user's list, but
-            // add them as read-only.
-            locallyAvailablePrograms.keySet().stream()
-                    .filter(p -> !programsAndRolesForUser.containsKey(p))
-                    .forEach(p -> {
-                        programsAndRolesForUser.put(p, FIELD_OFFICER_ROLE_STRING);
-                        programNames.put(p, p);
-                    });
+        // Add any locally available programs that werern't in the user's list, but
+        // add them as read-only.
+        locallyAvailablePrograms.keySet().stream()
+                .filter(p -> !programsAndRolesForUser.containsKey(p))
+                .forEach(p -> {
+                    programsAndRolesForUser.put(p, FIELD_OFFICER_ROLE_STRING);
+                    programNames.put(p, p);
+                });
 //        }
     }
 
     private void onAuthenticated(String jwtToken) {
         JSONObject payload = CognitoJWTParser.getPayload(jwtToken);
-        Set<Map.Entry<Object,Object>> payloadEntries = payload.entrySet();
-        authenticationInfo = payloadEntries.stream().collect(Collectors.toMap(e->e.getKey().toString(), e->e.getValue().toString()));
+        Set<Map.Entry<Object, Object>> payloadEntries = payload.entrySet();
+        authenticationInfo = payloadEntries.stream().collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
 
         String provider = authenticationInfo.get("iss").replace("https://", "");
         credentials = cognitoHelper.GetCredentials(provider, jwtToken);
@@ -373,6 +357,10 @@ public class LoginController {
 
             identityPersistence.saveLoginDetails(emailField.getText(), passwordField.getText(), new HashMap<>(authenticationInfo));
 
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/literacybridge/acm/gui/programselection.fxml"));
+            Stage stage = getState();
+            stage.setScene(new Scene(loader.load()));
+            stage.show();
         } catch (Exception ex) {
 //            ex.printStackTrace();
             DailogHelpers.errorDailog(getState(), "Authentication Failure", "Authentication is required to use the ACM.", false);
@@ -449,8 +437,7 @@ public class LoginController {
         public boolean downloadS3Object(String bucket,
                                         String key,
                                         File of,
-                                        BiConsumer<Long, Long> progressHandler)
-        {
+                                        BiConsumer<Long, Long> progressHandler) {
             return downloadS3Object(new GetObjectRequest(bucket, key), of, progressHandler);
         }
 
@@ -516,8 +503,7 @@ public class LoginController {
             try {
                 if (verb.equals("POST")) {
                     httpUtility.sendPostRequest(requestURL, body, allHeaders);
-                }
-                else if (verb.equals("GET")) {
+                } else if (verb.equals("GET")) {
                     httpUtility.sendGetRequest(requestURL, allHeaders);
                 }
                 jsonResponse = httpUtility.readJSONObject();
@@ -546,7 +532,7 @@ public class LoginController {
          * Make a REST POST call with the current signed-in credentials. We use this to make Lambda calls.
          *
          * @param requestURL URL to request.
-         * @param body JSON object to pass as request body.
+         * @param body       JSON object to pass as request body.
          * @return result in a JSON object.
          */
         public JSONObject authenticatedPostCall(String requestURL, JSONObject body) {
@@ -571,10 +557,10 @@ public class LoginController {
          * credentials with the credentials returned by a successful sign-in.
          *
          * @param usernameOrEmail username or email address.
-         * @param password of the user id.
+         * @param password        of the user id.
          */
         public void authenticate(String usernameOrEmail, String password) {
-            Map<String,String> userMetadata = new HashMap<>();
+            Map<String, String> userMetadata = new HashMap<>();
             userMetadata.put("Application", applicationName);
             if (StringUtils.isNotBlank(computerName)) userMetadata.put("Computer", computerName);
             AuthenticationHelper.AuthenticationResult validationResult = cognitoHelper.ValidateUser(usernameOrEmail, password, userMetadata);
@@ -609,8 +595,8 @@ public class LoginController {
          * it is a valid password, of course).
          *
          * @param usernameOrEmail username or email of the password to reset.
-         * @param password the new password.
-         * @param pin      reset code sent via email.
+         * @param password        the new password.
+         * @param pin             reset code sent via email.
          */
         public void updatePassword(String usernameOrEmail, String password, String pin) {
             cognitoHelper.UpdatePassword(usernameOrEmail, password, pin);
@@ -618,6 +604,7 @@ public class LoginController {
 
         /**
          * Called in response to a NEW_PASSWORD_REQUIRED result. This sets the new password, and completes the login.
+         *
          * @param username of user logging in.
          * @param password the new password chosen by the user.
          */
@@ -632,8 +619,7 @@ public class LoginController {
 
         public String signUpUser(String email,
                                  String password,
-                                 Map<String,String> attributes)
-        {
+                                 Map<String, String> attributes) {
             return cognitoHelper.SignUpUser(email, password, email, attributes);
         }
 
