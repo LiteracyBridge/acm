@@ -351,7 +351,6 @@ public class LoginController {
         JSONObject jsonResponse = awsInterface.authenticatedGetCall(PROGRAMS_INFO_API);
         try {
             JSONObject programsInfo = (JSONObject) jsonResponse.get("result");
-            System.out.println(programsInfo);
             parseProgramsInfoJSON(programsInfo);
             writeProgramsInfoJSON(programsInfo);
 
@@ -362,7 +361,7 @@ public class LoginController {
             stage.setScene(new Scene(loader.load()));
             stage.show();
         } catch (Exception ex) {
-//            ex.printStackTrace();
+            ex.printStackTrace();
             DailogHelpers.errorDailog(getState(), "Authentication Failure", "Authentication is required to use the ACM.", false);
 
         }

@@ -134,9 +134,6 @@ public class ApplicationV2 extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-//        this.primaryStage = primaryStage;
-
-
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/literacybridge/acm/gui/loginscreen.fxml"));
         Parent root = loader.load();
         Scene scene = new Scene(root);
