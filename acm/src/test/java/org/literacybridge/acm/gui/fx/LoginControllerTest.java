@@ -77,7 +77,7 @@ public class LoginControllerTest {
             @Override
             public void run() {
                 try {
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/loginscreen.fxml"));
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/literacybridge/acm/gui/loginscreen.fxml"));
                     Harness harness = new Harness();
                     harness.root = loader.load();
                     harness.controller = loader.getController();
