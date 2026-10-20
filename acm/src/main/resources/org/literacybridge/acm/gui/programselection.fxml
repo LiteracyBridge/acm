@@ -11,7 +11,7 @@
 <StackPane prefHeight="760.0" prefWidth="1280.0"
            style="-fx-background-color: white;"
            xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="org.literacybridge.acm.gui.fx.ProgramSelectionController">
+           fx:controller="org.literacybridge.acm.gui.fx.ProgramSelectionController" fx:id="rootPane">
     <VBox alignment="CENTER" maxWidth="360.0" minWidth="280.0" prefWidth="360.0" spacing="12.0">
         <Label text="Welcome"
                style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #111827;">
@@ -34,7 +34,7 @@
             </VBox.margin>
         </Label>
 
-        <ComboBox fx:id="programNamesCombobox" accessibleText="Program"
+        <ComboBox fx:id="comboBox" accessibleText="Program"
                   maxWidth="Infinity" prefHeight="42.0" promptText="Choose Program"
                   style="-fx-font-size: 14px;">
             <VBox.margin>
@@ -46,7 +46,7 @@
             <children>
                 <Button fx:id="openProgramBtn" defaultButton="true" disable="true"
                         mnemonicParsing="false" prefWidth="64.0" prefHeight="40.0"
-                        text="Next"
+                        text="Next" onAction="#openProgram"
                         style="-fx-background-color: #32A56F; -fx-background-radius: 4; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;"/>
             </children>
         </HBox>
