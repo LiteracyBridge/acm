@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane prefHeight="479.0" prefWidth="613.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.literacybridge.acm.gui.fx.LoginController">
+    <VBox alignment="CENTER" maxWidth="360.0" minWidth="280.0" prefWidth="360.0" spacing="12.0">
+
+        <ImageView fitWidth="120.0" preserveRatio="true">
+            <VBox.margin>
+                <Insets bottom="20.0" top="14.0" />
+            </VBox.margin>
+            <Image url="@../../../../images/amplio-logo.png" />
+        </ImageView>
+
+        <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #111827;" text="Enter verification code" />
+
+        <Label alignment="CENTER" maxWidth="360.0" style="-fx-font-size: 12px; -fx-text-fill: #6B7280;" text="We sent a 6-digit code to your email." textAlignment="CENTER" wrapText="true">
+            <VBox.margin>
+                <Insets bottom="8.0" />
+            </VBox.margin>
+        </Label>
+
+        <HBox alignment="CENTER" spacing="8.0">
+            <TextField fx:id="code1" alignment="CENTER" prefHeight="48.0" prefWidth="44.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 4; -fx-border-color: #D1D5DB; -fx-border-radius: 4;" />
+            <TextField fx:id="code2" alignment="CENTER" prefHeight="48.0" prefWidth="44.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 4; -fx-border-color: #D1D5DB; -fx-border-radius: 4;" />
+            <TextField fx:id="code3" alignment="CENTER" prefHeight="48.0" prefWidth="44.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 4; -fx-border-color: #D1D5DB; -fx-border-radius: 4;" />
+            <TextField fx:id="code4" alignment="CENTER" prefHeight="48.0" prefWidth="44.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 4; -fx-border-color: #D1D5DB; -fx-border-radius: 4;" />
+            <TextField fx:id="code5" alignment="CENTER" prefHeight="48.0" prefWidth="44.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 4; -fx-border-color: #D1D5DB; -fx-border-radius: 4;" />
+            <TextField fx:id="code6" alignment="CENTER" prefHeight="48.0" prefWidth="44.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 4; -fx-border-color: #D1D5DB; -fx-border-radius: 4;" />
+        </HBox>
+
+        <Label fx:id="errorLabel" managed="false" style="-fx-font-size: 11px; -fx-text-fill: #DC2626;" visible="false" wrapText="true" />
+
+        <Button fx:id="verifyButton" defaultButton="true" maxWidth="72" prefHeight="34.0" style="-fx-background-color: #35A66B; -fx-background-radius: 4; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold;" text="Verify" />
+
+<!--        <HBox alignment="CENTER" spacing="4.0">-->
+<!--            <Label text="Didn't get the code?"-->
+<!--                   style="-fx-font-size: 12px; -fx-text-fill: #6B7280;"/>-->
+<!--            <Hyperlink text="Resend"  padding="0"-->
+<!--                       style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #35A66B;"/>-->
+<!--        </HBox>-->
+
+        <ProgressIndicator fx:id="spinner" managed="false" prefHeight="20.0" prefWidth="20.0" visible="false" />
+    </VBox>
+</StackPane>
+
