@@ -26,8 +26,9 @@ public class IdentityPersistence {
 
     /**
      * Obfuscate a string based on another string.
-     * @param str The string to obfuscate.
-     * @param key The string with which to obfuscate.
+     *
+     * @param str      The string to obfuscate.
+     * @param key      The string with which to obfuscate.
      * @param unRotate If true, un-obfuscate.
      * @return The obfuscated (or un-obfuscated) string.
      */
@@ -37,7 +38,7 @@ public class IdentityPersistence {
         char[] keyChars = key.toCharArray();
         int ik = 0;
         for (int is = 0; is < strChars.length; is++) {
-            strChars[is] = (char)(strChars[is] + keyChars[ik] * m);
+            strChars[is] = (char) (strChars[is] + keyChars[ik] * m);
             if (++ik == keyChars.length) ik = 0;
         }
         return new String(strChars);
@@ -46,11 +47,12 @@ public class IdentityPersistence {
     /**
      * Persists login credentials to some persistent store. Intended to be called after a
      * successful login.
+     *
      * @param password The password.
      * @return True if the credentials were saved successfully, false otherwise.
      */
     @SuppressWarnings("UnusedReturnValue")
-    boolean saveLoginDetails(String email, String password, Map<String,String> extraProperties) {
+    public boolean saveLoginDetails(String email, String password, Map<String, String> extraProperties) {
         // This is not intended to be "secure". It simply prevents casual browsing of the
         // password.
         Properties credentialProps = new Properties();
@@ -61,7 +63,7 @@ public class IdentityPersistence {
         if (StringUtils.isNotEmpty(password)) {
             credentialProps.setProperty("secret", rotate(password, email, false));
         }
-        extraProperties.forEach((k,v) -> credentialProps.put("@"+k, v));
+        extraProperties.forEach((k, v) -> credentialProps.put("@" + k, v));
 
         return writePropertiesFile(credentialProps);
     }
@@ -89,15 +91,16 @@ public class IdentityPersistence {
     /**
      * Gets the extra properties for the user. These are the properties returned from
      * the authentication call, with things such as phone number, or custom greeting.
+     *
      * @return a Map of the key-value pairs.
      */
-    Map<String,String> getExtraProperties() {
+    Map<String, String> getExtraProperties() {
         Map<String, String> result = new HashMap<>();
         Properties credentialProps = readPropertiesFile();
         if (credentialProps != null) {
             credentialProps.forEach((k, v) -> {
-                String ks = (String)k;
-                String vs = (String)v;
+                String ks = (String) k;
+                String vs = (String) v;
                 if (ks.charAt(0) == '@') result.put(ks.substring(1), vs);
             });
         }
@@ -108,6 +111,7 @@ public class IdentityPersistence {
      * Reads credentials from some persistent store. (Ideally, this would be the OS keychain,
      * but, oy, there's no portable access to that, and our security requirements aren't
      * THAT stringent.
+     *
      * @return a Pair, consisting of the user id and password.
      */
     public LoginDetails retrieveLoginDetails() {
@@ -126,6 +130,7 @@ public class IdentityPersistence {
 
     /**
      * Reads a saved set of user info from the disk.
+     *
      * @return a Properties object with the user info.
      */
     private Properties readPropertiesFile() {
@@ -133,7 +138,7 @@ public class IdentityPersistence {
         Properties result = null;
 
         try (FileInputStream fis = new FileInputStream(credentialsFile);
-            InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8)) {
+             InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8)) {
             Properties credentialProps = new Properties();
             credentialProps.load(isr);
             result = credentialProps;
@@ -145,7 +150,7 @@ public class IdentityPersistence {
 
     private boolean writePropertiesFile(Properties props) {
         try (FileOutputStream fos = new FileOutputStream(credentialsFile);
-            OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
+             OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
             props.store(osw, null);
         } catch (Exception e) {
             // Ignore.
