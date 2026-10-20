@@ -65,11 +65,7 @@ public class LoginController {
     private Map<String, String> authenticationInfo;
     private Credentials credentials;
     private AuthenticationHelper.AuthenticationResult authenticationResult;
-    private Map<String, String> programsAndRolesForUser;
-    private List<String> s3RepositoryList;
-    private Map<String, String> programNames;
-    public static final String FIELD_OFFICER_ROLE_STRING = "FO";
-    private final Map<String, String> locallyAvailablePrograms = new HashMap<>();
+
     public static final String PROGRAMS_INFO_FILE = "programs.info";
 
     private final AwsInterface awsInterface = new AwsInterface();
@@ -285,58 +281,6 @@ public class LoginController {
         }
     }
 
-    /**
-     * Parses a JSONObject of programs info. Populates 'userProgramsAndRoles', 's3RepositoryList', and 'programNames'
-     *
-     * @param programsInfo to be parsed.
-     */
-    @SuppressWarnings("unchecked")
-    private void parseProgramsInfoJSON(JSONObject programsInfo) {
-        String defaultProgram = "0";
-        Map<String, Map<String, String>> programs_info = new HashMap<>();
-        String implicit_repository = programsInfo.getOrDefault("implicit_repository", "dbx").toString();
-        ((JSONObject) programsInfo.get("programs")).forEach((key, value) -> {
-            Set<Map.Entry<Object, Object>> valueEntries = ((JSONObject) value).entrySet();
-            Map<String, String> program_info = valueEntries.stream()
-                    .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
-            programs_info.put(key.toString(), program_info);
-        });
-
-        // Build map of {programid: "role,role"}
-        programsAndRolesForUser = programs_info.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get("roles")));
-        // Build a list of [programid] of those programs with s3 as repository.
-        s3RepositoryList = programs_info.entrySet().stream()
-                .filter(e -> e.getValue().getOrDefault("repository", implicit_repository).equalsIgnoreCase("s3"))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
-        // Extract the friendly names as {programid: "name"}
-        programNames = programs_info.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getOrDefault("name", e.getKey())));
-
-        // If the "defaultProgram" is not an S3 program, then it is strictly local to the user's computer.
-        // If the defaultProgram is not configured (on the server) for this user, simulate a FO
-        // role in that program, so that it is possible to open (but not update) it.
-        if (StringUtils.isNotBlank(defaultProgram) && !programsAndRolesForUser.containsKey(defaultProgram)
-                && !s3RepositoryList.contains(defaultProgram)) {
-            programsAndRolesForUser.put(defaultProgram, FIELD_OFFICER_ROLE_STRING);
-            // We could look in the program's properties.config for the friendly name. But, since the user
-            // had to pass the programid on the command line, it is probably slightly more user-friendly to
-            // simply show the programid, and it is certainly cheaper.
-            programNames.put(defaultProgram, defaultProgram);
-        }
-
-//        if (loginOptions.contains(Authenticator.LoginOptions.INCLUDE_FOUND_ACMS)) {
-        // Add any locally available programs that werern't in the user's list, but
-        // add them as read-only.
-        locallyAvailablePrograms.keySet().stream()
-                .filter(p -> !programsAndRolesForUser.containsKey(p))
-                .forEach(p -> {
-                    programsAndRolesForUser.put(p, FIELD_OFFICER_ROLE_STRING);
-                    programNames.put(p, p);
-                });
-//        }
-    }
 
     private void onAuthenticated(String jwtToken) {
         JSONObject payload = CognitoJWTParser.getPayload(jwtToken);
@@ -351,7 +295,7 @@ public class LoginController {
         JSONObject jsonResponse = awsInterface.authenticatedGetCall(PROGRAMS_INFO_API);
         try {
             JSONObject programsInfo = (JSONObject) jsonResponse.get("result");
-            parseProgramsInfoJSON(programsInfo);
+//            parseProgramsInfoJSON(programsInfo);
             writeProgramsInfoJSON(programsInfo);
 
             identityPersistence.saveLoginDetails(emailField.getText(), passwordField.getText(), new HashMap<>(authenticationInfo));

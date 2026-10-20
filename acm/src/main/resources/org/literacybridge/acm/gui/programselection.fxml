@@ -34,8 +34,8 @@
             </VBox.margin>
         </Label>
 
-        <ComboBox fx:id="programComboBox" accessibleText="Program"
-                  maxWidth="Infinity" prefHeight="42.0" promptText="Select"
+        <ComboBox fx:id="programNamesCombobox" accessibleText="Program"
+                  maxWidth="Infinity" prefHeight="42.0" promptText="Choose Program"
                   style="-fx-font-size: 14px;">
             <VBox.margin>
                 <Insets bottom="18.0"/>
@@ -44,7 +44,7 @@
 
         <HBox alignment="CENTER_RIGHT">
             <children>
-                <Button fx:id="openButton" defaultButton="true" disable="true"
+                <Button fx:id="openProgramBtn" defaultButton="true" disable="true"
                         mnemonicParsing="false" prefWidth="64.0" prefHeight="40.0"
                         text="Next"
                         style="-fx-background-color: #32A56F; -fx-background-radius: 4; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;"/>
