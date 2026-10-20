@@ -49,6 +49,7 @@ public class ApplicationV2 extends Application {
     private static SplashScreen splashScreen;
     private static Image iconImage;
     private static ApplicationV2 instance;
+    private static CommandLineParams cliParams;
 
     static {
         System.out.printf("Java version: %s, data model: %s\n",
@@ -127,12 +128,28 @@ public class ApplicationV2 extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        URL iconURL = ApplicationV2.class.getResource("/tb.png");
+        assert iconURL != null;
+        iconImage = new ImageIcon(iconURL).getImage();
+        ACMConfiguration.initialize(cliParams);
+
+        cliParams.update = true; // may be overridden later.
+
+        if (isEmpty(cliParams.sharedACM)) {
+//            JOptionPane.showMessageDialog(null,
+//                "No ACM chosen Can not continue.");
+            System.exit(1);
+        }
+
+
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/literacybridge/acm/gui/loginscreen.fxml"));
         Parent root = loader.load();
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
-        primaryStage.show();
 
+        openAcmDb(cliParams.sharedACM, primaryStage);
+        primaryStage.show();
+System.out.println(cliParams);
 
 //        System.out.println("ApplicationV2 constructor");
 //        Authenticator authInstance = Authenticator.getInstance();
@@ -259,8 +276,9 @@ public class ApplicationV2 extends Application {
             return;
         }
 
-//        launch(args);
-        startUp(params, args);
+        cliParams = params;
+        launch(args);
+//        startUp(params, args);
 //
         if (params.cleanUnreferenced) {
             ACMConfiguration.getInstance().getCurrentDB().cleanUnreferencedFiles();
@@ -300,8 +318,8 @@ public class ApplicationV2 extends Application {
             System.exit(1);
         }
 
-        openAcmDb(params.sharedACM);
-
+//        openAcmDb(params.sharedACM);
+//        openAcmDb(params.sharedACM);
         // Initialize application
 
         //        splashScreen.setProgressLabel("Initializing UI...");
@@ -393,7 +411,7 @@ public class ApplicationV2 extends Application {
      *
      * @param sharedACM ACM to be opened.
      */
-    private static void openAcmDb(String sharedACM) {
+    private static void openAcmDb(String sharedACM, Stage stage) {
         boolean syncOk = true;
         PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);
         // Uncomment lines to debug opening from S3.
@@ -422,9 +440,27 @@ public class ApplicationV2 extends Application {
             ACMConfiguration.getInstance().setCurrentDB(sharedACM, syncState, accessControlResolver);
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null,
-                    "Unable to connect to database. Please try restarting the ACM.");
-            System.exit(1);
+
+//            Platform.runLater(() -> {
+                Alert firstAlert = new Alert(Alert.AlertType.ERROR);
+                firstAlert.setTitle("Database Error");
+                firstAlert.setHeaderText(null);
+                firstAlert.setContentText("Unable to connect to database. Please try restarting the ACM.");
+
+                // 2. Safely grab your class-level stage via your singleton reference
+//                if (ApplicationV2.getApplication().primaryStage != null) {
+                    firstAlert.initOwner(stage);
+//                }
+
+                // 3. Block execution on the UI thread until they click "OK"
+                firstAlert.showAndWait();
+
+                // 4. Terminate the application cleanly AFTER they close the alert dialog
+                Platform.exit();
+                System.exit(1);
+//            });
+//            JOptionPane.showMessageDialog(null,
+//                    "Unable to connect to database. Please try restarting the ACM.");
         }
     }
 
