@@ -17,7 +17,7 @@
 
 <StackPane prefHeight="760.0" prefWidth="1280.0" style="-fx-background-color: white;"
            xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="org.literacybridge.acm.gui.fx.LoginController">
+           fx:controller="org.literacybridge.acm.gui.fx.LoginController" fx:id="rootPane">
     <VBox alignment="CENTER" maxWidth="360.0" minWidth="280.0" prefWidth="360.0" spacing="12.0">
         <ImageView fitWidth="120.0" preserveRatio="true">
             <VBox.margin>
@@ -53,7 +53,8 @@
                               accessibleText="Show or hide password" prefWidth="32.0" prefHeight="30.0"
                               style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 0;">
                     <graphic>
-                        <SVGPath content="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
+                        <SVGPath
+                                content="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
                                 style="-fx-fill: #1F2937;"/>
                     </graphic>
                     <StackPane.alignment>CENTER_RIGHT</StackPane.alignment>

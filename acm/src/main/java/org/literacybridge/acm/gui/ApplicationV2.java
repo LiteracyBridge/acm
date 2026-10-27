@@ -1,8 +1,11 @@
 package org.literacybridge.acm.gui;
 
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.JXFrame;
@@ -18,6 +21,7 @@ import org.literacybridge.acm.gui.MainWindow.ToolbarView;
 import org.literacybridge.acm.gui.dialogs.AcmCheckoutTest;
 import org.literacybridge.acm.gui.dialogs.LafTester;
 import org.literacybridge.acm.gui.dialogs.S3SyncDialog;
+import org.literacybridge.acm.gui.fx.DailogHelpers;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.FilterState;
@@ -33,6 +37,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +54,8 @@ public class ApplicationV2 extends Application {
     private static SplashScreen splashScreen;
     private static Image iconImage;
     private static ApplicationV2 instance;
+    private Stage primaryStage;
+    public static CommandLineParams cliParams;
 
     static {
         System.out.printf("Java version: %s, data model: %s\n",
@@ -131,8 +138,96 @@ public class ApplicationV2 extends Application {
         Parent root = loader.load();
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
+
+
+        // START: Initialize application
+        //        if (ACMConfiguration.getInstance().isDevo()) {
+//            JMenuBar menuBar = new JMenuBar();
+//            JMenu menu = new JMenu("Developer");
+//            menuBar.add(menu);
+//            JMenuItem menuItem = new JMenuItem("Access Control...");
+//            menu.add(menuItem);
+//            menuItem.addActionListener(e -> new AcmCheckoutTest(this).setVisible(true));
+//            menuItem = new JMenuItem("UI Defaults...");
+//            menu.add(menuItem);
+//            menuItem.addActionListener(e -> new LafTester(this).setVisible(true));
+//            setJMenuBar(menuBar);
+//        }
+
+
+        fileSystemMonitor
+                .addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());
+        fileSystemMonitor.start();
+
+//        application.setSize(1000, 725);
+//        application.setLocation(20, 20);
+
+        preRunChecks();
+        URL iconURL = ApplicationV2.class.getResource("/tb.png");
+        assert iconURL != null;
+        iconImage = new ImageIcon(iconURL).getImage();
+
+        cliParams.update = true; // may be overridden later.
+        ACMConfiguration.initialize(cliParams);
+
+//        authenticateAndChooseProgram(cliParams);
+
+
+        if (isEmpty(cliParams.sharedACM)) {
+            DailogHelpers.errorDailog(primaryStage, "No ACM Selected", "No ACM chosen Can not continue.", true);
+            System.exit(1);
+        }
+
         primaryStage.show();
 
+//        openAcmDb(cliParams.sharedACM, primaryStage);
+//
+//        Authenticator authInstance = Authenticator.getInstance();
+//        String greeting = authInstance.getUserSelfName();
+//        if (StringUtils.isEmpty(greeting)) {
+//            greeting = String.format("Hello, %s", authInstance.getUserEmail());
+//        }
+//        String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
+//                "  --  CHANGES WILL *NOT* BE SAVED!" : "";
+//        String layoutIndicator = AmplioHome.isOldStyleHomeDirectory()
+//                ? (OsUtils.WINDOWS ? "v1" : "∅")
+//                : (OsUtils.WINDOWS ? "v2" : "✓");
+//
+//        String dbVersion = "v" +
+//                ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion();
+//        String programTitle = String.format(LabelProvider.getLabel("APPLICATION_TITLE_FORMAT"),
+//                LabelProvider.getLabel("ACM_PROGRAM_NAME"));
+//        String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
+//                greeting,
+//                programTitle,
+//                Constants.ACM_VERSION,
+//                layoutIndicator,
+//                ACMConfiguration.getInstance().getTitle(),
+//                dbVersion,
+//                sandboxWarning);
+//
+//        if (cliParams.cleanUnreferenced) {
+//            ACMConfiguration.getInstance().getCurrentDB().cleanUnreferencedFiles();
+//        }
+//
+//
+//        LOG.log(Level.INFO, "ACM successfully started.");
+//        ACMConfiguration.getInstance().getCurrentDB().setupWavCaching(sizeMB -> {
+//            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+//            alert.setTitle("WAV Cache");
+//            alert.setHeaderText(null);
+//            alert.setContentText("The WAV cache is currently using " + sizeMB
+//                    + " MB disk space and a cleanup is recommended. Perform cleanup?");
+//            alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+//            alert.initOwner(primaryStage);
+//
+//            Optional<ButtonType> result = alert.showAndWait();
+//            return result.isPresent() && result.get() == ButtonType.YES;
+//        });
+        // END: Initialize application
+
+//        primaryStage.show();
+//        System.out.println(cliParams);
 
 //        System.out.println("ApplicationV2 constructor");
 //        Authenticator authInstance = Authenticator.getInstance();
@@ -148,58 +243,62 @@ public class ApplicationV2 extends Application {
 //                : (OsUtils.WINDOWS ? "v2" : "✓");
     }
 
-    /*
-    @SuppressWarnings("FieldCanBeLocal")
-  private final WindowListener shutdownListener = new WindowAdapter() {
-      @Override
-      public void windowClosing(WindowEvent e) {
-          super.windowClosing(e);
-          // This text has already been set; this call actually has no effect.
-          splashScreen.setProgressLabel("Shutting down...", SplashScreen.SPLASH_OPTIONS.ALWAYS_ON_TOP);
-          splashScreen.makeNonTransparent();
-          application.setVisible(false);
-          try {
-              ACMConfiguration.DB_CLOSE_DISPOSITION disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.COMMIT;
 
-              if (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) {
-                  disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.DISCARD;
+    //    @SuppressWarnings("FieldCanBeLocal")
+//  private final WindowListener shutdownListener = new WindowAdapter() {
+    @Override
+    public void stop() throws Exception {
+//          super.windowClosing(e);
+        // This text has already been set; this call actually has no effect.
+//          splashScreen.setProgressLabel("Shutting down...", SplashScreen.SPLASH_OPTIONS.ALWAYS_ON_TOP);
+//          splashScreen.makeNonTransparent();
+//          application.setVisible(false);
+        try {
+            ACMConfiguration.DB_CLOSE_DISPOSITION disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.COMMIT;
+            if (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) {
+                disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.DISCARD;
+            } else if (ACMConfiguration.getInstance().getCurrentDB().hasChanges()) {
+                ButtonType saveWorkButton = new ButtonType("Save Work");
+                ButtonType throwAwayButton = new ButtonType("Throw Away Your Latest Changes");
 
-              } else if (ACMConfiguration.getInstance().getCurrentDB().hasChanges()) {
-                  Object[] optionsSaveWork = {"Save Work", "Throw Away Your Latest Changes"};
-                  String msg = "If you made a mistake you can throw away all your changes now.";
-                  String title = "Save Work?";
-                  int buttonIx = JOptionPane.showOptionDialog(splashScreen, msg, title, JOptionPane.YES_NO_CANCEL_OPTION,
-                      JOptionPane.QUESTION_MESSAGE, null, optionsSaveWork,
-                      optionsSaveWork[0]);
-                  if (buttonIx == 1) {
-                      msg = "Are you sure you want to throw away all your work since opening the ACM?";
-                      title = "Are You Sure?";
-                      buttonIx = JOptionPane.showOptionDialog(splashScreen, msg, title, JOptionPane.OK_CANCEL_OPTION,
-                          JOptionPane.WARNING_MESSAGE, null, null,
-                          JOptionPane.CANCEL_OPTION);
-                      if (buttonIx == JOptionPane.OK_OPTION) {
-                          disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.DISCARD;
-                      }
-                  }
-              }
+                Alert firstAlert = new Alert(Alert.AlertType.CONFIRMATION);
+                firstAlert.setTitle("Save Work?");
+                firstAlert.setHeaderText(null);
+                firstAlert.setContentText("If you made a mistake you can throw away all your changes now.");
+                firstAlert.getButtonTypes().setAll(saveWorkButton, throwAwayButton);
 
-              ACMConfiguration.getInstance().closeCurrentDb(disposition);
-          } catch (Exception e1) {
-              e1.printStackTrace();
-          }
-      }
+                Optional<ButtonType> firstResult = firstAlert.showAndWait();
+                if (firstResult.isPresent() && firstResult.get() == throwAwayButton) {
+                    Alert secondAlert = new Alert(Alert.AlertType.WARNING);
+                    secondAlert.setTitle("Are You Sure?");
+                    secondAlert.setHeaderText(null);
+                    secondAlert.setContentText("Are you sure you want to throw away all your work since opening the ACM?");
+                    secondAlert.getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
 
-      @Override
-      public void windowActivated(WindowEvent e) {
-          super.windowActivated(e);
-          // The next thing that will be seen is this. And Swing's repainting is so awful that unless we set it
-          // here, it will, in fact, not ever be seen. (Swing aggressively prevents applications from being able
-          // to "wait for the UI to settle".)
-          splashScreen.setProgressLabel("Shutting down...", SplashScreen.SPLASH_OPTIONS.ALWAYS_ON_TOP);
-          splashScreen.makeTransparent();
-      }
-  };
+                    Optional<ButtonType> secondResult = secondAlert.showAndWait();
+                    if (secondResult.isPresent() && secondResult.get() == ButtonType.OK) {
+                        disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.DISCARD;
+                    }
+                }
+            }
 
+            ACMConfiguration.getInstance().closeCurrentDb(disposition);
+        } catch (Exception e1) {
+            e1.printStackTrace();
+        }
+    }
+
+//      @Override
+//      public void windowActivated(WindowEvent e) {
+//          super.windowActivated(e);
+//          // The next thing that will be seen is this. And Swing's repainting is so awful that unless we set it
+//          // here, it will, in fact, not ever be seen. (Swing aggressively prevents applications from being able
+//          // to "wait for the UI to settle".)
+//          splashScreen.setProgressLabel("Shutting down...", SplashScreen.SPLASH_OPTIONS.ALWAYS_ON_TOP);
+//          splashScreen.makeTransparent();
+//      }
+//  };
+/*
   @Override
   public void setBackground(Color bgColor) {
     // Workaround for weird bug in seaglass look&feel that causes a
@@ -259,8 +358,9 @@ public class ApplicationV2 extends Application {
             return;
         }
 
-//        launch(args);
-        startUp(params, args);
+        cliParams = params;
+        launch(args);
+//        startUp(params, args);
 //
         if (params.cleanUnreferenced) {
             ACMConfiguration.getInstance().getCurrentDB().cleanUnreferencedFiles();
@@ -300,8 +400,8 @@ public class ApplicationV2 extends Application {
             System.exit(1);
         }
 
-        openAcmDb(params.sharedACM);
-
+//        openAcmDb(params.sharedACM);
+//        openAcmDb(params.sharedACM);
         // Initialize application
 
         //        splashScreen.setProgressLabel("Initializing UI...");
@@ -376,13 +476,14 @@ public class ApplicationV2 extends Application {
 //
         LOG.log(Level.INFO, "ACM successfully started.");
         ACMConfiguration.getInstance().getCurrentDB().setupWavCaching(sizeMB -> {
-//            int answer = JOptionPane.showOptionDialog(null,
-//                "The WAV cache is currently using " + sizeMB
-//                    + " MB disk space and a cleanup is recommended. Perform cleanup?",
-//                "WAV Cache", JOptionPane.YES_NO_OPTION,
-//                JOptionPane.QUESTION_MESSAGE, null, null, JOptionPane.YES_OPTION);
-//            return (answer == JOptionPane.YES_OPTION);
-            return true;
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("WAV Cache");
+            alert.setHeaderText(null);
+            alert.setContentText("The WAV cache is currently using " + sizeMB
+                    + " MB disk space and a cleanup is recommended. Perform cleanup?");
+            alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+            Optional<ButtonType> result = alert.showAndWait();
+            return result.isPresent() && result.get() == ButtonType.YES;
         });
 //        application.mainView.audioItemView.requestFocusInWindow();
     }
@@ -393,7 +494,7 @@ public class ApplicationV2 extends Application {
      *
      * @param sharedACM ACM to be opened.
      */
-    private static void openAcmDb(String sharedACM) {
+    private static void openAcmDb(String sharedACM, Stage stage) {
         boolean syncOk = true;
         PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);
         // Uncomment lines to debug opening from S3.
@@ -411,7 +512,7 @@ public class ApplicationV2 extends Application {
             }
         }
 
-        splashScreen.setProgressLabel("Opening content database...");
+//        splashScreen.setProgressLabel("Opening content database...");
         // init database
         try {
             AccessControlResolver accessControlResolver = new GuiAccessControlResolver();
@@ -422,9 +523,15 @@ public class ApplicationV2 extends Application {
             ACMConfiguration.getInstance().setCurrentDB(sharedACM, syncState, accessControlResolver);
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null,
-                    "Unable to connect to database. Please try restarting the ACM.");
-            System.exit(1);
+
+            Alert firstAlert = new Alert(Alert.AlertType.ERROR);
+            firstAlert.setTitle("Database Error");
+            firstAlert.setHeaderText(null);
+            firstAlert.setContentText("Unable to connect to database. Please try restarting the ACM.");
+            firstAlert.initOwner(stage);
+            firstAlert.showAndWait();
+
+//            System.exit(1);
         }
     }
 
@@ -450,7 +557,7 @@ public class ApplicationV2 extends Application {
      * @param params from the command line.
      */
     private static void authenticateAndChooseProgram(CommandLineParams params) {
-        splashScreen.setProgressLabel("Logging in...");
+//        splashScreen.setProgressLabel("Logging in...");
         Authenticator authInstance = Authenticator.getInstance();
         authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs());
         Authenticator.LoginOptions okRepoOption = AmplioHome.isOldStyleHomeDirectory() || params.noS3Dbs ? LOCAL_DATA_ONLY : LOCAL_OR_S3;
