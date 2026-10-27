@@ -1,0 +1,360 @@
+/*
+ * Shared styles for the ACM dashboard.
+ * Colours are defined once on .root and referenced everywhere else.
+ */
+.root {
+    -color-primary: #32A56F;
+    -color-primary-soft: #DDF3E8;
+    -color-text: #111827;
+    -color-text-strong: #1F2937;
+    -color-text-muted: #4B5563;
+    -color-border: #D1D5DB;
+    -color-divider: #E5E7EB;
+    -color-surface: #FFFFFF;
+    -color-page: #F9FAFB;
+    -color-hover: #F3F4F6;
+}
+
+/* ---------- Shell regions ---------- */
+
+.dashboard {
+    -fx-background-color: -color-page;
+}
+
+.topbar {
+    -fx-background-color: -color-surface;
+    -fx-border-color: transparent transparent -color-divider transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-min-height: 56;
+    -fx-pref-height: 56;
+    -fx-padding: 0 24 0 16;
+    -fx-spacing: 16;
+}
+
+.sidebar {
+    -fx-background-color: -color-surface;
+    -fx-border-color: transparent -color-divider transparent transparent;
+    -fx-border-width: 0 1 0 0;
+    -fx-pref-width: 256;
+    -fx-min-width: 256;
+    -fx-padding: 24 12 16 12;
+    -fx-spacing: 8;
+}
+
+.content {
+    -fx-padding: 28 32 24 32;
+}
+
+.playerbar {
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-divider transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-min-height: 64;
+    -fx-pref-height: 64;
+    -fx-padding: 0 32;
+    -fx-spacing: 16;
+}
+
+/* ---------- Typography ---------- */
+
+.page-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-text;
+}
+
+.placeholder-text {
+    -fx-font-size: 13px;
+    -fx-text-fill: -color-text-muted;
+}
+
+
+/* ---------- Top bar ---------- */
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-padding: 6;
+    -fx-cursor: hand;
+}
+
+.icon-button:hover {
+    -fx-background-color: -color-hover;
+}
+
+.icon-button .icon {
+    -fx-fill: -color-text-strong;
+}
+
+.program-select {
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-pref-height: 38;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.program-select .list-cell {
+    -fx-text-fill: -color-text;
+    -fx-padding: 0 8;
+}
+
+.program-select .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.program-select .arrow {
+    -fx-background-color: -color-text-muted;
+}
+
+.avatar {
+    -fx-background-color: -color-divider;
+    -fx-background-radius: 18;
+    -fx-min-width: 36;
+    -fx-pref-width: 36;
+    -fx-max-width: 36;
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+    -fx-max-height: 36;
+    -fx-padding: 0;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-text;
+    -fx-cursor: hand;
+}
+
+
+/* ---------- Sidebar ---------- */
+
+.nav-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-padding: 10 12;
+    -fx-graphic-text-gap: 14;
+    -fx-font-size: 15px;
+    -fx-text-fill: -color-text-muted;
+    -fx-alignment: center-left;
+    -fx-cursor: hand;
+}
+
+.nav-item .icon {
+    -fx-fill: -color-text-muted;
+}
+
+.nav-item:hover {
+    -fx-background-color: -color-hover;
+}
+
+.nav-item:selected {
+    -fx-background-color: -color-primary-soft;
+    -fx-text-fill: -color-primary;
+}
+
+.nav-item:selected .icon {
+    -fx-fill: -color-primary;
+}
+
+.sidebar-divider {
+    -fx-padding: 12 0;
+}
+
+.sidebar-divider .line {
+    -fx-border-color: -color-divider;
+    -fx-border-width: 1 0 0 0;
+}
+
+.section-header {
+    -fx-padding: 0 4 0 12;
+}
+
+.section-label {
+    -fx-font-size: 15px;
+    -fx-text-fill: -color-text-muted;
+}
+
+.playlist-list {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 6;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 6;
+    -fx-padding: 0 4;
+}
+
+.playlist-list .list-cell {
+    -fx-background-color: -color-surface;
+    -fx-border-color: transparent transparent -color-divider transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 12 16;
+    -fx-font-size: 13px;
+    -fx-text-fill: -color-text;
+}
+
+.playlist-list .list-cell:empty {
+    -fx-border-color: transparent;
+}
+
+.playlist-list .list-cell:hover {
+    -fx-background-color: -color-hover;
+}
+
+.playlist-list .list-cell:selected {
+    -fx-background-color: -color-primary-soft;
+}
+
+
+.search-box {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 6;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 6;
+    -fx-padding: 0 12;
+    -fx-spacing: 8;
+    -fx-pref-height: 40;
+}
+
+.search-box:focus-within {
+    -fx-border-color: -color-primary;
+}
+
+.search-box .icon {
+    -fx-fill: -color-text-strong;
+}
+
+.search-field {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-text;
+    -fx-prompt-text-fill: -color-text-muted;
+}
+
+.btn-secondary {
+    -fx-background-color: -color-hover;
+    -fx-background-radius: 6;
+    -fx-padding: 0 16;
+    -fx-pref-height: 40;
+    -fx-graphic-text-gap: 10;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-text;
+    -fx-cursor: hand;
+}
+
+.btn-secondary:hover {
+    -fx-background-color: -color-divider;
+}
+
+.btn-secondary .icon {
+    -fx-fill: -color-text;
+}
+
+.audio-table {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 8;
+    -fx-padding: 0;
+    -fx-fixed-cell-size: 52;
+    -fx-table-cell-border-color: transparent;
+}
+
+.audio-table .column-header-background {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 8 8 0 0;
+    -fx-border-color: transparent transparent -color-divider transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.audio-table .column-header,
+.audio-table .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-pref-height: 52;
+}
+
+.audio-table .column-header .label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-text;
+    -fx-alignment: center-left;
+    -fx-padding: 0 16;
+}
+
+.audio-table .column-header .arrow {
+    -fx-background-color: -color-text-muted;
+}
+
+.audio-table .table-row-cell {
+    -fx-background-color: -color-surface;
+    -fx-border-color: transparent transparent -color-divider transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.audio-table .table-row-cell:empty {
+    -fx-border-color: transparent;
+}
+
+.audio-table .table-row-cell:hover {
+    -fx-background-color: -color-page;
+}
+
+.audio-table .table-row-cell:selected {
+    -fx-background-color: -color-hover;
+}
+
+.audio-table .table-cell {
+    -fx-padding: 0 16;
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-text;
+    -fx-alignment: center-left;
+    -fx-border-color: transparent;
+}
+
+.audio-table .table-row-cell:selected .table-cell {
+    -fx-text-fill: -color-text;
+}
+
+
+
+/* ---------- Player bar ---------- */
+
+.player-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-text;
+}
+
+.player-time {
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-text-strong;
+}
+
+.player-slider {
+    -fx-cursor: hand;
+}
+
+.player-slider .track {
+    -fx-background-color: -color-divider;
+    -fx-background-insets: 0;
+    -fx-background-radius: 2;
+    -fx-padding: 2;
+}
+
+.player-slider .thumb {
+    -fx-background-color: -color-primary;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-padding: 5;
+    -fx-effect: null;
+}
+
+.player-slider .thumb:hover,
+.player-slider .thumb:pressed {
+    -fx-background-color: derive(-color-primary, -15%);
+}
+
+.player-controls .icon {
+    -fx-fill: -color-text;
+}

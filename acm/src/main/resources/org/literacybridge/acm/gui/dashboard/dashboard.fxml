@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
+
+<BorderPane prefHeight="760.0" prefWidth="1280.0"
+            styleClass="dashboard" stylesheets="@dashboard.css"
+            xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+    <top>
+        <fx:include fx:id="topBar" source="topbar.fxml"/>
+    </top>
+    <left>
+        <fx:include fx:id="sidebar" source="sidebar.fxml"/>
+    </left>
+    <center>
+        <BorderPane>
+            <center>
+                <StackPane fx:id="contentArea" styleClass="content">
+                    <fx:include fx:id="audioLibrary" source="audiolibrary.fxml"/>
+                </StackPane>
+            </center>
+            <bottom>
+                <fx:include fx:id="playerBar" source="playerbar.fxml"/>
+            </bottom>
+        </BorderPane>
+    </center>
+</BorderPane>
