@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.fx.dashboard;
 
 
 public class AudioLibraryRow {
+    private final String id;
     private final String title;
     private final String duration;
     private final String category;
@@ -9,8 +10,9 @@ public class AudioLibraryRow {
     private final String language;
     private final String date;
 
-    public AudioLibraryRow(String title, String duration, String category,
+    public AudioLibraryRow(String id, String title, String duration, String category,
                            String source, String language, String date) {
+        this.id = id;
         this.title = title;
         this.duration = duration;
         this.category = category;
@@ -21,6 +23,10 @@ public class AudioLibraryRow {
 
     public String getTitle() {
         return title;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getDuration() {
