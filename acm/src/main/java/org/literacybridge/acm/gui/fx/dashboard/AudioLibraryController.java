@@ -2,10 +2,7 @@ package org.literacybridge.acm.gui.fx.dashboard;
 
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.shape.SVGPath;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.MetadataSpecification;
@@ -39,17 +36,19 @@ public class AudioLibraryController {
             );
 
         });
-
         audioTable.getItems().setAll(audioItems.toArray(AudioLibraryRow[]::new));
 
-//        audioTable.getItems().setAll(
-//
-//                new AudioLibraryRow("Fertilizer & Manure: Proper Use and Storage", "10:27", "Agriculture", "Unknown", "Dagaare", "2024-09-21"),
-//                new AudioLibraryRow("Family Planning", "02:03", "Antenatal Care", "GHS-Wa Reg", "Dagaare", "2024-09-21"),
-//                new AudioLibraryRow("Cowpea Storage", "08:32", "Storing", "LBG-Wa", "French", "2024-09-21"),
-//                new AudioLibraryRow("Reasons for Handwashing", "02:17", "Handwashing", "Unknown", "Nepali", "2024-09-21"),
-//                new AudioLibraryRow("Trust Parents", "01:47", "Gen Education", "Unknown", "Nepali", "2024-09-21"),
-//                new AudioLibraryRow("kwonsa umwana amabere", "00:45", "Breastfeeding", "Unknown", "Kirundi", "2024-09-21"));
+        // Attach double click even listener to the table rows
+        audioTable.setRowFactory(tv -> {
+            TableRow<AudioLibraryRow> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    AudioLibraryRow rowData = row.getItem();
+                    System.out.println(rowData);
+                }
+            });
+            return row;
+        });
     }
 
     // The "more" button at the end of each row. Its menu comes in a later step.
