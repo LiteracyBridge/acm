@@ -1,51 +1,57 @@
 package org.literacybridge.acm.gui.fx.dashboard;
 
 
-public class AudioLibraryRow {
-    private final String id;
-    private final String title;
-    private final String duration;
-    private final String category;
-    private final String source;
-    private final String language;
-    private final String date;
+import org.literacybridge.acm.store.AudioItem;
 
-    public AudioLibraryRow(String id, String title, String duration, String category,
-                           String source, String language, String date) {
-        this.id = id;
-        this.title = title;
-        this.duration = duration;
-        this.category = category;
-        this.source = source;
-        this.language = language;
-        this.date = date;
+public class AudioLibraryRow {
+    private final AudioItem audioItem;
+//    private final String id;
+//    private final String title;
+//    private final String duration;
+//    private final String category;
+//    private final String source;
+//    private final String language;
+//    private final String date;
+
+    public AudioLibraryRow(AudioItem audioItem) {
+        this.audioItem = audioItem;
+//        this.title = title;
+//        this.duration = duration;
+//        this.category = category;
+//        this.source = source;
+//        this.language = language;
+//        this.date = date;
+    }
+
+    public AudioItem getAudioItem() {
+        return audioItem;
     }
 
     public String getTitle() {
-        return title;
+        return audioItem.getTitle();
     }
 
     public String getId() {
-        return id;
+        return audioItem.getId();
     }
 
     public String getDuration() {
-        return duration;
+        return audioItem.getDuration();
     }
 
     public String getCategory() {
-        return category;
+        return "Agriculture Cat";
     }
 
     public String getSource() {
-        return source;
+        return "Unknown";
     }
 
     public String getLanguage() {
-        return language;
+        return audioItem.getLanguageCode();
     }
 
     public String getDate() {
-        return date;
+        return "2026-01-01";
     }
 }

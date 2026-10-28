@@ -262,10 +262,6 @@ public class AudioItemView extends Container {
         }
     }
 
-    boolean hasSelectedRows() {
-        return audioItemTable.getSelectedRow() != -1;
-    }
-
     public AudioItem getCurrentAudioItem() {
         int tableRow = audioItemTable.getSelectedRow();
         if (tableRow == -1) {

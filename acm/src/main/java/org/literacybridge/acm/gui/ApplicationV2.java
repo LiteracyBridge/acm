@@ -47,6 +47,8 @@ public class ApplicationV2 extends Application {
     private Stage primaryStage;
     public static CommandLineParams cliParams;
 
+    private final SimpleSoundPlayer player = new SimpleSoundPlayer();
+
     static {
         System.out.printf("Java version: %s, data model: %s\n",
                 System.getProperty("java.version"),
@@ -109,8 +111,6 @@ public class ApplicationV2 extends Application {
     public static Image getImageIcon() {
         return iconImage;
     }
-
-    private final SimpleSoundPlayer player = new SimpleSoundPlayer();
 
 
     public ApplicationV2() {
