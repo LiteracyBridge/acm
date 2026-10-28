@@ -30,6 +30,7 @@ public class PlayerBarController {
     private final Timer updatePlayerStateTimer = new Timer(100, this::onUpdateTimerTick);
     private DashboardController dashboard;
     private double duration = 0.1;
+    private AudioItem selectedAudioItem;
 
     @FXML
     private Label titleLabel;
@@ -59,8 +60,12 @@ public class PlayerBarController {
                         getPlayer().pause();
                         showPlaying(false);
                     } else if (!wasPlaying && playing) {
-//                        TODO: add private field for the selectedAudio item or get the first item of the table if no item is selected
-                        showPlaying(playing);
+                        if(selectedAudioItem != null) {
+                            getPlayer().resume();
+                            showPlaying(true);
+                            mirrorPlayerState(getPlayer().getPlayerStateDetails());
+                        }
+
                     }
                 });
 //        positionSlider.valueProperty().addListener(
@@ -92,7 +97,9 @@ public class PlayerBarController {
     }
 
     public void playAudio(AudioItem item) {
+        selectedAudioItem = item;
         SimpleSoundPlayer player = getPlayer();
+
         if (player != null) {
             player.stop();
             updatePlayerStateTimer.stop();
@@ -118,14 +125,13 @@ public class PlayerBarController {
             });
             player.play(f);
             duration = player.getDurationInSecs();
-            System.out.println(duration);
             showTrack(item.getTitle(), (int) duration);
             updatePlayerStateTimer.start();
 
         } catch (IOException | BaseAudioConverter.ConversionException |
                  AudioItemRepository.UnsupportedFormatException e) {
             // There really isn't anything to do with this exception.
-//      throw new RuntimeException(e);
+            // throw new RuntimeException(e);
         }
     }
 
@@ -166,7 +172,6 @@ public class PlayerBarController {
 
                 int playedTimeInSecs = (int) newState.getCurrentPoitionInSecs();
                 elapsedLabel.setText(formatTime(playedTimeInSecs));
-//                remainingTimeLbl.setText(secondsToTimeString((int) (duration - playedTimeInSecs)));
 //            }
                 updatePlayerStateTimer.start();
 
