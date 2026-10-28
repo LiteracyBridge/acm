@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.fx.dashboard;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
@@ -24,9 +25,11 @@ import java.io.IOException;
 public class PlayerBarController {
     private static final String PLAY_ICON = "M8 5v14l11-7z";
     private static final String PAUSE_ICON = "M6 19h4V5H6v14zm8-14v14h4V5h-4z";
+    private static final int SLIDER_UNITS_PER_SECOND = 10;
 
     private final Timer updatePlayerStateTimer = new Timer(100, this::onUpdateTimerTick);
     private DashboardController dashboard;
+    private double duration = 0.1;
 
     @FXML
     private Label titleLabel;
@@ -107,7 +110,14 @@ public class PlayerBarController {
 //            Application.getFilterState().updateResult();
 //            initPlayer();
             // TODO: update slider state
+            player.addObserver((o, arg) -> {
+                if (arg instanceof PlayerStateDetails) {
+                    mirrorPlayerState((PlayerStateDetails) arg);
+                }
+            });
             player.play(f);
+            duration = player.getDurationInSecs();
+            showTrack(item.getTitle(), (int) duration);
             updatePlayerStateTimer.start();
             // This is a bit hacky. At this point we know that the slider has been layed out, so we can
             // get it's real size, and apply that to the label.
@@ -134,46 +144,43 @@ public class PlayerBarController {
     }
 
     private void mirrorPlayerState(PlayerStateDetails newState) {
-//        if (newState.getCurrentPlayerState().isNotPlaying()) {
-//            playBtn.setIcon(playImageIcon);
-//            playBtn.setToolTipText(LabelProvider.getLabel("Play"));
-//            boolean isPaused = newState.getCurrentPlayerState().isPaused();
-//            stopBtn.setEnabled(isPaused);
-//            positionSlider.setEnabled(isPaused);
-//            if (newState.getCurrentPlayerState().isStopped()) {
-//                titleInfoLbl.setText(NOT_PLAYING);
-//                playedTimeLbl.setText(NO_TIME);
-//                remainingTimeLbl.setText(NO_TIME);
-//                positionSlider.setValue(0);
-//            } else {
-//                positionSlider.setMaximum((int) (duration * SLIDER_UNITS_PER_SECOND));
-//                positionSlider.setValue((int) (newState.getCurrentPoitionInSecs() * SLIDER_UNITS_PER_SECOND));
-//
-//                int playedTimeInSecs = (int) newState.getCurrentPoitionInSecs();
-//                playedTimeLbl.setText(secondsToTimeString(playedTimeInSecs));
+        Platform.runLater(() -> {
+        if (newState.getCurrentPlayerState().isNotPlaying()) {
+            showPlaying(false);
+
+            if (newState.getCurrentPlayerState().isStopped()) {
+                positionSlider.setValue(0);
+            } else {
+                positionSlider.setMax((duration * SLIDER_UNITS_PER_SECOND));
+                positionSlider.setValue((int) (newState.getCurrentPoitionInSecs() * SLIDER_UNITS_PER_SECOND));
+
+                int playedTimeInSecs = (int) newState.getCurrentPoitionInSecs();
+                totalLabel.setText(formatTime(playedTimeInSecs));
 //                remainingTimeLbl.setText(secondsToTimeString((int) (duration - playedTimeInSecs)));
-//            }
-//            updatePlayerStateTimer.stop();
-//
-//        } else if (newState.getCurrentPlayerState().isPlaying()) {
-//            playBtn.setIcon(pauseImageIcon);
-//            playBtn.setToolTipText(LabelProvider.getLabel("Pause"));
-//            duration = player.getDurationInSecs();
-//            stopBtn.setEnabled(true);
-//            positionSlider.setEnabled(true);
-//
-//            // update slider only if slide is not being moved by user
+            }
+            updatePlayerStateTimer.stop();
+
+            return;
+        }
+
+        if (newState.getCurrentPlayerState().isPlaying()) {
+            showPlaying(true);
+
+            duration = getPlayer().getDurationInSecs();
+
+
 //            if (!positionSliderGrabbed) {
-//                positionSlider.setMaximum((int) (duration * SLIDER_UNITS_PER_SECOND));
-//                positionSlider.setValue((int) (newState.getCurrentPoitionInSecs() * SLIDER_UNITS_PER_SECOND));
-//
-//                int playedTimeInSecs = (int) newState.getCurrentPoitionInSecs();
-//                playedTimeLbl.setText(secondsToTimeString(playedTimeInSecs));
+            positionSlider.setMax((duration * SLIDER_UNITS_PER_SECOND));
+            positionSlider.setValue((newState.getCurrentPoitionInSecs() * SLIDER_UNITS_PER_SECOND));
+
+            int playedTimeInSecs = (int) newState.getCurrentPoitionInSecs();
+            totalLabel.setText(formatTime(playedTimeInSecs));
 //                remainingTimeLbl.setText(secondsToTimeString((int) (duration - playedTimeInSecs)));
 //            }
-//            updatePlayerStateTimer.start();
-//
-//        }
+            updatePlayerStateTimer.start();
+
+        }
+        });
     }
 
     private SimpleSoundPlayer getPlayer() {
