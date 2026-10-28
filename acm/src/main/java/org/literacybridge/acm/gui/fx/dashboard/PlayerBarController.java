@@ -54,13 +54,18 @@ public class PlayerBarController {
 //        this.player = Application.getApplication().getSoundPlayer();
 
         playPauseButton.selectedProperty().addListener(
-                (observable, wasPlaying, playing) -> showPlaying(playing));
-        positionSlider.valueProperty().addListener(
-                (observable, oldValue, newValue) -> elapsedLabel.setText(formatTime(newValue.intValue())));
+                (observable, wasPlaying, playing) -> {
+                    if (wasPlaying && !playing) {
+                        getPlayer().pause();
+                        showPlaying(false);
+                    } else if (!wasPlaying && playing) {
+//                        TODO: add private field for the selectedAudio item or get the first item of the table if no item is selected
+                        showPlaying(playing);
+                    }
+                });
+//        positionSlider.valueProperty().addListener(
+//                (observable, oldValue, newValue) -> elapsedLabel.setText(formatTime(newValue.intValue())));
 
-        // Dummy data until the dashboard is wired to the sound player.
-        showTrack("Family Planning", 123);
-        positionSlider.setValue(20);
         playPauseButton.setSelected(true);
     }
 
@@ -103,13 +108,9 @@ public class PlayerBarController {
         Application parent = Application.getApplication();
         try {
             // convert on the fly if necessary
-//            parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             File f = ACMConfiguration.getInstance().getCurrentDB().getRepository()
                     .getAudioFile(item, AudioItemRepository.AudioFormat.WAV);
 
-//            Application.getFilterState().updateResult();
-//            initPlayer();
-            // TODO: update slider state
             player.addObserver((o, arg) -> {
                 if (arg instanceof PlayerStateDetails) {
                     mirrorPlayerState((PlayerStateDetails) arg);
@@ -117,69 +118,59 @@ public class PlayerBarController {
             });
             player.play(f);
             duration = player.getDurationInSecs();
+            System.out.println(duration);
             showTrack(item.getTitle(), (int) duration);
             updatePlayerStateTimer.start();
-            // This is a bit hacky. At this point we know that the slider has been layed out, so we can
-            // get it's real size, and apply that to the label.
-//            Dimension d = sliderBox.getSize();
-//            d.width -= 20;
-//            titleInfoLbl.setMaximumSize(d);
-//            titleInfoLbl.setPreferredSize(d);
-//            titleInfoLbl.setText(item.getMetadata()
-//                    .getMetadataValue(MetadataSpecification.DC_TITLE).getValue());
+
         } catch (IOException | BaseAudioConverter.ConversionException |
                  AudioItemRepository.UnsupportedFormatException e) {
             // There really isn't anything to do with this exception.
 //      throw new RuntimeException(e);
         }
-//        finally {
-//            parent.setCursor(Cursor.getDefaultCursor());
-//        }
     }
 
     private void onUpdateTimerTick(ActionEvent e) {
         PlayerStateDetails details = getPlayer().getPlayerStateDetails();
         mirrorPlayerState(details);
-        // TODO: update slider state
     }
 
     private void mirrorPlayerState(PlayerStateDetails newState) {
         Platform.runLater(() -> {
-        if (newState.getCurrentPlayerState().isNotPlaying()) {
-            showPlaying(false);
+            if (newState.getCurrentPlayerState().isNotPlaying()) {
+                showPlaying(false);
 
-            if (newState.getCurrentPlayerState().isStopped()) {
-                positionSlider.setValue(0);
-            } else {
-                positionSlider.setMax((duration * SLIDER_UNITS_PER_SECOND));
-                positionSlider.setValue((int) (newState.getCurrentPoitionInSecs() * SLIDER_UNITS_PER_SECOND));
+                if (newState.getCurrentPlayerState().isStopped()) {
+                    positionSlider.setValue(0);
+                } else {
+                    positionSlider.setMax((duration * SLIDER_UNITS_PER_SECOND));
+                    positionSlider.setValue((int) (newState.getCurrentPoitionInSecs() * SLIDER_UNITS_PER_SECOND));
 
-                int playedTimeInSecs = (int) newState.getCurrentPoitionInSecs();
-                totalLabel.setText(formatTime(playedTimeInSecs));
-//                remainingTimeLbl.setText(secondsToTimeString((int) (duration - playedTimeInSecs)));
+                    int playedTimeInSecs = (int) newState.getCurrentPoitionInSecs();
+                    elapsedLabel.setText(formatTime(playedTimeInSecs));
+                }
+                updatePlayerStateTimer.stop();
+
+                return;
             }
-            updatePlayerStateTimer.stop();
 
-            return;
-        }
+            if (newState.getCurrentPlayerState().isPlaying()) {
+                showPlaying(true);
 
-        if (newState.getCurrentPlayerState().isPlaying()) {
-            showPlaying(true);
-
-            duration = getPlayer().getDurationInSecs();
+                duration = getPlayer().getDurationInSecs();
+                totalLabel.setText(formatTime((int) duration));
 
 
 //            if (!positionSliderGrabbed) {
-            positionSlider.setMax((duration * SLIDER_UNITS_PER_SECOND));
-            positionSlider.setValue((newState.getCurrentPoitionInSecs() * SLIDER_UNITS_PER_SECOND));
+//                positionSlider.setMax((duration * SLIDER_UNITS_PER_SECOND));
+                positionSlider.setValue((newState.getCurrentPoitionInSecs() * SLIDER_UNITS_PER_SECOND));
 
-            int playedTimeInSecs = (int) newState.getCurrentPoitionInSecs();
-            totalLabel.setText(formatTime(playedTimeInSecs));
+                int playedTimeInSecs = (int) newState.getCurrentPoitionInSecs();
+                elapsedLabel.setText(formatTime(playedTimeInSecs));
 //                remainingTimeLbl.setText(secondsToTimeString((int) (duration - playedTimeInSecs)));
 //            }
-            updatePlayerStateTimer.start();
+                updatePlayerStateTimer.start();
 
-        }
+            }
         });
     }
 
