@@ -14,7 +14,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -28,7 +27,6 @@ import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.cloud.IdentityPersistence;
 import org.literacybridge.acm.cloud.cognito.AuthenticationHelper;
 import org.literacybridge.acm.cloud.cognito.CognitoHelper;
@@ -38,10 +36,6 @@ import org.literacybridge.acm.config.AccessControl;
 import org.literacybridge.acm.config.AmplioHome;
 import org.literacybridge.acm.config.HttpUtility;
 import org.literacybridge.acm.gui.ApplicationV2;
-import org.literacybridge.acm.gui.CommandLineParams;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
-
-import javax.swing.*;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -50,7 +44,6 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.OFFLINE_EMAIL_CHOICE;
 import static org.literacybridge.acm.cloud.Authenticator.PROGRAMS_INFO_API;
 
 public class LoginController {
@@ -206,14 +199,6 @@ public class LoginController {
 
     @FXML
     private void initialize() {
-//        try {
-//            computerName = InetAddress.getLocalHost().getHostName();
-//        } catch (UnknownHostException ignored) {
-//        }
-//        this.identityPersistence = new IdentityPersistence(AmplioHome.getDirectory());
-//        cognitoHelper = new CognitoHelper();
-
-
         visiblePasswordField.textProperty().bindBidirectional(passwordField.textProperty());
         visiblePasswordField.visibleProperty().bind(passwordVisibilityButton.selectedProperty());
         visiblePasswordField.managedProperty().bind(visiblePasswordField.visibleProperty());
@@ -306,7 +291,7 @@ public class LoginController {
             stage.show();
         } catch (Exception ex) {
             ex.printStackTrace();
-            DailogHelpers.errorDailog(getState(), "Authentication Failure", "Authentication is required to use the ACM.", false);
+            FxHelpers.errorDailog(getState(), "Authentication Failure", "Authentication is required to use the ACM.", false);
 
         }
     }

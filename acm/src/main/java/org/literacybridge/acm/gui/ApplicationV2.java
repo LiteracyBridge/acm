@@ -1,6 +1,5 @@
 package org.literacybridge.acm.gui;
 
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -8,7 +7,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
-import org.jdesktop.swingx.JXFrame;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.literacybridge.acm.Constants;
@@ -16,25 +14,17 @@ import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.*;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
-import org.literacybridge.acm.gui.MainWindow.MainView;
-import org.literacybridge.acm.gui.MainWindow.ToolbarView;
-import org.literacybridge.acm.gui.dialogs.AcmCheckoutTest;
-import org.literacybridge.acm.gui.dialogs.LafTester;
 import org.literacybridge.acm.gui.dialogs.S3SyncDialog;
-import org.literacybridge.acm.gui.fx.DailogHelpers;
+import org.literacybridge.acm.gui.fx.FxHelpers;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.FilterState;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
 import org.literacybridge.acm.utils.LogHelper;
 import org.literacybridge.acm.utils.OsUtils;
-import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Optional;
@@ -174,7 +164,7 @@ public class ApplicationV2 extends Application {
 
 
         if (isEmpty(cliParams.sharedACM)) {
-            DailogHelpers.errorDailog(primaryStage, "No ACM Selected", "No ACM chosen Can not continue.", true);
+            FxHelpers.errorDailog(primaryStage, "No ACM Selected", "No ACM chosen Can not continue.", true);
             System.exit(1);
         }
 

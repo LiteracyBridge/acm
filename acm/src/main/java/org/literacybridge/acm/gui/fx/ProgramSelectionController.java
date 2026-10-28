@@ -72,10 +72,13 @@ public class ProgramSelectionController {
 
         ApplicationV2.cliParams.sharedACM = code;
 
-        System.out.println("Currently selected: " + code);
-        openAcmDb(code, stage);
 
         try {
+            System.out.println("Currently selected: " + code);
+            openAcmDb(code, stage);
+
+            FxHelpers.changeScene((Stage) rootPane.getScene().getWindow(), FxHelpers.Scenes.DASHBOARD);
+
             if (ApplicationV2.cliParams.cleanUnreferenced) {
                 ACMConfiguration.getInstance().getCurrentDB().cleanUnreferencedFiles();
             }
