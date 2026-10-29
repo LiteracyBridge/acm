@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.fx.dashboard;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.ToggleButton;
@@ -48,6 +49,9 @@ public class PlayerBarController {
     private ToggleButton playPauseButton;
 
     @FXML
+    private Button previousButton;
+
+    @FXML
     private SVGPath playPauseIcon;
 
     @FXML
@@ -60,7 +64,7 @@ public class PlayerBarController {
                         getPlayer().pause();
                         showPlaying(false);
                     } else if (!wasPlaying && playing) {
-                        if(selectedAudioItem != null) {
+                        if (selectedAudioItem != null) {
                             getPlayer().resume();
                             showPlaying(true);
                             mirrorPlayerState(getPlayer().getPlayerStateDetails());
@@ -72,6 +76,58 @@ public class PlayerBarController {
 //                (observable, oldValue, newValue) -> elapsedLabel.setText(formatTime(newValue.intValue())));
 
         playPauseButton.setSelected(true);
+    }
+
+    @FXML
+    private void handlePreviousButtonClick() {
+        var tableItems = dashboard.getAudioLibrary().getTable().getItems();
+
+        if (tableItems.isEmpty()) return;
+
+        if (selectedAudioItem == null) {
+            // No audio item has been selected, play the first track of the table
+            playAudio(tableItems.get(0).getAudioItem());
+            return;
+        }
+
+        // Play the next track before the currently selected audio
+        var thisRow = tableItems.stream().filter(t -> t.getAudioItem().getId().equals(selectedAudioItem.getId())).findFirst().orElse(null);
+
+        if (thisRow == null) return;
+
+        var thisIndex = tableItems.indexOf(thisRow);
+        if (thisIndex == 0) {
+            return; // First item, cannot go back
+        }
+
+        var nextRow = tableItems.get(thisIndex - 1);
+        playAudio(nextRow.getAudioItem());
+    }
+
+    @FXML
+    private void handleNextButtonClick() {
+        var tableItems = dashboard.getAudioLibrary().getTable().getItems();
+
+        if (tableItems.isEmpty()) return;
+
+        if (selectedAudioItem == null) {
+            // No audio item has been selected, play the first track of the table
+            playAudio(tableItems.get(0).getAudioItem());
+            return;
+        }
+
+        // Play the next track before the currently selected audio
+        var thisRow = tableItems.stream().filter(t -> t.getAudioItem().getId().equals(selectedAudioItem.getId())).findFirst().orElse(null);
+
+        if (thisRow == null) return;
+
+        var thisIndex = tableItems.indexOf(thisRow);
+        if (thisIndex == tableItems.size() - 1) {
+            return; // Last item, cannot go forward
+        }
+
+        var nextRow = tableItems.get(thisIndex + 1);
+        playAudio(nextRow.getAudioItem());
     }
 
     public void showTrack(String title, int durationSeconds) {
@@ -91,6 +147,7 @@ public class PlayerBarController {
     static String formatTime(int totalSeconds) {
         return String.format("%d:%02d", totalSeconds / 60, totalSeconds % 60);
     }
+
 
     public void setDashboardController(DashboardController parentController) {
         this.dashboard = parentController;
@@ -182,4 +239,5 @@ public class PlayerBarController {
     private SimpleSoundPlayer getPlayer() {
         return ApplicationV2.getApplication().getSoundPlayer();
     }
+
 }

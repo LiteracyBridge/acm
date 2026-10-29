@@ -52,4 +52,8 @@ public class DashboardController implements Initializable {
         return playerBarController;
     }
 
+    public AudioLibraryController getAudioLibrary() {
+        return audioLibraryController;
+    }
+
 }

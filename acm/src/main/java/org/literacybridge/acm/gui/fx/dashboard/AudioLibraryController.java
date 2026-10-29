@@ -70,6 +70,10 @@ public class AudioLibraryController {
         this.dashboard = parentController;
     }
 
+    public TableView<AudioLibraryRow> getTable(){
+        return audioTable;
+    }
+    
     // The "more" button at the end of each row. Its menu comes in a later step.
     private static class RowMenuCell extends TableCell<AudioLibraryRow, Void> {
         private final Button button = new Button();

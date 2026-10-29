@@ -25,7 +25,7 @@
     <Region minWidth="16.0" prefWidth="64.0"/>
 
     <HBox alignment="CENTER" spacing="8.0" styleClass="player-controls">
-        <Button fx:id="previousButton" accessibleText="Previous" mnemonicParsing="false" styleClass="icon-button">
+        <Button onAction="#handlePreviousButtonClick" accessibleText="Play previous audio item in the audio library" mnemonicParsing="false" styleClass="icon-button">
             <graphic>
                 <SVGPath styleClass="icon" content="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
             </graphic>
@@ -43,7 +43,7 @@
             </tooltip>
         </ToggleButton>
 
-        <Button fx:id="nextButton" accessibleText="Next" mnemonicParsing="false" styleClass="icon-button">
+        <Button onAction="#handleNextButtonClick" accessibleText="Next" mnemonicParsing="false" styleClass="icon-button">
             <graphic>
                 <SVGPath styleClass="icon" content="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
             </graphic>
