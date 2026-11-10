@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.literacybridge.acm.gui.fx.dashboard.CreateDeploymentController">
+
+    <VBox styleClass="deployment-header">
+        <Label text="Create Deployment " styleClass="page-title"/>
+
+        <HBox alignment="CENTER_LEFT">
+            <VBox styleClass="deployment-card">
+                <Label text="Import Content" styleClass="deployment-card-title"/>
+                <Label text="Step 2/5 Incomplete" styleClass="deployment-card-progress"/>
+                <HBox alignment="CENTER_LEFT" styleClass="deployment-card-status">
+                    <Label text="Status" styleClass="deployment-card-status-label"/>
+                    <Label text="Pending" styleClass="status-badge,status-pending"/>
+                </HBox>
+            </VBox>
+
+            <Region HBox.hgrow="ALWAYS" styleClass="deployment-card-line"/>
+
+            <VBox styleClass="deployment-card">
+                <Label text="Playlist Prompt" styleClass="deployment-card-title"/>
+                <Label text="Step 5/5 Incomplete" styleClass="deployment-card-progress"/>
+                <HBox alignment="CENTER_LEFT" styleClass="deployment-card-status">
+                    <Label text="Status" styleClass="deployment-card-status-label"/>
+                    <Label text="Complete" styleClass="status-badge,status-complete"/>
+                </HBox>
+            </VBox>
+
+            <Region HBox.hgrow="ALWAYS" styleClass="deployment-card-line"/>
+
+            <VBox styleClass="deployment-card">
+                <Label text="System Prompt" styleClass="deployment-card-title"/>
+                <Label text="Step 5/5 Incomplete" styleClass="deployment-card-progress"/>
+                <HBox alignment="CENTER_LEFT" styleClass="deployment-card-status">
+                    <Label text="Status" styleClass="deployment-card-status-label"/>
+                    <Label text="Complete" styleClass="status-badge,status-complete"/>
+                </HBox>
+            </VBox>
+        </HBox>
+    </VBox>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="deployment-steps-scroll">
+        <VBox styleClass="deployment-steps">
+
+            <HBox fx:id="step1" styleClass="step">
+                <VBox alignment="TOP_CENTER">
+                    <Label text="1" styleClass="step-marker"/>
+                    <Region VBox.vgrow="ALWAYS" styleClass="step-line"/>
+                </VBox>
+                <VBox HBox.hgrow="ALWAYS" styleClass="step-body">
+                    <Label text="Deployment Number" styleClass="step-title"/>
+                    <VBox fx:id="step1Content" styleClass="step-content">
+                        <HBox spacing="24.0" styleClass="step-card">
+                            <VBox spacing="16.0">
+                                <Label text="Create deployment" styleClass="step-card-title"/>
+                                <ComboBox fx:id="deploymentComboBox" accessibleText="Create deployment"
+                                          prefWidth="212.0" promptText="Select" styleClass="program-select"/>
+                            </VBox>
+                            <VBox spacing="16.0">
+                                <Label text="Platform" styleClass="step-card-title"/>
+                                <ComboBox fx:id="platformComboBox" accessibleText="Platform"
+                                          prefWidth="212.0" promptText="Select" styleClass="program-select"/>
+                            </VBox>
+                        </HBox>
+                        <HBox fx:id="stepButtons" alignment="CENTER_RIGHT" spacing="6.0">
+                            <Button fx:id="previousButton" text="&lt;&lt; Previous" mnemonicParsing="false"
+                                    styleClass="btn-step,btn-step-outline" onAction="#handlePrevious"/>
+                            <Button fx:id="nextButton" text="Next &gt;&gt;" mnemonicParsing="false"
+                                    styleClass="btn-step,btn-step-primary" onAction="#handleNext"/>
+                            <Button text="Cancel" mnemonicParsing="false"
+                                    styleClass="btn-step,btn-step-outline" onAction="#handleCancel"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </HBox>
+
+            <HBox fx:id="step2" styleClass="step">
+                <VBox alignment="TOP_CENTER">
+                    <Label text="2" styleClass="step-marker"/>
+                    <Region VBox.vgrow="ALWAYS" styleClass="step-line"/>
+                </VBox>
+                <VBox HBox.hgrow="ALWAYS" styleClass="step-body">
+                    <Label text="Modification" styleClass="step-title"/>
+                    <VBox fx:id="step2Content" styleClass="step-content">
+                        <fx:include fx:id="modification" source="deploymentmodification.fxml"/>
+                    </VBox>
+                </VBox>
+            </HBox>
+
+            <HBox fx:id="step3" styleClass="step">
+                <VBox alignment="TOP_CENTER">
+                    <Label text="3" styleClass="step-marker"/>
+                </VBox>
+                <VBox HBox.hgrow="ALWAYS" styleClass="step-body">
+                    <Label text="Validation" styleClass="step-title"/>
+                    <VBox fx:id="step3Content" styleClass="step-content">
+                        <VBox styleClass="step-card">
+                            <Label text="This step is coming soon." styleClass="placeholder-text"/>
+                        </VBox>
+                    </VBox>
+                </VBox>
+            </HBox>
+        </VBox>
+    </ScrollPane>
+</VBox>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.TreeTableColumn?>
+<?import javafx.scene.control.TreeTableView?>
+<?import javafx.scene.control.cell.TreeItemPropertyValueFactory?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="12.0"
+      xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.literacybridge.acm.gui.fx.dashboard.ModificationController">
+
+    <!-- The Publish switch sits on top of the table, at the right end of the header row. -->
+    <StackPane>
+    <TreeTableView fx:id="playlistTable" showRoot="false" styleClass="deployment-table">
+        <placeholder>
+            <Label text="No playlists in this deployment." styleClass="placeholder-text"/>
+        </placeholder>
+        <columns>
+            <TreeTableColumn text="Playlist Name" prefWidth="${playlistTable.width * 0.34}">
+                <cellValueFactory>
+                    <TreeItemPropertyValueFactory property="name"/>
+                </cellValueFactory>
+            </TreeTableColumn>
+            <TreeTableColumn text="Tracks" prefWidth="${playlistTable.width * 0.15}">
+                <cellValueFactory>
+                    <TreeItemPropertyValueFactory property="tracks"/>
+                </cellValueFactory>
+            </TreeTableColumn>
+            <TreeTableColumn text="Duration" prefWidth="${playlistTable.width * 0.16}">
+                <cellValueFactory>
+                    <TreeItemPropertyValueFactory property="duration"/>
+                </cellValueFactory>
+            </TreeTableColumn>
+            <TreeTableColumn fx:id="testAudioColumn" text="Test Audio" prefWidth="${playlistTable.width * 0.23}"/>
+        </columns>
+    </TreeTableView>
+        <ToggleButton fx:id="publishToggle" text="Publish" styleClass="publish-switch" StackPane.alignment="TOP_RIGHT">
+            <graphic>
+                <StackPane styleClass="switch-track">
+                    <Region styleClass="switch-knob"/>
+                </StackPane>
+            </graphic>
+            <StackPane.margin>
+                <Insets top="15.0" right="24.0"/>
+            </StackPane.margin>
+        </ToggleButton>
+    </StackPane>
+
+    <VBox spacing="10.0">
+        <CheckBox fx:id="tutorialCheckBox" text="Include Talking Book tutorial." selected="true" styleClass="deployment-option"/>
+        <CheckBox fx:id="feedbackPublicCheckBox" text="Make user feedback public." styleClass="deployment-option"/>
+    </VBox>
+</VBox>

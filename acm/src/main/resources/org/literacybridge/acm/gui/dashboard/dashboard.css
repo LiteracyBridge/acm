@@ -283,7 +283,8 @@
 }
 
 .audio-table .column-header .arrow {
-    -fx-background-color: -color-text-muted;
+    -fx-padding: 0;
+    -fx-background-color: transparent;
 }
 
 .audio-table .table-row-cell {
@@ -357,4 +358,407 @@
 
 .player-controls .icon {
     -fx-fill: -color-text;
+}
+
+/* ---------- Collapsed sidebar ---------- */
+
+.sidebar:collapsed {
+    -fx-pref-width: 68;
+    -fx-min-width: 68;
+    -fx-padding: 24 10 16 10;
+}
+
+.sidebar:collapsed .nav-item {
+    -fx-content-display: graphic-only;
+    -fx-alignment: center;
+}
+
+/* ---------- Sort indicators ---------- */
+
+.audio-table .column-header .label {
+    -fx-content-display: right;
+    -fx-graphic-text-gap: 8;
+}
+
+.audio-table .sort-triangle {
+    -fx-fill: -color-border;
+}
+
+.audio-table .sort-triangle:active {
+    -fx-fill: -color-text;
+}
+
+
+/* ---------- Create Deployment ---------- */
+
+.content:full-bleed {
+    -fx-padding: 0;
+}
+
+.deployment-header {
+    -fx-background-color: -color-surface;
+    -fx-border-color: transparent transparent -color-divider transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 20 32 20 32;
+    -fx-spacing: 20;
+}
+
+.deployment-card {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 8;
+    -fx-padding: 14 18;
+    -fx-spacing: 4;
+    -fx-min-width: 168;
+    -fx-pref-width: 168;
+}
+
+.deployment-card-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-text;
+}
+
+.deployment-card-progress {
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-text-muted;
+}
+
+.deployment-card-status {
+    -fx-spacing: 12;
+    -fx-padding: 4 0 0 0;
+}
+
+.deployment-card-status-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: -color-text;
+}
+
+.deployment-card-line {
+    -fx-min-width: 24;
+    -fx-min-height: 1;
+    -fx-max-height: 1;
+    -fx-border-color: derive(-color-primary, 40%) transparent transparent transparent;
+    -fx-border-style: dashed;
+    -fx-border-width: 1 0 0 0;
+}
+
+.status-badge {
+    -fx-background-radius: 8;
+    -fx-padding: 1 8;
+    -fx-font-size: 11px;
+}
+
+.status-pending {
+    -fx-background-color: #FEE2E2;
+    -fx-text-fill: #B91C1C;
+}
+
+.status-complete {
+    -fx-background-color: -color-primary-soft;
+    -fx-text-fill: #1F7A50;
+}
+
+/* ---------- Create Deployment steps ---------- */
+
+.deployment-steps-scroll,
+.deployment-steps-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.deployment-steps {
+    -fx-padding: 24 46 24 24;
+}
+
+.step {
+    -fx-spacing: 12;
+}
+
+.step-marker {
+    -fx-min-width: 28;
+    -fx-pref-width: 28;
+    -fx-max-width: 28;
+    -fx-min-height: 28;
+    -fx-pref-height: 28;
+    -fx-max-height: 28;
+    -fx-alignment: center;
+    -fx-background-color: -color-border;
+    -fx-background-radius: 14;
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-surface;
+}
+
+.step:active .step-marker {
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-primary;
+    -fx-border-radius: 14;
+    -fx-border-width: 1.5;
+    -fx-text-fill: -color-text;
+}
+
+.step:done .step-marker {
+    -fx-background-color: -color-primary;
+}
+
+.step-line {
+    -fx-min-width: 2;
+    -fx-max-width: 2;
+    -fx-min-height: 16;
+    -fx-background-color: -color-border;
+}
+
+.step:active .step-line,
+.step:done .step-line {
+    -fx-background-color: -color-primary;
+}
+
+.step-body {
+    -fx-padding: 0 0 24 0;
+    -fx-spacing: 12;
+}
+
+.step-title {
+    -fx-min-height: 28;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-text;
+}
+
+.step-content {
+    -fx-spacing: 12;
+}
+
+.step-card {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 8;
+    -fx-padding: 20 22 36 22;
+    -fx-spacing: 16;
+}
+
+.step-card-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-text;
+}
+
+.btn-step {
+    -fx-background-radius: 4;
+    -fx-padding: 0 14;
+    -fx-pref-height: 36;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+}
+
+/* Previous and Cancel. */
+.btn-step-outline {
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-text-muted;
+    -fx-border-radius: 4;
+    -fx-text-fill: -color-text;
+}
+
+.btn-step-outline:hover {
+    -fx-background-color: -color-hover;
+}
+
+/* Next. */
+.btn-step-primary {
+    -fx-background-color: -color-primary;
+    -fx-text-fill: -color-surface;
+}
+
+.btn-step-primary:hover {
+    -fx-background-color: #2B9161;
+}
+
+
+
+/* ---------- Modification table ---------- */
+
+.deployment-table {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 8;
+    -fx-padding: 0;
+    -fx-table-cell-border-color: transparent;
+}
+
+.deployment-table .column-header-background {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 8 8 0 0;
+    -fx-border-color: transparent transparent -color-divider transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.deployment-table .column-header,
+.deployment-table .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-pref-height: 56;
+}
+
+.deployment-table .column-header .label {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-text;
+    -fx-alignment: center-left;
+    -fx-padding: 0 20;
+    -fx-content-display: right;
+    -fx-graphic-text-gap: 8;
+}
+
+.deployment-table .column-header .arrow {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+
+.deployment-table .sort-triangle {
+    -fx-fill: -color-border;
+}
+
+.deployment-table .sort-triangle:active {
+    -fx-fill: -color-text;
+}
+/* ---------- Modification rows ---------- */
+
+.deployment-table .tree-table-row-cell {
+    -fx-cell-size: 56;
+    -fx-indent: 30;
+    -fx-background-color: -color-surface;
+    -fx-border-color: transparent transparent -color-divider transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.deployment-table .tree-table-row-cell:track {
+    -fx-background-color: -color-page;
+}
+
+.deployment-table .tree-table-row-cell:empty {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.deployment-table .tree-table-row-cell:selected {
+    -fx-background-color: -color-hover;
+}
+
+.deployment-table .tree-table-cell {
+    -fx-padding: 0 20;
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-text;
+    -fx-alignment: center-left;
+    -fx-border-color: transparent;
+}
+
+.deployment-table .tree-table-row-cell:selected .tree-table-cell {
+    -fx-text-fill: -color-text;
+}
+
+/* JavaFX puts the arrow at the top of the row; 23 above and below centres it in the 56px row. */
+.deployment-table .tree-disclosure-node {
+    -fx-padding: 23 4 23 20;
+}
+
+.deployment-table .tree-disclosure-node .arrow {
+    -fx-shape: "M1.4 0 L6 4.6 L1.4 9.2 L0 7.8 L3.2 4.6 L0 1.4 Z";
+    -fx-background-color: -color-text-muted;
+    -fx-padding: 5 3.5;
+}
+
+/* ---------- Modification Test Audio buttons ---------- */
+
+.btn-test-audio {
+    -fx-pref-width: 116;
+    -fx-padding: 4 8;
+    -fx-background-color: -color-primary-soft;
+    -fx-background-radius: 6;
+    -fx-border-color: #A7DFC0;
+    -fx-border-radius: 6;
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-text;
+    -fx-cursor: hand;
+}
+
+.btn-test-audio:track {
+    -fx-background-color: #DCE4F9;
+    -fx-border-color: #A9B9EC;
+}
+
+.btn-test-audio:playing {
+    -fx-background-color: #EEF1FA;
+    -fx-border-color: #C9D3EF;
+}
+
+.deployment-table .tree-table-row-cell:playing {
+    -fx-background-color: #B3C5E9;
+}
+
+/* ---------- Modification Publish switch ---------- */
+
+.publish-switch,
+.publish-switch:hover,
+.publish-switch:focused,
+.publish-switch:armed,
+.publish-switch:selected {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-graphic-text-gap: 6;
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-text-muted;
+    -fx-cursor: hand;
+}
+
+.publish-switch:selected {
+    -fx-text-fill: -color-primary;
+}
+
+.publish-switch .switch-track {
+    -fx-min-width: 52;
+    -fx-min-height: 28;
+    -fx-max-width: 52;
+    -fx-max-height: 28;
+    -fx-padding: 3;
+    -fx-alignment: center-left;
+    -fx-background-color: -color-border;
+    -fx-background-radius: 14;
+}
+
+.publish-switch:selected .switch-track {
+    -fx-alignment: center-right;
+    -fx-background-color: -color-primary;
+}
+
+.publish-switch .switch-knob {
+    -fx-min-width: 22;
+    -fx-min-height: 22;
+    -fx-max-width: 22;
+    -fx-max-height: 22;
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 11;
+}
+
+/* ---------- Modification options ---------- */
+
+.deployment-option {
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-text-strong;
+    -fx-label-padding: 0 0 0 8;
+    -fx-mark-color: -color-text-strong;
+    -fx-cursor: hand;
+}
+
+.deployment-option > .box,
+.deployment-option:focused > .box,
+.deployment-option:hover > .box {
+    -fx-background-color: -color-surface;
+    -fx-background-insets: 0;
+    -fx-background-radius: 2;
+    -fx-border-color: -color-text-strong;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 2;
+    -fx-padding: 1;
 }

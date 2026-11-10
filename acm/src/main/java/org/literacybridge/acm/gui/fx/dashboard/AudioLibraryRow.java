@@ -3,24 +3,14 @@ package org.literacybridge.acm.gui.fx.dashboard;
 
 import org.literacybridge.acm.store.AudioItem;
 
+import java.util.Locale;
+import java.util.stream.Stream;
+
 public class AudioLibraryRow {
     private final AudioItem audioItem;
-//    private final String id;
-//    private final String title;
-//    private final String duration;
-//    private final String category;
-//    private final String source;
-//    private final String language;
-//    private final String date;
 
     public AudioLibraryRow(AudioItem audioItem) {
         this.audioItem = audioItem;
-//        this.title = title;
-//        this.duration = duration;
-//        this.category = category;
-//        this.source = source;
-//        this.language = language;
-//        this.date = date;
     }
 
     public AudioItem getAudioItem() {
@@ -53,5 +43,16 @@ public class AudioLibraryRow {
 
     public String getDate() {
         return "2026-01-01";
+    }
+
+    // True if the search text appears in the title, category, source or language, ignoring case.
+    // Empty search text matches every row.
+    public boolean matches(String searchText) {
+        if (searchText == null || searchText.trim().isEmpty()) {
+            return true;
+        }
+        String needle = searchText.trim().toLowerCase(Locale.ROOT);
+        return Stream.of(getTitle(), getCategory(), getSource(), getLanguage())
+                .anyMatch(value -> value != null && value.toLowerCase(Locale.ROOT).contains(needle));
     }
 }

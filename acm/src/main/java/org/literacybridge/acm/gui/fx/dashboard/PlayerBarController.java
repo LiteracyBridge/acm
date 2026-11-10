@@ -14,7 +14,6 @@ import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ApplicationV2;
 import org.literacybridge.acm.gui.playerAPI.PlayerStateDetails;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 

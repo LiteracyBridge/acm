@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.SVGPath?>
 
-<VBox styleClass="sidebar"
+<VBox fx:id="sidebarRoot" styleClass="sidebar"
       xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="org.literacybridge.acm.gui.fx.dashboard.SidebarController">
 
@@ -64,7 +64,7 @@
             </graphic>
         </ToggleButton>
 
-        <ToggleButton fx:id="createDeploymentsNav" text="Create Deployments" userData="createDeployments"
+        <ToggleButton fx:id="createDeploymentsNav" text="Deployments" userData="createDeployments"
                       toggleGroup="$navGroup" mnemonicParsing="false"
                       maxWidth="Infinity" styleClass="nav-item">
             <graphic>
@@ -73,9 +73,9 @@
         </ToggleButton>
     </VBox>
 
-    <Separator styleClass="sidebar-divider"/>
+    <Separator fx:id="playlistDivider" styleClass="sidebar-divider"/>
 
-    <HBox alignment="CENTER_LEFT" styleClass="section-header">
+    <HBox fx:id="playlistHeader" alignment="CENTER_LEFT" styleClass="section-header">
         <Label text="Playlists" styleClass="section-label"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Button fx:id="addPlaylistButton" accessibleText="New playlist" mnemonicParsing="false"
